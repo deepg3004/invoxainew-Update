@@ -100,6 +100,17 @@ export default async function Dashboard() {
             Manage pages →
           </Link>
         </Card>
+        <Card title="AI landing pages">
+          <p className="text-sm text-neutral-500">
+            Let AI write and publish a landing page from a short brief.
+          </p>
+          <Link
+            href="/ai-pages"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Generate a page →
+          </Link>
+        </Card>
       </div>
     </main>
   );

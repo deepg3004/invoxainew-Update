@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
     "@invoxai/auth": "workspace:*",
     "@invoxai/config": "workspace:*",
     "@invoxai/db": "workspace:*",
