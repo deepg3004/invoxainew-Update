@@ -1,0 +1,42 @@
+# InvoxAI reverse proxy — deployed copy lives at /etc/caddy/Caddyfile.
+#   invoxai.io / www       -> :3000 (web)
+#   app.invoxai.io         -> :3001 (seller dashboard)
+#   admin.invoxai.io       -> :3002 (admin)
+#   <anything else>        -> :3003 (tenant public sites), on-demand TLS
+# Caddy obtains/renews Let's Encrypt certs automatically.
+
+{
+	email iamdeep.mk@gmail.com
+
+	# On-demand TLS: before issuing a cert for a host that isn't listed below,
+	# Caddy asks the tenant app whether that host is a real tenant. Prevents
+	# certificate-issuance abuse from arbitrary domains pointed at this IP.
+	on_demand_tls {
+		ask http://127.0.0.1:3003/api/tls-allow
+	}
+}
+
+invoxai.io, www.invoxai.io {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:3000
+}
+
+app.invoxai.io {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:3001
+}
+
+admin.invoxai.io {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:3002
+}
+
+# Catch-all for tenant subdomains (*.invoxai.io) and future custom domains.
+# The on_demand directive gates cert issuance via the ask endpoint above.
+https:// {
+	tls {
+		on_demand
+	}
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:3003
+}
