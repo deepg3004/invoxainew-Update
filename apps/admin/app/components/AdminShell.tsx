@@ -17,6 +17,9 @@ export function AdminShell({
             <Link href="/" className="font-semibold text-neutral-900">
               InvoxAI admin
             </Link>
+            <Link href="/tenants" className="text-neutral-600 hover:text-neutral-900">
+              Tenants
+            </Link>
             <Link href="/plans" className="text-neutral-600 hover:text-neutral-900">
               Plans
             </Link>

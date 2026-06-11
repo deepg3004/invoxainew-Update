@@ -74,3 +74,9 @@ export {
   deleteAiPage,
   type ChargeCreateResult,
 } from "./aipage";
+export {
+  getPlatformOverview,
+  listTenantsAdmin,
+  getTenantAdminDetail,
+  type PlatformOverview,
+} from "./admin";

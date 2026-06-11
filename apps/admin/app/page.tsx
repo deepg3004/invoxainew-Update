@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card } from "@invoxai/ui";
-import { listPlans, listPricingSettings } from "@invoxai/db";
+import { getPlatformOverview, listPlans, listPricingSettings } from "@invoxai/db";
+import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../lib/auth";
 import { AdminShell } from "./components/AdminShell";
 import { NotAuthorized } from "./components/NotAuthorized";
@@ -8,11 +9,24 @@ import { NotAuthorized } from "./components/NotAuthorized";
 // Reads live DB state, so it must be dynamic.
 export const dynamic = "force-dynamic";
 
+function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+      <div className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+        {label}
+      </div>
+      <div className="mt-1 text-2xl font-bold text-neutral-900">{value}</div>
+      {hint ? <div className="mt-0.5 text-xs text-neutral-400">{hint}</div> : null}
+    </div>
+  );
+}
+
 export default async function Home() {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
-  const [plans, settings] = await Promise.all([
+  const [ov, plans, settings] = await Promise.all([
+    getPlatformOverview(),
     listPlans(),
     listPricingSettings(),
   ]);
@@ -23,33 +37,41 @@ export default async function Home() {
       <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
         InvoxAI · admin
       </p>
-      <h1 className="mt-1 text-3xl font-bold">Platform dashboard</h1>
-      <p className="mt-2 text-neutral-500">
-        Define subscription plans and platform pricing. Every price, limit, and
-        commission here is the single source of truth used across the platform.
-      </p>
+      <h1 className="mt-1 text-3xl font-bold">Platform overview</h1>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <Stat label="Tenants" value={String(ov.tenants)} hint={`${ov.activeSubscriptions} active subscriptions`} />
+        <Stat label="Buyers" value={String(ov.buyerAccounts)} />
+        <Stat label="Paid orders" value={String(ov.paidOrders)} />
+        <Stat label="GMV (seller-direct)" value={formatRupees(ov.gmvPaise)} hint="Settled to seller gateways" />
+        <Stat
+          label="InvoxAI commission"
+          value={formatRupees(ov.commissionPaidPaise)}
+          hint={ov.commissionDuePaise > 0 ? `${formatRupees(ov.commissionDuePaise)} due` : "all collected"}
+        />
+        <Stat label="Seller wallet balances" value={formatRupees(ov.walletBalancePaise)} hint={`${ov.aiPages} AI pages generated`} />
+      </div>
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <Card title="Tenants">
+          <p className="text-sm text-neutral-500">Search and inspect every seller.</p>
+          <Link href="/tenants" className="mt-3 inline-block text-sm font-medium text-blue-600 underline">
+            View tenants →
+          </Link>
+        </Card>
         <Card title="Plans">
-          <p className="text-sm">
-            {plans.length} plan{plans.length === 1 ? "" : "s"} · {activePlans}{" "}
-            active
+          <p className="text-sm text-neutral-500">
+            {plans.length} plan{plans.length === 1 ? "" : "s"} · {activePlans} active
           </p>
-          <Link
-            href="/plans"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
+          <Link href="/plans" className="mt-3 inline-block text-sm font-medium text-blue-600 underline">
             Manage plans →
           </Link>
         </Card>
         <Card title="Pricing settings">
-          <p className="text-sm">
+          <p className="text-sm text-neutral-500">
             {settings.length} setting{settings.length === 1 ? "" : "s"}
           </p>
-          <Link
-            href="/pricing"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
+          <Link href="/pricing" className="mt-3 inline-block text-sm font-medium text-blue-600 underline">
             Manage pricing →
           </Link>
         </Card>
