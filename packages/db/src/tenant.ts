@@ -40,6 +40,40 @@ export function getTenantByUsername(username: string) {
   return prisma.tenant.findUnique({ where: { username } });
 }
 
+export interface OnboardingStatus {
+  hasSubscription: boolean;
+  gatewayConnected: boolean;
+  hasPaymentPage: boolean;
+  hasWalletBalance: boolean;
+}
+
+/** Seller setup progress for the dashboard onboarding checklist. Scoped. */
+export async function getOnboardingStatus(
+  tenantId: string,
+): Promise<OnboardingStatus> {
+  const [gw, pages, wallet, sub] = await Promise.all([
+    prisma.sellerGateway.findUnique({
+      where: { tenantId },
+      select: { status: true },
+    }),
+    prisma.paymentPage.count({ where: { tenantId } }),
+    prisma.wallet.findUnique({
+      where: { tenantId },
+      select: { balancePaise: true },
+    }),
+    prisma.subscription.findUnique({
+      where: { tenantId },
+      select: { status: true },
+    }),
+  ]);
+  return {
+    hasSubscription: sub !== null,
+    gatewayConnected: gw?.status === "CONNECTED",
+    hasPaymentPage: pages > 0,
+    hasWalletBalance: (wallet?.balancePaise ?? 0) > 0,
+  };
+}
+
 /** Is this tenant suspended? (storefront + checkout must be blocked if so.) */
 export async function isTenantSuspended(tenantId: string): Promise<boolean> {
   const t = await prisma.tenant.findUnique({

@@ -7,7 +7,9 @@ export {
   isUsernameTaken,
   createTenantForOwner,
   isTenantSuspended,
+  getOnboardingStatus,
   type CreateTenantResult,
+  type OnboardingStatus,
 } from "./tenant";
 export {
   listPlans,

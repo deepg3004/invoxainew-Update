@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card } from "@invoxai/ui";
-import { getTenantByOwnerId, getWalletStatus } from "@invoxai/db";
+import { getTenantByOwnerId, getWalletStatus, getOnboardingStatus } from "@invoxai/db";
 import { getSessionUser } from "../lib/auth";
 import { LowBalanceBanner } from "./components/LowBalanceBanner";
+import { OnboardingChecklist } from "./components/OnboardingChecklist";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,10 @@ export default async function Dashboard() {
   if (!tenant) redirect("/onboarding");
 
   const siteUrl = publicSiteUrl(tenant.username);
-  const wallet = await getWalletStatus(tenant.id);
+  const [wallet, onboarding] = await Promise.all([
+    getWalletStatus(tenant.id),
+    getOnboardingStatus(tenant.id),
+  ]);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
@@ -48,6 +52,7 @@ export default async function Dashboard() {
           balancePaise={wallet.balancePaise}
           dueCommissionPaise={wallet.dueCommissionPaise}
         />
+        <OnboardingChecklist status={onboarding} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
