@@ -56,8 +56,12 @@ export {
   getBuyerPaymentByOrderId,
   markBuyerPaymentPaid,
   settleDueCommissions,
+  listTenantOrders,
+  getTenantSalesSummary,
+  updateOrderFulfillment,
   type CreatePageResult,
   type BuyerPaidResult,
+  type SalesSummary,
 } from "./payments";
 export {
   ensureBuyerAccount,

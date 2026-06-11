@@ -78,6 +78,7 @@ export default async function BuyerCorner() {
                 <tr>
                   <th className="px-4 py-3 font-medium">Item</th>
                   <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium text-right">Amount</th>
                 </tr>
               </thead>
@@ -88,6 +89,15 @@ export default async function BuyerCorner() {
                       {o.paymentPage.title}
                     </td>
                     <td className="px-4 py-3 text-neutral-500">{formatDate(o.paidAt)}</td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700">
+                        {o.fulfillmentStatus.charAt(0) +
+                          o.fulfillmentStatus.slice(1).toLowerCase()}
+                      </span>
+                      {o.trackingNote ? (
+                        <div className="mt-1 text-xs text-neutral-400">{o.trackingNote}</div>
+                      ) : null}
+                    </td>
                     <td className="px-4 py-3 text-right">{formatRupees(o.amountPaise)}</td>
                   </tr>
                 ))}

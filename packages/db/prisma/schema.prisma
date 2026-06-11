@@ -342,6 +342,9 @@ model BuyerPayment {
   buyerContact      String?            @map("buyer_contact")
   razorpayPaymentId String?            @map("razorpay_payment_id")
   paidAt            DateTime?          @map("paid_at")
+  // C10: fulfillment tracking (seller-set, buyer-visible).
+  fulfillmentStatus FulfillmentStatus  @default(NEW) @map("fulfillment_status")
+  trackingNote      String?            @map("tracking_note")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   commission        CommissionCharge?
@@ -393,6 +396,16 @@ model AiPage {
   @@unique([tenantId, slug])
   @@index([tenantId])
   @@map("ai_pages")
+}
+
+/// Order fulfillment lifecycle (C10), set by the seller and shown to the buyer.
+/// Digital sellers can jump straight to DELIVERED; CANCELLED is terminal.
+enum FulfillmentStatus {
+  NEW
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
 
 /// InvoxAI's commission on one buyer payment (C7). One per buyer payment.

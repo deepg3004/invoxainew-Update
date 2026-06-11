@@ -111,6 +111,17 @@ export default async function Dashboard() {
             Generate a page →
           </Link>
         </Card>
+        <Card title="Orders">
+          <p className="text-sm text-neutral-500">
+            Track your sales and update fulfillment status for buyers.
+          </p>
+          <Link
+            href="/orders"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            View orders →
+          </Link>
+        </Card>
       </div>
     </main>
   );

@@ -162,6 +162,65 @@ export function getBuyerPaymentByOrderId(razorpayOrderId: string) {
   });
 }
 
+// ── Order tracking (C10) ──────────────────────────────────────────────────────
+
+/** A seller's paid orders, newest first, with item + commission. Scoped. */
+export function listTenantOrders(tenantId: string, take = 100) {
+  return prisma.buyerPayment.findMany({
+    where: { tenantId, status: "PAID" },
+    orderBy: { paidAt: "desc" },
+    take,
+    include: {
+      paymentPage: { select: { title: true, slug: true } },
+      commission: { select: { status: true, amountPaise: true } },
+    },
+  });
+}
+
+export interface SalesSummary {
+  orderCount: number;
+  grossPaise: number;
+  commissionPaidPaise: number;
+  commissionDuePaise: number;
+}
+
+/** Headline sales totals for the seller's orders dashboard. Scoped by tenantId. */
+export async function getTenantSalesSummary(tenantId: string): Promise<SalesSummary> {
+  const [orders, commissions] = await Promise.all([
+    prisma.buyerPayment.aggregate({
+      where: { tenantId, status: "PAID" },
+      _count: { _all: true },
+      _sum: { amountPaise: true },
+    }),
+    prisma.commissionCharge.groupBy({
+      by: ["status"],
+      where: { tenantId },
+      _sum: { amountPaise: true },
+    }),
+  ]);
+  const paid = commissions.find((c) => c.status === "PAID")?._sum.amountPaise ?? 0;
+  const due = commissions.find((c) => c.status === "DUE")?._sum.amountPaise ?? 0;
+  return {
+    orderCount: orders._count._all,
+    grossPaise: orders._sum.amountPaise ?? 0,
+    commissionPaidPaise: paid,
+    commissionDuePaise: due,
+  };
+}
+
+/** Update a seller's own order fulfillment status + tracking note. Scoped. */
+export function updateOrderFulfillment(
+  tenantId: string,
+  id: string,
+  status: "NEW" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED",
+  trackingNote: string | null,
+) {
+  return prisma.buyerPayment.updateMany({
+    where: { id, tenantId },
+    data: { fulfillmentStatus: status, trackingNote },
+  });
+}
+
 export type BuyerPaidResult =
   | { ok: true; alreadyProcessed: boolean; commission: "paid" | "due" | "none" }
   | { ok: false; reason: "not_found" };
