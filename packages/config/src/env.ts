@@ -26,6 +26,12 @@ const serverSchema = z.object({
 
   // Anthropic — only required from C9 onward, so optional for now.
   ANTHROPIC_API_KEY: z.string().optional().default(""),
+
+  // Platform admin allowlist (C3) — comma-separated emails that may access the
+  // admin app. Bootstraps admin identity without a chicken-and-egg DB seed;
+  // the allowlist is matched case-insensitively against the verified session
+  // email. Empty in non-admin deployments. SERVER ONLY.
+  ADMIN_EMAILS: z.string().optional().default(""),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

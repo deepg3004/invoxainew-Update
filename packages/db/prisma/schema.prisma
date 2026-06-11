@@ -50,3 +50,47 @@ model Tenant {
   @@index([username])
   @@map("tenants")
 }
+
+/// A platform subscription tier a seller can subscribe to (used from C4).
+///
+/// MONEY: all amounts are stored as INTEGER paise (₹1 = 100 paise) — never
+/// floats — to avoid rounding errors. Commission is stored as INTEGER basis
+/// points (`commissionBps`): 250 = 2.50%, 10000 = 100%. Code references the
+/// stable `key`, never the price, so admins can re-price without code changes
+/// (hard rule: all pricing/limits/commission come from the DB, admin-editable).
+///
+/// Plans are never hard-deleted (a seller may be subscribed); `isActive=false`
+/// retires a plan instead. RLS is enabled with NO policy → the anon/browser
+/// path is denied entirely; only server code (Prisma, owner role) reads/writes.
+model Plan {
+  id            String   @id @default(uuid()) @db.Uuid
+  key           String   @unique // stable slug referenced by code, e.g. "starter"
+  name          String
+  description   String?
+  priceMonthly  Int      @default(0) @map("price_monthly") // paise
+  priceYearly   Int      @default(0) @map("price_yearly") // paise
+  commissionBps Int      @default(0) @map("commission_bps") // basis points
+  maxProducts   Int?     @map("max_products") // null = unlimited
+  maxAiPages    Int?     @map("max_ai_pages") // null = unlimited
+  isActive      Boolean  @default(true) @map("is_active")
+  sortOrder     Int      @default(0) @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("plans")
+}
+
+/// Platform-wide pricing knobs as key/value, admin-editable (e.g. the
+/// `ai_page_price` ₹149 fee). `valuePaise` is INTEGER paise, as above. Kept
+/// separate from Plan because these are global, not per-tier. RLS: same
+/// deny-anon lockdown as Plan.
+model PricingSetting {
+  key        String   @id // stable code key, e.g. "ai_page_price"
+  label      String // human-readable description shown in the admin editor
+  valuePaise Int      @map("value_paise")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("pricing_settings")
+}
