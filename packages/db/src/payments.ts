@@ -208,6 +208,126 @@ export async function getTenantSalesSummary(tenantId: string): Promise<SalesSumm
   };
 }
 
+// ── Refunds (Phase 1) ─────────────────────────────────────────────────────────
+
+/** A seller's own PAID order, with the fields needed to issue a refund. Scoped. */
+export function getRefundableOrder(tenantId: string, id: string) {
+  return prisma.buyerPayment.findFirst({
+    where: { id, tenantId, status: "PAID" },
+    select: {
+      id: true,
+      razorpayPaymentId: true,
+      amountPaise: true,
+      refundedPaise: true,
+    },
+  });
+}
+
+export type RefundResult =
+  | {
+      ok: true;
+      alreadyProcessed: boolean;
+      commissionReversedPaise: number;
+    }
+  | { ok: false; reason: "not_found" | "not_refundable" | "amount_invalid" };
+
+/**
+ * Record a refund (already executed on the SELLER's gateway) and reverse the
+ * proportional commission — in ONE transaction, idempotently.
+ *
+ * Commission reversal: refundCommission = commission × refundAmount / orderAmount.
+ *  - commission was PAID (debited from wallet) → CREDIT it back to the wallet.
+ *  - commission was DUE (not yet collected) → reduce the outstanding DUE amount.
+ * `razorpayRefundId` is unique, so a retried/duplicate record is a no-op. Partial
+ * refunds accumulate in `refundedPaise`; we never reverse more commission than
+ * was charged. Never touches buyer money — only the seller's wallet/arrears.
+ */
+export async function recordRefund(input: {
+  buyerPaymentId: string;
+  tenantId: string;
+  razorpayRefundId: string;
+  amountPaise: number;
+}): Promise<RefundResult> {
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.refund.findUnique({
+      where: { razorpayRefundId: input.razorpayRefundId },
+      select: { commissionReversedPaise: true },
+    });
+    if (existing) {
+      return {
+        ok: true,
+        alreadyProcessed: true,
+        commissionReversedPaise: existing.commissionReversedPaise,
+      };
+    }
+
+    const order = await tx.buyerPayment.findFirst({
+      where: { id: input.buyerPaymentId, tenantId: input.tenantId },
+      include: { commission: true },
+    });
+    if (!order) return { ok: false, reason: "not_found" };
+    if (order.status !== "PAID") return { ok: false, reason: "not_refundable" };
+
+    const remaining = order.amountPaise - order.refundedPaise;
+    if (input.amountPaise <= 0 || input.amountPaise > remaining) {
+      return { ok: false, reason: "amount_invalid" };
+    }
+
+    // Proportional commission reversal.
+    let commissionReversed = 0;
+    if (order.commission && order.amountPaise > 0) {
+      commissionReversed = Math.floor(
+        (order.commission.amountPaise * input.amountPaise) / order.amountPaise,
+      );
+      if (commissionReversed > 0) {
+        if (order.commission.status === "PAID") {
+          const wallet = await tx.wallet.upsert({
+            where: { tenantId: input.tenantId },
+            create: { tenantId: input.tenantId, balancePaise: commissionReversed },
+            update: { balancePaise: { increment: commissionReversed } },
+          });
+          await tx.walletTransaction.create({
+            data: {
+              walletId: wallet.id,
+              tenantId: input.tenantId,
+              direction: "CREDIT",
+              amountPaise: commissionReversed,
+              balanceAfter: wallet.balancePaise,
+              reason: "Commission refund",
+              referenceType: "refund",
+              referenceId: input.razorpayRefundId,
+            },
+          });
+        } else {
+          // DUE — reduce what the seller still owes (floor at 0).
+          await tx.commissionCharge.update({
+            where: { id: order.commission.id },
+            data: {
+              amountPaise: Math.max(0, order.commission.amountPaise - commissionReversed),
+            },
+          });
+        }
+      }
+    }
+
+    await tx.buyerPayment.update({
+      where: { id: order.id },
+      data: { refundedPaise: order.refundedPaise + input.amountPaise },
+    });
+    await tx.refund.create({
+      data: {
+        razorpayRefundId: input.razorpayRefundId,
+        buyerPaymentId: order.id,
+        tenantId: input.tenantId,
+        amountPaise: input.amountPaise,
+        commissionReversedPaise: commissionReversed,
+      },
+    });
+
+    return { ok: true, alreadyProcessed: false, commissionReversedPaise: commissionReversed };
+  });
+}
+
 /** Update a seller's own order fulfillment status + tracking note. Scoped. */
 export function updateOrderFulfillment(
   tenantId: string,

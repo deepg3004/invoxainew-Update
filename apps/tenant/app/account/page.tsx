@@ -98,7 +98,14 @@ export default async function BuyerCorner() {
                         <div className="mt-1 text-xs text-neutral-400">{o.trackingNote}</div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3 text-right">{formatRupees(o.amountPaise)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {formatRupees(o.amountPaise)}
+                      {o.refundedPaise > 0 ? (
+                        <div className="text-xs font-medium text-red-700">
+                          −{formatRupees(o.refundedPaise)} refunded
+                        </div>
+                      ) : null}
+                    </td>
                   </tr>
                 ))}
               </tbody>

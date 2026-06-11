@@ -3,6 +3,7 @@ import { listTenantOrders, getTenantSalesSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { updateOrderFulfillmentAction } from "./actions";
+import { RefundForm } from "./RefundForm";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,12 @@ export default async function OrdersPage() {
                     {formatRupees(o.amountPaise)} · {formatDate(o.paidAt)}
                     {o.buyerEmail ? ` · ${o.buyerEmail}` : ""}
                   </div>
+                  {o.refundedPaise > 0 ? (
+                    <div className="mt-0.5 text-xs font-medium text-red-700">
+                      Refunded {formatRupees(o.refundedPaise)}
+                      {o.refundedPaise >= o.amountPaise ? " (full)" : " (partial)"}
+                    </div>
+                  ) : null}
                 </div>
                 <form
                   action={updateOrderFulfillmentAction.bind(null, o.id)}
@@ -99,6 +106,11 @@ export default async function OrdersPage() {
                   </button>
                 </form>
               </div>
+              {o.razorpayPaymentId && o.refundedPaise < o.amountPaise ? (
+                <div className="mt-3 border-t border-neutral-100 pt-3">
+                  <RefundForm orderId={o.id} remainingPaise={o.amountPaise - o.refundedPaise} />
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

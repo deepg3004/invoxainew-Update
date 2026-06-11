@@ -64,6 +64,40 @@ export async function createRazorpayOrder(input: {
   return (await res.json()) as RazorpayOrder;
 }
 
+export interface RazorpayRefund {
+  id: string;
+  amount: number;
+  status: string;
+}
+
+/**
+ * Issue a refund on the SELLER's gateway (Phase 1) for `amountPaise` of a
+ * captured payment. Uses the seller's own keys. Razorpay itself rejects a refund
+ * that exceeds the remaining refundable amount, so it can't be over-refunded.
+ * Throws on a non-2xx so the caller doesn't record a refund that didn't happen.
+ */
+export async function refundPayment(input: {
+  keyId: string;
+  keySecret: string;
+  paymentId: string;
+  amountPaise: number;
+}): Promise<RazorpayRefund> {
+  const auth = Buffer.from(`${input.keyId}:${input.keySecret}`).toString("base64");
+  const res = await fetch(
+    `https://api.razorpay.com/v1/payments/${input.paymentId}/refunds`,
+    {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: input.amountPaise }),
+    },
+  );
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`Razorpay refund failed (${res.status}): ${detail}`);
+  }
+  return (await res.json()) as RazorpayRefund;
+}
+
 /**
  * Validate an ARBITRARY Razorpay key id + secret (a seller's own keys, C6) by
  * making a cheap authenticated read against Razorpay. 200 → valid; 401 → bad

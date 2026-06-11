@@ -347,9 +347,12 @@ model BuyerPayment {
   // C10: fulfillment tracking (seller-set, buyer-visible).
   fulfillmentStatus FulfillmentStatus  @default(NEW) @map("fulfillment_status")
   trackingNote      String?            @map("tracking_note")
+  // Phase 1: cumulative amount refunded to the buyer (on the seller's gateway).
+  refundedPaise     Int                @default(0) @map("refunded_paise")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   commission        CommissionCharge?
+  refunds           Refund[]
 
   @@index([tenantId, createdAt])
   @@index([tenantId, buyerProfileId])
@@ -444,6 +447,26 @@ model CommissionCharge {
 
   @@index([tenantId, status])
   @@map("commission_charges")
+}
+
+/// A refund issued to a buyer on the SELLER's gateway (Phase 1). InvoxAI does
+/// not hold buyer money, so the refund happens in the seller's Razorpay; this
+/// row records it and the proportional commission InvoxAI reversed back to the
+/// seller (credited to their wallet if the commission was already collected, or
+/// deducted from the amount still DUE). `razorpayRefundId` is unique → recording
+/// is idempotent. Partial refunds accumulate via BuyerPayment.refundedPaise.
+model Refund {
+  id                      String       @id @default(uuid()) @db.Uuid
+  razorpayRefundId        String       @unique @map("razorpay_refund_id")
+  buyerPaymentId          String       @map("buyer_payment_id") @db.Uuid
+  buyerPayment            BuyerPayment @relation(fields: [buyerPaymentId], references: [id], onDelete: Cascade)
+  tenantId                String       @map("tenant_id") @db.Uuid
+  amountPaise             Int          @map("amount_paise")
+  commissionReversedPaise Int          @map("commission_reversed_paise")
+  createdAt               DateTime     @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("refunds")
 }
 
 /// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`
