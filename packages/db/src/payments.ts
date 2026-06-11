@@ -137,6 +137,7 @@ export function createBuyerPayment(input: {
   tenantId: string;
   paymentPageId: string;
   amountPaise: number;
+  buyerProfileId?: string | null;
   buyerEmail?: string | null;
   buyerContact?: string | null;
 }) {
@@ -146,6 +147,7 @@ export function createBuyerPayment(input: {
       tenantId: input.tenantId,
       paymentPageId: input.paymentPageId,
       amountPaise: input.amountPaise,
+      buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerContact: input.buyerContact ?? null,
     },

@@ -67,6 +67,9 @@ export function PayBox({ paymentPageId }: { paymentPageId: string }) {
     return (
       <div className="mt-5 rounded-md bg-green-50 px-3 py-3 text-center text-sm font-medium text-green-700">
         ✓ Payment successful. Thank you!
+        <a href="/account" className="mt-1 block text-xs font-normal text-green-800 underline">
+          View it in your orders
+        </a>
       </div>
     );
   }

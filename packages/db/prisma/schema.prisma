@@ -32,6 +32,8 @@ model Profile {
 
   /// The tenant this profile owns as a seller (nullable until onboarding).
   ownedTenant Tenant?
+  /// The tenants this profile is a BUYER on (C8), one per tenant.
+  buyerAccounts BuyerAccount[]
 
   @@map("profiles")
 }
@@ -61,6 +63,8 @@ model Tenant {
   // C7: a tenant has many payment pages and buyer payments.
   paymentPages PaymentPage[]
   buyerPayments BuyerPayment[]
+  // C8: the buyers who have an account on this tenant's site.
+  buyerAccounts BuyerAccount[]
 }
 
 /// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =
@@ -330,6 +334,8 @@ model BuyerPayment {
   paymentPage       PaymentPage        @relation(fields: [paymentPageId], references: [id])
   amountPaise       Int                @map("amount_paise")
   status            BuyerPaymentStatus @default(CREATED)
+  // C8: set when the buyer was logged in at checkout, to attribute the order.
+  buyerProfileId    String?            @map("buyer_profile_id") @db.Uuid
   buyerEmail        String?            @map("buyer_email")
   buyerContact      String?            @map("buyer_contact")
   razorpayPaymentId String?            @map("razorpay_payment_id")
@@ -339,7 +345,26 @@ model BuyerPayment {
   commission        CommissionCharge?
 
   @@index([tenantId, createdAt])
+  @@index([tenantId, buyerProfileId])
   @@map("buyer_payments")
+}
+
+/// Links a Supabase user (Profile) to a tenant as a BUYER (C8). One per
+/// (tenant, profile). A person can be a buyer on many tenants and/or a seller —
+/// these are independent. Created on first visit to a tenant's Buyer Corner.
+/// Buyers see ONLY their own data, always scoped by this tenantId (hard rule).
+/// RLS: deny-anon lockdown (server renders the corner via Prisma).
+model BuyerAccount {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  profileId String   @map("profile_id") @db.Uuid
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([tenantId, profileId])
+  @@index([tenantId])
+  @@map("buyer_accounts")
 }
 
 /// InvoxAI's commission on one buyer payment (C7). One per buyer payment.

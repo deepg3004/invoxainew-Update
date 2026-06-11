@@ -6,6 +6,7 @@ import {
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
+import { getSessionUser } from "../../../lib/auth";
 
 export type StartBuyerResult =
   | { ok: false; error: string }
@@ -41,12 +42,17 @@ export async function startBuyerCheckout(
     notes: { paymentPageId: page.id, tenantId: page.tenantId },
   });
 
+  // Guest checkout: attribute the order to the buyer's account only if they
+  // happen to be signed in (C8). Email still captures guest orders for later.
+  const user = await getSessionUser();
+
   await createBuyerPayment({
     razorpayOrderId: order.id,
     tenantId: page.tenantId,
     paymentPageId: page.id,
     amountPaise: page.amountPaise,
-    buyerEmail: buyer.email ?? null,
+    buyerProfileId: user?.id ?? null,
+    buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
   });
 

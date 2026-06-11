@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Card } from "@invoxai/ui";
@@ -40,9 +41,14 @@ export default async function TenantHome() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
-        {tenant.username}.invoxai.io
-      </p>
+      <div className="flex items-start justify-between">
+        <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          {tenant.username}.invoxai.io
+        </p>
+        <Link href="/account" className="text-sm text-blue-600 underline">
+          Your orders
+        </Link>
+      </div>
       <h1 className="mt-1 text-3xl font-bold">{tenant.name ?? tenant.username}</h1>
 
       <div className="mt-8">
