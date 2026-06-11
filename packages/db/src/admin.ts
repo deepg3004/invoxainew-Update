@@ -83,6 +83,129 @@ export function listTenantsAdmin(search?: string) {
   });
 }
 
+// ── Reports + search (Phase 3, slice 3) ──────────────────────────────────────
+
+export interface RevenueReport {
+  commissionCollectedPaise: number;
+  commissionDuePaise: number;
+  aiPageFeesPaise: number;
+  aiPageCount: number;
+  subscriptionRevenuePaise: number;
+  subscriptionCount: number;
+  walletTopupsPaise: number;
+  walletLiabilityPaise: number;
+  totalEarnedPaise: number;
+}
+
+/**
+ * InvoxAI's own revenue (never buyer money): commission debited from seller
+ * wallets, AI-page fees, and subscription payments. Wallet top-ups + current
+ * balances are shown separately as the prepaid-money picture (a liability).
+ */
+export async function getRevenueReport(): Promise<RevenueReport> {
+  const [comm, aiFees, subRev, topups, liability] = await Promise.all([
+    prisma.commissionCharge.groupBy({ by: ["status"], _sum: { amountPaise: true } }),
+    prisma.walletTransaction.aggregate({
+      where: { referenceType: "ai_page", direction: "DEBIT" },
+      _sum: { amountPaise: true },
+      _count: { _all: true },
+    }),
+    prisma.platformOrder.aggregate({
+      where: { purpose: "SUBSCRIPTION", status: "PAID" },
+      _sum: { amountPaise: true },
+      _count: { _all: true },
+    }),
+    prisma.platformOrder.aggregate({
+      where: { purpose: "WALLET_TOPUP", status: "PAID" },
+      _sum: { amountPaise: true },
+    }),
+    prisma.wallet.aggregate({ _sum: { balancePaise: true } }),
+  ]);
+  const commissionCollectedPaise =
+    comm.find((c) => c.status === "PAID")?._sum.amountPaise ?? 0;
+  const commissionDuePaise = comm.find((c) => c.status === "DUE")?._sum.amountPaise ?? 0;
+  const aiPageFeesPaise = aiFees._sum.amountPaise ?? 0;
+  const subscriptionRevenuePaise = subRev._sum.amountPaise ?? 0;
+  return {
+    commissionCollectedPaise,
+    commissionDuePaise,
+    aiPageFeesPaise,
+    aiPageCount: aiFees._count._all,
+    subscriptionRevenuePaise,
+    subscriptionCount: subRev._count._all,
+    walletTopupsPaise: topups._sum.amountPaise ?? 0,
+    walletLiabilityPaise: liability._sum.balancePaise ?? 0,
+    totalEarnedPaise:
+      commissionCollectedPaise + aiPageFeesPaise + subscriptionRevenuePaise,
+  };
+}
+
+export interface AttentionRow {
+  id: string;
+  username: string;
+  balancePaise: number;
+  commissionDuePaise: number;
+}
+
+/** Tenants that need attention: outstanding commission, or a low/empty wallet. */
+export async function getWalletAttention(lowThresholdPaise = 5000): Promise<AttentionRow[]> {
+  const [due, lowWallets] = await Promise.all([
+    prisma.commissionCharge.groupBy({
+      by: ["tenantId"],
+      where: { status: "DUE" },
+      _sum: { amountPaise: true },
+    }),
+    prisma.wallet.findMany({
+      where: { balancePaise: { lt: lowThresholdPaise } },
+      select: { tenantId: true },
+    }),
+  ]);
+  const dueMap = new Map(due.map((d) => [d.tenantId, d._sum.amountPaise ?? 0]));
+  const ids = new Set<string>([...dueMap.keys(), ...lowWallets.map((w) => w.tenantId)]);
+  if (ids.size === 0) return [];
+  const tenants = await prisma.tenant.findMany({
+    where: { id: { in: [...ids] } },
+    select: { id: true, username: true, wallet: { select: { balancePaise: true } } },
+  });
+  return tenants
+    .map((t) => ({
+      id: t.id,
+      username: t.username,
+      balancePaise: t.wallet?.balancePaise ?? 0,
+      commissionDuePaise: dueMap.get(t.id) ?? 0,
+    }))
+    .sort((a, b) => b.commissionDuePaise - a.commissionDuePaise);
+}
+
+/** Cross-tenant buyer-payment search by email/contact (admin support). */
+export function searchBuyerPayments(query: string, take = 50) {
+  const q = query.trim();
+  if (!q) return Promise.resolve([]);
+  return prisma.buyerPayment.findMany({
+    where: {
+      OR: [
+        { buyerEmail: { contains: q, mode: "insensitive" } },
+        { buyerContact: { contains: q } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take,
+    include: {
+      tenant: { select: { id: true, username: true } },
+      paymentPage: { select: { title: true } },
+    },
+  });
+}
+
+/** Recent accepted webhook events (the idempotency/audit log). */
+export function listRecentPaymentEvents(take = 30) {
+  return prisma.paymentEvent.findMany({
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { id: true, eventId: true, type: true, tenantId: true, createdAt: true },
+  });
+}
+
 // ── Mutating admin actions (Phase 3, slice 2) ────────────────────────────────
 
 /**

@@ -20,6 +20,12 @@ export function AdminShell({
             <Link href="/tenants" className="text-neutral-600 hover:text-neutral-900">
               Tenants
             </Link>
+            <Link href="/buyers" className="text-neutral-600 hover:text-neutral-900">
+              Buyers
+            </Link>
+            <Link href="/reports" className="text-neutral-600 hover:text-neutral-900">
+              Reports
+            </Link>
             <Link href="/plans" className="text-neutral-600 hover:text-neutral-900">
               Plans
             </Link>

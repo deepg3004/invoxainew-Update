@@ -82,6 +82,12 @@ export {
   setTenantSuspended,
   adminAdjustWallet,
   listAdminAuditLog,
+  getRevenueReport,
+  getWalletAttention,
+  searchBuyerPayments,
+  listRecentPaymentEvents,
   type PlatformOverview,
   type AdminWalletResult,
+  type RevenueReport,
+  type AttentionRow,
 } from "./admin";
