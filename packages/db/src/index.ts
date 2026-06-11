@@ -84,10 +84,13 @@ export {
 } from "./invoice";
 export {
   chargeAndCreateAiPage,
+  createAiPage,
+  setAiPageChargeRef,
   listAiPages,
   getPublishedAiPage,
   deleteAiPage,
   type ChargeCreateResult,
+  type CreateAiPageResult,
 } from "./aipage";
 export {
   getFeatureRule,
@@ -96,8 +99,10 @@ export {
   setPlanFeatureLimit,
   listPlanFeatureLimits,
   getFeatureUsage,
+  getFeatureQuota,
   consumeFeature,
   type ConsumeResult,
+  type FeatureQuota,
 } from "./feature";
 export {
   getPlatformOverview,

@@ -81,8 +81,64 @@ export function getFeatureUsage(tenantId: string, featureKey: string) {
 
 // ── The engine ───────────────────────────────────────────────────────────────
 
+export interface FeatureQuota {
+  active: boolean;
+  freeLimit: number; // -1 = unlimited
+  used: number;
+  remainingFree: number; // -1 = unlimited
+  basePaise: number;
+  gstPaise: number;
+  totalPaise: number;
+  walletEnabled: boolean;
+  directEnabled: boolean;
+}
+
+/** Read-only quota + price for a tenant+feature this month (for UI). */
+export async function getFeatureQuota(
+  tenantId: string,
+  featureKey: string,
+): Promise<FeatureQuota | null> {
+  const rule = await prisma.featureRule.findUnique({ where: { featureKey } });
+  if (!rule) return null;
+  const sub = await prisma.subscription.findUnique({
+    where: { tenantId },
+    select: { planId: true },
+  });
+  let freeLimit = 0;
+  if (sub) {
+    const lim = await prisma.planFeatureLimit.findUnique({
+      where: { planId_featureKey: { planId: sub.planId, featureKey } },
+    });
+    freeLimit = lim?.freeLimit ?? 0;
+  }
+  const usage = await prisma.featureUsage.findUnique({
+    where: {
+      tenantId_featureKey_period: { tenantId, featureKey, period: currentPeriod() },
+    },
+  });
+  const used = usage?.count ?? 0;
+  const gstPaise = Math.round((rule.basePaise * rule.gstRateBps) / 10000);
+  return {
+    active: rule.active,
+    freeLimit,
+    used,
+    remainingFree: freeLimit < 0 ? -1 : Math.max(0, freeLimit - used),
+    basePaise: rule.basePaise,
+    gstPaise,
+    totalPaise: rule.basePaise + gstPaise,
+    walletEnabled: rule.walletEnabled,
+    directEnabled: rule.directEnabled,
+  };
+}
+
 export type ConsumeResult =
-  | { ok: true; charged: "free" | "wallet"; amountPaise: number; remainingFree: number }
+  | {
+      ok: true;
+      charged: "free" | "wallet";
+      amountPaise: number;
+      remainingFree: number;
+      referenceId?: string;
+    }
   | {
       ok: false;
       reason: "unavailable" | "insufficient_funds" | "payment_required";
@@ -177,7 +233,7 @@ export async function consumeFeature(input: {
         },
       });
       await tx.featureUsage.update({ where: { id: usage.id }, data: { count: { increment: 1 } } });
-      return { ok: true, charged: "wallet", amountPaise: totalPaise, remainingFree: 0 };
+      return { ok: true, charged: "wallet", amountPaise: totalPaise, remainingFree: 0, referenceId: ref };
     }
 
     if (rule.directEnabled) {

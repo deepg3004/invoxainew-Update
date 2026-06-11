@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@invoxai/ui";
-import { listAiPages, getWalletByTenant, getPricingSetting } from "@invoxai/db";
+import { listAiPages, getWalletByTenant, getFeatureQuota } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { deleteAiPageAction } from "./actions";
@@ -15,14 +15,17 @@ function buyerBase(username: string): string {
 
 export default async function AiPagesPage() {
   const { tenant } = await requireTenant();
-  const [pages, wallet, setting] = await Promise.all([
+  const [pages, wallet, quota] = await Promise.all([
     listAiPages(tenant.id),
     getWalletByTenant(tenant.id),
-    getPricingSetting("ai_page_price"),
+    getFeatureQuota(tenant.id, "ai_page"),
   ]);
-  const price = setting?.valuePaise ?? 14900;
+  const price = quota?.totalPaise ?? 17582;
   const balance = wallet?.balancePaise ?? 0;
   const base = buyerBase(tenant.username);
+  const unlimited = quota?.remainingFree === -1;
+  const freeLeft = unlimited ? Infinity : (quota?.remainingFree ?? 0);
+  const nextIsFree = unlimited || freeLeft > 0;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -33,8 +36,14 @@ export default async function AiPagesPage() {
           </p>
           <h1 className="mt-1 text-3xl font-bold">AI landing pages</h1>
           <p className="mt-1 text-neutral-500">
-            Describe your business and AI writes a published page —{" "}
-            <strong>{formatRupees(price)}</strong> each, from your wallet.
+            Describe your business and AI writes a published page.{" "}
+            {unlimited ? (
+              <strong>Unlimited on your plan.</strong>
+            ) : nextIsFree ? (
+              <strong>{freeLeft} free left this month</strong>
+            ) : (
+              <>Next page <strong>{formatRupees(price)}</strong> from your wallet.</>
+            )}
           </p>
         </div>
         <Link
@@ -49,9 +58,9 @@ export default async function AiPagesPage() {
         <Card title="Wallet">
           <p className="text-sm">
             Balance: <strong>{formatRupees(balance)}</strong>
-            {balance < price ? (
+            {!nextIsFree && balance < price ? (
               <>
-                {" "}— too low for a page.{" "}
+                {" "}— too low for a paid page ({formatRupees(price)}).{" "}
                 <Link href="/wallet" className="text-blue-600 underline">
                   Top up
                 </Link>

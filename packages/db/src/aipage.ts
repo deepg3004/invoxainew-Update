@@ -8,6 +8,49 @@ import { prisma } from "./client";
  * defines its shape and the tenant app renders it.
  */
 
+export type CreateAiPageResult =
+  | { ok: true; id: string }
+  | { ok: false; reason: "slug_taken" };
+
+/**
+ * Create an AI page (no charge here — billing is handled separately by the
+ * Feature Billing engine). `chargeRef` is null for free pages, or the feature-
+ * charge reference when paid. Slug is unique per tenant; a clash is reported.
+ */
+export async function createAiPage(input: {
+  tenantId: string;
+  slug: string;
+  title: string;
+  brief: string;
+  content: Prisma.InputJsonValue;
+  chargeRef?: string | null;
+}): Promise<CreateAiPageResult> {
+  try {
+    const page = await prisma.aiPage.create({
+      data: {
+        tenantId: input.tenantId,
+        slug: input.slug,
+        title: input.title,
+        brief: input.brief,
+        content: input.content,
+        chargeRef: input.chargeRef ?? null,
+      },
+      select: { id: true },
+    });
+    return { ok: true, id: page.id };
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return { ok: false, reason: "slug_taken" };
+    }
+    throw e;
+  }
+}
+
+/** Tag a page with its feature-charge reference (after a paid generation). */
+export function setAiPageChargeRef(id: string, chargeRef: string) {
+  return prisma.aiPage.update({ where: { id }, data: { chargeRef } });
+}
+
 export type ChargeCreateResult =
   | { ok: true; id: string }
   | { ok: false; reason: "slug_taken" | "insufficient_funds" | "no_wallet" };

@@ -462,7 +462,9 @@ model AiPage {
   brief       String // the seller's prompt, kept for re-generation/audit
   content     Json // structured content Claude returned
   isPublished Boolean  @default(true) @map("is_published")
-  chargeRef   String   @unique @map("charge_ref") // wallet-debit idempotency key
+  // Null when generated within the plan's free allowance (no charge); the
+  // feature-charge reference when it was paid (Feature Billing engine).
+  chargeRef   String?  @unique @map("charge_ref")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

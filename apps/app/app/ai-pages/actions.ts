@@ -1,12 +1,13 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
-  getPricingSetting,
   getWalletByTenant,
-  chargeAndCreateAiPage,
+  getFeatureQuota,
+  consumeFeature,
+  createAiPage,
+  setAiPageChargeRef,
   deleteAiPage,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
@@ -16,9 +17,8 @@ import { aiConfigured, generateLandingPage } from "../../lib/ai";
 export type AiPageFormState = { error?: string };
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
-// Reserved so an AI page can't shadow a real tenant route.
 const RESERVED = new Set(["pay", "account", "api", "health", "_next", "favicon"]);
-const DEFAULT_AI_PAGE_PAISE = 14900; // ₹149 fallback if the setting is missing
+const FEATURE = "ai_page";
 
 export async function generateAiPageAction(
   _prev: AiPageFormState,
@@ -39,38 +39,54 @@ export async function generateAiPageAction(
   const brief = String(form.get("brief") ?? "").trim();
   if (brief.length < 10) return { error: "Add a short brief (at least 10 characters)." };
 
-  // Price is admin-editable (C3); fall back to ₹149 if unset.
-  const setting = await getPricingSetting("ai_page_price");
-  const pricePaise = setting?.valuePaise ?? DEFAULT_AI_PAGE_PAISE;
-
-  // Prepaid service: require the balance up front (charged only on success).
-  const wallet = await getWalletByTenant(tenant.id);
-  if (!wallet || wallet.balancePaise < pricePaise) {
-    return {
-      error: `Your wallet needs at least ${formatRupees(pricePaise)} to generate a page. Top up your wallet first.`,
-    };
+  // Feature Billing: free within the plan's monthly allowance, else wallet fee.
+  const quota = await getFeatureQuota(tenant.id, FEATURE);
+  if (!quota || !quota.active) {
+    return { error: "AI page generation isn’t available right now." };
+  }
+  const willBeFree = quota.remainingFree !== 0; // -1 (unlimited) or > 0
+  if (!willBeFree) {
+    // Don't spend an AI call if the seller can't cover the fee.
+    const wallet = await getWalletByTenant(tenant.id);
+    const affordable =
+      quota.walletEnabled && (wallet?.balancePaise ?? 0) >= quota.totalPaise;
+    if (!affordable) {
+      return {
+        error: `You’ve used your free AI pages this month. The next one is ${formatRupees(quota.totalPaise)} — top up your wallet first.`,
+      };
+    }
   }
 
   const result = await generateLandingPage({ businessName, brief });
   if (!result.ok) return { error: result.error };
 
-  // Charge + create atomically; nothing is charged unless the page is created.
-  const created = await chargeAndCreateAiPage({
+  // Create the page first (reserves the slug, no charge), then bill it. If
+  // billing fails we roll back the page, so we never charge for a page that
+  // doesn't exist and never create one we couldn't bill.
+  const created = await createAiPage({
     tenantId: tenant.id,
     slug,
     title: result.content.title,
     brief,
-    // Round-trip to a plain JSON value (Prisma's InputJsonValue wants an index
-    // signature that a typed interface doesn't provide).
     content: JSON.parse(JSON.stringify(result.content)),
-    pricePaise,
-    chargeRef: randomUUID(),
+    chargeRef: null,
   });
   if (!created.ok) {
-    if (created.reason === "slug_taken") {
-      return { error: `The address "/${slug}" is already in use. (You were not charged.)` };
+    return { error: `The address "/${slug}" is already in use.` };
+  }
+
+  const charge = await consumeFeature({ tenantId: tenant.id, featureKey: FEATURE });
+  if (!charge.ok) {
+    await deleteAiPage(tenant.id, created.id);
+    if (charge.reason === "insufficient_funds") {
+      return {
+        error: `Free AI pages used up and your wallet is low (need ${formatRupees(charge.pricePaise ?? quota.totalPaise)}). Top up and try again.`,
+      };
     }
-    return { error: "Your wallet balance just changed — please top up and try again." };
+    return { error: "Couldn’t bill the AI page. Please try again." };
+  }
+  if (charge.charged === "wallet" && charge.referenceId) {
+    await setAiPageChargeRef(created.id, charge.referenceId);
   }
 
   revalidatePath("/ai-pages");
