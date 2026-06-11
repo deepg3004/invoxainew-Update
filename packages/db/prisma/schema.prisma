@@ -58,6 +58,9 @@ model Tenant {
   // C6: a tenant connects at most one of their OWN payment gateways (buyer money
   // settles here, seller-direct — never through InvoxAI).
   gateway      SellerGateway?
+  // C7: a tenant has many payment pages and buyer payments.
+  paymentPages PaymentPage[]
+  buyerPayments BuyerPayment[]
 }
 
 /// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =
@@ -112,6 +115,22 @@ enum GatewayMode {
 enum GatewayStatus {
   CONNECTED
   DISCONNECTED
+}
+
+/// Lifecycle of a buyer payment (C7). CREATED = order made on the seller's
+/// gateway, not yet paid; PAID = signature-verified success; FAILED = abandoned.
+enum BuyerPaymentStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+/// InvoxAI commission on a buyer payment (C7). PAID = debited from the seller's
+/// wallet; DUE = wallet couldn't cover it, owed and settled on the next top-up.
+/// Buyer money is never touched — commission only ever moves seller wallet money.
+enum CommissionStatus {
+  PAID
+  DUE
 }
 
 /// A platform subscription tier a seller can subscribe to (used from C4).
@@ -273,6 +292,73 @@ model SellerGateway {
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
   @@map("seller_gateways")
+}
+
+/// A seller-created payment page/link (C7). A buyer pays a fixed amount at
+/// `username.invoxai.io/pay/<slug>`. `slug` is unique PER TENANT (each seller has
+/// their own namespace). Amount is integer paise. RLS: deny-anon lockdown (the
+/// public buyer page renders server-side via Prisma).
+model PaymentPage {
+  id          String         @id @default(uuid()) @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug        String
+  title       String
+  description String?
+  amountPaise Int            @map("amount_paise")
+  isActive    Boolean        @default(true) @map("is_active")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  payments    BuyerPayment[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("payment_pages")
+}
+
+/// One buyer payment attempt against a payment page (C7). The Razorpay order is
+/// created on the SELLER's gateway, so money settles seller-direct. We persist
+/// the order BEFORE checkout so confirmation validates a server-trusted amount.
+/// `razorpayOrderId` unique → the PAID transition is idempotent (atomic claim),
+/// so a refreshed callback can't double-record or double-charge commission.
+model BuyerPayment {
+  id                String             @id @default(uuid()) @db.Uuid
+  razorpayOrderId   String             @unique @map("razorpay_order_id")
+  tenantId          String             @map("tenant_id") @db.Uuid
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  paymentPageId     String             @map("payment_page_id") @db.Uuid
+  paymentPage       PaymentPage        @relation(fields: [paymentPageId], references: [id])
+  amountPaise       Int                @map("amount_paise")
+  status            BuyerPaymentStatus @default(CREATED)
+  buyerEmail        String?            @map("buyer_email")
+  buyerContact      String?            @map("buyer_contact")
+  razorpayPaymentId String?            @map("razorpay_payment_id")
+  paidAt            DateTime?          @map("paid_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  commission        CommissionCharge?
+
+  @@index([tenantId, createdAt])
+  @@map("buyer_payments")
+}
+
+/// InvoxAI's commission on one buyer payment (C7). One per buyer payment.
+/// `status` is PAID once debited from the seller's wallet, or DUE while the
+/// wallet can't cover it (settled on the next top-up). `bps` records the rate
+/// applied for audit. This is seller wallet money — never buyer money.
+model CommissionCharge {
+  id             String           @id @default(uuid()) @db.Uuid
+  buyerPaymentId String           @unique @map("buyer_payment_id") @db.Uuid
+  buyerPayment   BuyerPayment     @relation(fields: [buyerPaymentId], references: [id], onDelete: Cascade)
+  tenantId       String           @map("tenant_id") @db.Uuid
+  amountPaise    Int              @map("amount_paise")
+  bps            Int
+  status         CommissionStatus @default(PAID)
+  settledAt      DateTime?        @map("settled_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@index([tenantId, status])
+  @@map("commission_charges")
 }
 
 /// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`

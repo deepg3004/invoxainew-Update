@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./client";
+import { settleDueCommissions } from "./payments";
 
 /**
  * Platform subscription + checkout-order data access (C4).
@@ -132,6 +133,8 @@ export async function markPlatformOrderPaid(input: {
           referenceId: order.id,
         },
       });
+      // A top-up clears any outstanding commission arrears (C7), oldest first.
+      await settleDueCommissions(tx, order.tenantId);
       return { ok: true, alreadyProcessed: false, purpose: "WALLET_TOPUP" };
     }
 

@@ -89,6 +89,17 @@ export default async function Dashboard() {
             Connect gateway →
           </Link>
         </Card>
+        <Card title="Payment pages">
+          <p className="text-sm text-neutral-500">
+            Create shareable links buyers can pay you through.
+          </p>
+          <Link
+            href="/pay-pages"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Manage pages →
+          </Link>
+        </Card>
       </div>
     </main>
   );
