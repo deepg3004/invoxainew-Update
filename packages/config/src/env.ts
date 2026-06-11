@@ -42,6 +42,14 @@ const serverSchema = z.object({
   RAZORPAY_KEY_SECRET: z.string().optional().default(""),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(""),
 
+  // GST tax-invoice details (Phase 1.3) for InvoxAI's own income. Fill with your
+  // CA-confirmed legal entity + GSTIN; until GSTIN is set, invoices render as a
+  // non-tax DRAFT. GST_RATE_BPS default 1800 = 18%.
+  INVOICE_LEGAL_NAME: z.string().optional().default("InvoxAI"),
+  INVOICE_GSTIN: z.string().optional().default(""),
+  INVOICE_ADDRESS: z.string().optional().default(""),
+  INVOICE_GST_RATE_BPS: z.coerce.number().int().optional().default(1800),
+
   // Sentry error reporting (Phase 1.4) — optional. When set, the apps report
   // server-side errors. Also exposed as NEXT_PUBLIC_SENTRY_DSN for the browser.
   SENTRY_DSN: z.string().optional().default(""),

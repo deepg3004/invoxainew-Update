@@ -131,6 +131,17 @@ export default async function Dashboard() {
             View orders →
           </Link>
         </Card>
+        <Card title="Tax invoices">
+          <p className="text-sm text-neutral-500">
+            Download GST invoices for what you pay InvoxAI.
+          </p>
+          <Link
+            href="/invoices"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            View invoices →
+          </Link>
+        </Card>
       </div>
     </main>
   );
