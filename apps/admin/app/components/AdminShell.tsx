@@ -29,6 +29,9 @@ export function AdminShell({
             <Link href="/plans" className="text-neutral-600 hover:text-neutral-900">
               Plans
             </Link>
+            <Link href="/features" className="text-neutral-600 hover:text-neutral-900">
+              Features
+            </Link>
             <Link
               href="/pricing"
               className="text-neutral-600 hover:text-neutral-900"

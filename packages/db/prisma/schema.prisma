@@ -169,9 +169,75 @@ model Plan {
 
   subscriptions Subscription[]
   orders        PlatformOrder[]
+  featureLimits PlanFeatureLimit[]
 
   @@index([isActive, sortOrder])
   @@map("plans")
+}
+
+/// Admin-configurable paid feature (Feature Billing engine). `featureKey` is the
+/// stable code handle (e.g. "ai_page"). Price is integer paise; GST in bps. Admin
+/// toggles wallet/direct payment + active. Generalizes the AI-page ₹149 pattern.
+model FeatureRule {
+  featureKey    String   @id @map("feature_key")
+  name          String
+  basePaise     Int      @map("base_paise")
+  gstRateBps    Int      @default(1800) @map("gst_rate_bps")
+  walletEnabled Boolean  @default(true) @map("wallet_enabled")
+  directEnabled Boolean  @default(false) @map("direct_enabled")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  limits PlanFeatureLimit[]
+
+  @@map("feature_rules")
+}
+
+/// Per-plan free monthly allowance for a feature. `freeLimit` -1 = unlimited,
+/// 0 = none free (always charged). Beyond the allowance the FeatureRule price
+/// applies.
+model PlanFeatureLimit {
+  id         String      @id @default(uuid()) @db.Uuid
+  planId     String      @map("plan_id") @db.Uuid
+  plan       Plan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  featureKey String      @map("feature_key")
+  rule       FeatureRule @relation(fields: [featureKey], references: [featureKey], onDelete: Cascade)
+  freeLimit  Int         @default(0) @map("free_limit")
+
+  @@unique([planId, featureKey])
+  @@map("plan_feature_limits")
+}
+
+/// Per-tenant monthly usage counter for a feature (`period` = "YYYY-MM"). Drives
+/// the free-allowance check.
+model FeatureUsage {
+  id         String @id @default(uuid()) @db.Uuid
+  tenantId   String @map("tenant_id") @db.Uuid
+  featureKey String @map("feature_key")
+  period     String
+  count      Int    @default(0)
+
+  @@unique([tenantId, featureKey, period])
+  @@index([tenantId])
+  @@map("feature_usage")
+}
+
+/// Audit log of every PAID feature use (over the free allowance). The wallet
+/// debit references the same `referenceId`. Only ever moves seller wallet money.
+model FeatureCharge {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  featureKey  String   @map("feature_key")
+  basePaise   Int      @map("base_paise")
+  gstPaise    Int      @map("gst_paise")
+  totalPaise  Int      @map("total_paise")
+  payVia      String   @map("pay_via")
+  referenceId String   @unique @map("reference_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("feature_charges")
 }
 
 /// Platform-wide pricing knobs as key/value, admin-editable (e.g. the

@@ -90,6 +90,16 @@ export {
   type ChargeCreateResult,
 } from "./aipage";
 export {
+  getFeatureRule,
+  listFeatureRules,
+  upsertFeatureRule,
+  setPlanFeatureLimit,
+  listPlanFeatureLimits,
+  getFeatureUsage,
+  consumeFeature,
+  type ConsumeResult,
+} from "./feature";
+export {
   getPlatformOverview,
   listTenantsAdmin,
   getTenantAdminDetail,
