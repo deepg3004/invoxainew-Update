@@ -8,6 +8,7 @@ import {
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { PayBox } from "./PayBox";
+import { StoreUnavailable } from "../../StoreUnavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function PayPage({
 
   const tenant = await getTenantByUsername(username);
   if (!tenant) notFound();
+  if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
   const { slug } = await params;
   const page = await getActivePaymentPage(tenant.id, slug);

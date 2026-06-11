@@ -40,6 +40,15 @@ export function getTenantByUsername(username: string) {
   return prisma.tenant.findUnique({ where: { username } });
 }
 
+/** Is this tenant suspended? (storefront + checkout must be blocked if so.) */
+export async function isTenantSuspended(tenantId: string): Promise<boolean> {
+  const t = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: { suspendedAt: true },
+  });
+  return Boolean(t?.suspendedAt);
+}
+
 /** Cheap existence check for live username availability. */
 export async function isUsernameTaken(username: string): Promise<boolean> {
   const hit = await prisma.tenant.findUnique({

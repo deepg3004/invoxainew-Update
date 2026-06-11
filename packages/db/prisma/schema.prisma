@@ -44,6 +44,8 @@ model Tenant {
   id        String   @id @default(uuid()) @db.Uuid
   username  String   @unique // lowercase subdomain label, validated app-side
   name      String?
+  // Phase 3 admin: when set, the storefront + checkout are blocked (suspended).
+  suspendedAt DateTime? @map("suspended_at")
   ownerId   String   @unique @db.Uuid
   owner     Profile  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
@@ -396,6 +398,23 @@ model AiPage {
   @@unique([tenantId, slug])
   @@index([tenantId])
   @@map("ai_pages")
+}
+
+/// Audit trail of every mutating PLATFORM-ADMIN action (Phase 3): tenant
+/// suspend/unsuspend and manual wallet credit/debit. Records who (adminEmail),
+/// what (action), on whom (tenantId), how much (amountPaise), and why (detail).
+/// Append-only; never edited. RLS: deny-anon lockdown.
+model AdminAuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  adminEmail  String   @map("admin_email")
+  action      String // e.g. tenant.suspend / tenant.unsuspend / wallet.credit / wallet.debit
+  tenantId    String?  @map("tenant_id") @db.Uuid
+  amountPaise Int?     @map("amount_paise")
+  detail      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 /// Order fulfillment lifecycle (C10), set by the seller and shown to the buyer.

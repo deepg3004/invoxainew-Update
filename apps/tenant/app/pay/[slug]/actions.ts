@@ -3,6 +3,7 @@
 import {
   getActivePaymentPageById,
   createBuyerPayment,
+  isTenantSuspended,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
@@ -30,6 +31,11 @@ export async function startBuyerCheckout(
 ): Promise<StartBuyerResult> {
   const page = await getActivePaymentPageById(paymentPageId);
   if (!page) return { ok: false, error: "This payment page is unavailable." };
+
+  // Suspended store can't take payments (Phase 3 admin).
+  if (await isTenantSuspended(page.tenantId)) {
+    return { ok: false, error: "This store is temporarily unavailable." };
+  }
 
   const creds = await getGatewayCredentials(page.tenantId);
   if (!creds) {

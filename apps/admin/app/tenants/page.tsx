@@ -63,6 +63,11 @@ export default async function TenantsPage({
                   <Link href={`/tenants/${t.id}`} className="font-medium text-blue-600 underline">
                     {t.username}
                   </Link>
+                  {t.suspendedAt ? (
+                    <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
+                      SUSPENDED
+                    </span>
+                  ) : null}
                   {t.name ? <div className="text-xs text-neutral-400">{t.name}</div> : null}
                 </td>
                 <td className="px-4 py-3 text-neutral-600">{t.owner.email ?? "—"}</td>

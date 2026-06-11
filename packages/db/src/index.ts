@@ -6,6 +6,7 @@ export {
   getTenantByUsername,
   isUsernameTaken,
   createTenantForOwner,
+  isTenantSuspended,
   type CreateTenantResult,
 } from "./tenant";
 export {
@@ -78,5 +79,9 @@ export {
   getPlatformOverview,
   listTenantsAdmin,
   getTenantAdminDetail,
+  setTenantSuspended,
+  adminAdjustWallet,
+  listAdminAuditLog,
   type PlatformOverview,
+  type AdminWalletResult,
 } from "./admin";

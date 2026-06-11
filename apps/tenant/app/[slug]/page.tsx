@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import { getTenantByUsername, getPublishedAiPage } from "@invoxai/db";
+import { StoreUnavailable } from "../StoreUnavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export default async function AiLandingPage({
   if (!username) notFound();
   const tenant = await getTenantByUsername(username);
   if (!tenant) notFound();
+  if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
   const { slug } = await params;
   const page = await getPublishedAiPage(tenant.id, slug);

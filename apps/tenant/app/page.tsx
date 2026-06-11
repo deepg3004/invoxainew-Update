@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Card } from "@invoxai/ui";
 import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import { getTenantByUsername } from "@invoxai/db";
+import { StoreUnavailable } from "./StoreUnavailable";
 
 // Resolved per-request from the Host header, so never cache.
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function TenantHome() {
 
   const tenant = await getTenantByUsername(username);
   if (!tenant) notFound();
+  if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">

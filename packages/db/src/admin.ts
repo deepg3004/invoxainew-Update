@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { prisma } from "./client";
 
 /**
@@ -79,6 +80,106 @@ export function listTenantsAdmin(search?: string) {
       gateway: { select: { status: true, mode: true } },
       _count: { select: { buyerPayments: true, paymentPages: true, aiPages: true } },
     },
+  });
+}
+
+// ── Mutating admin actions (Phase 3, slice 2) ────────────────────────────────
+
+/**
+ * Suspend or un-suspend a tenant, with an audit-log entry, atomically.
+ * Suspension blocks the storefront + buyer checkout (enforced in the tenant app).
+ */
+export async function setTenantSuspended(input: {
+  tenantId: string;
+  suspended: boolean;
+  adminEmail: string;
+  reason?: string | null;
+}) {
+  return prisma.$transaction(async (tx) => {
+    await tx.tenant.update({
+      where: { id: input.tenantId },
+      data: { suspendedAt: input.suspended ? new Date() : null },
+    });
+    await tx.adminAuditLog.create({
+      data: {
+        adminEmail: input.adminEmail,
+        action: input.suspended ? "tenant.suspend" : "tenant.unsuspend",
+        tenantId: input.tenantId,
+        detail: input.reason ?? null,
+      },
+    });
+  });
+}
+
+export type AdminWalletResult =
+  | { ok: true; balancePaise: number }
+  | { ok: false; reason: "insufficient_funds" };
+
+/**
+ * Manual wallet credit/debit by an admin (refunds, corrections, goodwill).
+ *
+ * One transaction does: balance check (debit never goes negative) → update
+ * balance → append a WalletTransaction → write an AdminAuditLog. The wallet is
+ * created on first credit. A unique `referenceId` ties the ledger row to the
+ * audit entry. This only ever moves the SELLER's wallet money — never buyer
+ * money (hard rule).
+ */
+export async function adminAdjustWallet(input: {
+  tenantId: string;
+  direction: "CREDIT" | "DEBIT";
+  amountPaise: number;
+  reason: string;
+  adminEmail: string;
+}): Promise<AdminWalletResult> {
+  return prisma.$transaction(async (tx) => {
+    const wallet = await tx.wallet.upsert({
+      where: { tenantId: input.tenantId },
+      create: { tenantId: input.tenantId },
+      update: {},
+    });
+
+    const delta = input.direction === "CREDIT" ? input.amountPaise : -input.amountPaise;
+    const balanceAfter = wallet.balancePaise + delta;
+    if (balanceAfter < 0) {
+      return { ok: false, reason: "insufficient_funds" };
+    }
+
+    const ref = `admin_${randomUUID()}`;
+    await tx.wallet.update({
+      where: { id: wallet.id },
+      data: { balancePaise: balanceAfter },
+    });
+    await tx.walletTransaction.create({
+      data: {
+        walletId: wallet.id,
+        tenantId: input.tenantId,
+        direction: input.direction,
+        amountPaise: input.amountPaise,
+        balanceAfter,
+        reason: `Admin adjustment: ${input.reason}`,
+        referenceType: "admin",
+        referenceId: ref,
+      },
+    });
+    await tx.adminAuditLog.create({
+      data: {
+        adminEmail: input.adminEmail,
+        action: input.direction === "CREDIT" ? "wallet.credit" : "wallet.debit",
+        tenantId: input.tenantId,
+        amountPaise: input.amountPaise,
+        detail: input.reason,
+      },
+    });
+    return { ok: true, balancePaise: balanceAfter };
+  });
+}
+
+/** Recent admin audit entries for a tenant. */
+export function listAdminAuditLog(tenantId: string, take = 15) {
+  return prisma.adminAuditLog.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+    take,
   });
 }
 
