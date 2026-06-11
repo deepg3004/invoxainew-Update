@@ -1,0 +1,20 @@
+import { requireTenant } from "../../../lib/tenant";
+import { ProductForm } from "../ProductForm";
+import { createProductAction } from "../actions";
+
+export const dynamic = "force-dynamic";
+
+export default async function NewProductPage() {
+  await requireTenant();
+  return (
+    <main className="mx-auto max-w-xl px-6 py-12">
+      <h1 className="text-2xl font-bold">New product</h1>
+      <p className="mt-1 text-neutral-500">
+        Add an item to your store. Buyers pay you directly on your own gateway.
+      </p>
+      <div className="mt-6">
+        <ProductForm action={createProductAction} submitLabel="Create product" />
+      </div>
+    </main>
+  );
+}

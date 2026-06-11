@@ -71,6 +71,8 @@ model Tenant {
   aiPages      AiPage[]
   // Ads tracking: per-tenant pixel/measurement IDs injected on public pages.
   tracking     TenantTracking?
+  // Store: the seller's product catalog (Final Plan §9).
+  products     Product[]
 }
 
 /// Per-tenant ads/analytics tracking IDs (Final Plan §21). Injected on the
@@ -87,6 +89,45 @@ model TenantTracking {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@map("tenant_tracking")
+}
+
+/// A sellable product in a tenant's store (Final Plan §9, slice 1 = catalog).
+/// Buyers will pay for these on the SELLER's own gateway (slice 2 storefront +
+/// checkout), so this carries no buyer money — it's just the catalog. Price is
+/// integer paise. `stockQty` null = unlimited; a number is units remaining
+/// (decremented on sale in slice 2). RLS: published rows are read server-side
+/// to render the storefront; writes are seller-only via Prisma (deny-anon).
+model Product {
+  id          String        @id @default(uuid()) @db.Uuid
+  tenantId    String        @map("tenant_id") @db.Uuid
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug        String
+  title       String
+  description String?
+  pricePaise  Int           @map("price_paise")
+  imageUrl    String?       @map("image_url")
+  kind        ProductKind   @default(DIGITAL)
+  status      ProductStatus @default(DRAFT)
+  stockQty    Int?          @map("stock_qty")
+  sortOrder   Int           @default(0) @map("sort_order")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("products")
+}
+
+enum ProductKind {
+  DIGITAL
+  PHYSICAL
+  SERVICE
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
 /// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =

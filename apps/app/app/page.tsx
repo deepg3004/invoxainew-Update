@@ -114,6 +114,17 @@ export default async function Dashboard() {
             Manage pages →
           </Link>
         </Card>
+        <Card title="Products">
+          <p className="text-sm text-neutral-500">
+            Build a store catalog buyers can browse and purchase.
+          </p>
+          <Link
+            href="/products"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Manage products →
+          </Link>
+        </Card>
         <Card title="AI landing pages">
           <p className="text-sm text-neutral-500">
             Let AI write and publish a landing page from a short brief.

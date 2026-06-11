@@ -1,5 +1,6 @@
 export { prisma } from "./client";
 export { PrismaClient, Prisma } from "@prisma/client";
+export type { ProductKind, ProductStatus } from "@prisma/client";
 export {
   upsertProfile,
   getTenantByOwnerId,
@@ -86,6 +87,16 @@ export {
   getTenantTracking,
   upsertTenantTracking,
 } from "./tracking";
+export {
+  createProduct,
+  listProducts,
+  getProductById,
+  listPublishedProducts,
+  getPublishedProduct,
+  updateProduct,
+  setProductStatus,
+  type CreateProductResult,
+} from "./products";
 export {
   chargeAndCreateAiPage,
   createAiPage,
