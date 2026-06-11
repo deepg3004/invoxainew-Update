@@ -4,9 +4,11 @@
 // port 6543). Migrations (Prisma CLI) use the direct DIRECT_URL (port 5432) —
 // migrations hang on the pooler, so `directUrl` is required here.
 //
-// No application models yet (C1 only proves connectivity via `SELECT 1`).
-// When models are added in C2+, run a migration and then ENABLE RLS on every
-// new table in Supabase before exposing it.
+// IMPORTANT (security): Prisma connects as the Postgres owner role and so
+// BYPASSES Row Level Security. Tenant isolation is therefore enforced in
+// application code (every tenant query scoped by ownerId/tenantId). RLS is
+// enabled on every table as defense-in-depth for the Supabase anon/browser
+// path. See the RLS migration that accompanies these models.
 
 generator client {
   provider = "prisma-client-js"
@@ -16,4 +18,35 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+/// App-level mirror of a Supabase Auth user (id == auth.users.id).
+/// Created on first sign-in. A seller owns exactly one Tenant (C2); buyers
+/// (C8) will also be Profiles but scoped per-tenant via a separate relation.
+model Profile {
+  id        String   @id @db.Uuid // = auth.users.id
+  email     String?
+  fullName  String?  @map("full_name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// The tenant this profile owns as a seller (nullable until onboarding).
+  ownedTenant Tenant?
+
+  @@map("profiles")
+}
+
+/// A seller's site: username.invoxai.io. One tenant per owner for the MVP
+/// (ownerId is unique). `username` is the subdomain label and is globally unique.
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  username  String   @unique // lowercase subdomain label, validated app-side
+  name      String?
+  ownerId   String   @unique @db.Uuid
+  owner     Profile  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([username])
+  @@map("tenants")
 }

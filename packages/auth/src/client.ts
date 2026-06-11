@@ -1,15 +1,14 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * Browser/anon Supabase client.
+ * Browser Supabase client (cookie-based sessions via @supabase/ssr).
  *
- * Reads ONLY the public anon key and URL (the NEXT_PUBLIC_* values Next.js
- * inlines into the client bundle). Access control is enforced server-side by
- * Row Level Security — never the anon key alone.
- *
- * This file intentionally has no access to the service-role key.
+ * Reads ONLY the public anon key + URL that Next.js inlines into the client
+ * bundle. Access control is enforced by RLS + server-side scoping, never the
+ * anon key alone. This module has no access to the service-role key.
  */
-export function createAnonClient(): SupabaseClient {
+export function createBrowserSupabaseClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -19,5 +18,5 @@ export function createAnonClient(): SupabaseClient {
     );
   }
 
-  return createClient(url, anonKey);
+  return createBrowserClient(url, anonKey);
 }

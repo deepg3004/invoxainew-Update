@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./username": "./src/username.ts",
+    "./host": "./src/host.ts",
+    "./redis": "./src/redis.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

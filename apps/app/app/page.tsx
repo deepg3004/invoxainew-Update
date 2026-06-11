@@ -1,36 +1,58 @@
-import { Card, HealthBadge } from "@invoxai/ui";
-import { checkHealth } from "./lib/health";
+import { redirect } from "next/navigation";
+import { Card } from "@invoxai/ui";
+import { getTenantByOwnerId } from "@invoxai/db";
+import { getSessionUser } from "../lib/auth";
 
-// This status page reads live DB/Redis state, so it must be dynamic.
 export const dynamic = "force-dynamic";
 
-const APP_NAME = "app";
-const APP_DOMAIN = "app.invoxai.io (seller dashboard)";
+function publicSiteUrl(username: string): string {
+  // Dev: the tenant app serves username.localhost:3003. Prod: the real domain.
+  return process.env.NODE_ENV === "development"
+    ? `http://${username}.localhost:3003`
+    : `https://${username}.invoxai.io`;
+}
 
-export default async function Home() {
-  const health = await checkHealth();
+export default async function Dashboard() {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+
+  const tenant = await getTenantByOwnerId(user.id);
+  if (!tenant) redirect("/onboarding");
+
+  const siteUrl = publicSiteUrl(tenant.username);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
-        InvoxAI · {APP_NAME}
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">{APP_DOMAIN}</h1>
-      <p className="mt-2 text-neutral-500">
-        C1 Foundation — this app boots and its dependencies are wired.
-      </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+            InvoxAI · dashboard
+          </p>
+          <h1 className="mt-1 text-3xl font-bold">
+            {tenant.name ?? "Your site"}
+          </h1>
+          <p className="mt-1 text-neutral-500">Signed in as {user.email}</p>
+        </div>
+        <form action="/auth/signout" method="post">
+          <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
+            Sign out
+          </button>
+        </form>
+      </div>
 
       <div className="mt-8">
-        <Card title="Health">
-          <div className="flex flex-wrap gap-2">
-            <HealthBadge ok={health.checks.db.ok} label="db" />
-            <HealthBadge ok={health.checks.redis.ok} label="redis" />
-          </div>
-          <p className="mt-4 text-sm">
-            Raw probe:{" "}
-            <a className="text-blue-600 underline" href="/health">
-              /health
-            </a>
+        <Card title="Your address is live">
+          <a
+            href={siteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="text-lg font-medium text-blue-600 underline"
+          >
+            {tenant.username}.invoxai.io
+          </a>
+          <p className="mt-2 text-sm text-neutral-500">
+            This resolves to your public buyer-facing site (host-based tenant
+            resolution). Building it out comes in later steps.
           </p>
         </Card>
       </div>
