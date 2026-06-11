@@ -57,7 +57,17 @@ export default async function OrdersPage() {
         </Card>
       </div>
 
-      <h2 className="mt-10 text-xl font-bold">All orders</h2>
+      <div className="mt-10 flex items-center justify-between">
+        <h2 className="text-xl font-bold">All orders</h2>
+        {orders.length > 0 ? (
+          <a
+            href="/orders/export"
+            className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:bg-neutral-50"
+          >
+            Export CSV
+          </a>
+        ) : null}
+      </div>
       {orders.length === 0 ? (
         <p className="mt-3 text-neutral-500">No orders yet.</p>
       ) : (

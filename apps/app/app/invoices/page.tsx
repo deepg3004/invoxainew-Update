@@ -27,7 +27,15 @@ export default async function InvoicesPage() {
       <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
         InvoxAI · invoices
       </p>
-      <h1 className="mt-1 text-3xl font-bold">Tax invoices</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="mt-1 text-3xl font-bold">Tax invoices</h1>
+        <a
+          href="/invoices/export"
+          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:bg-neutral-50"
+        >
+          Export CSV
+        </a>
+      </div>
       <p className="mt-2 text-neutral-500">
         Invoices for what you’ve paid InvoxAI (subscriptions). AI-page and
         commission invoices will appear here as they roll out.
