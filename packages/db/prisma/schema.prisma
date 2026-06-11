@@ -55,6 +55,9 @@ model Tenant {
   orders       PlatformOrder[]
   // C5: a tenant has at most one prepaid wallet (for InvoxAI fees only).
   wallet       Wallet?
+  // C6: a tenant connects at most one of their OWN payment gateways (buyer money
+  // settles here, seller-direct — never through InvoxAI).
+  gateway      SellerGateway?
 }
 
 /// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =
@@ -91,6 +94,24 @@ enum OrderPurpose {
 enum WalletTxnDirection {
   CREDIT
   DEBIT
+}
+
+/// Payment gateway a seller connects as their own (C6). Razorpay for the MVP.
+enum GatewayProvider {
+  RAZORPAY
+}
+
+/// Test vs live mode of the connected gateway, derived from the key id prefix
+/// (rzp_test_… / rzp_live_…). Surfaced so sellers don't accidentally take real
+/// buyer money on test keys (or vice-versa).
+enum GatewayMode {
+  TEST
+  LIVE
+}
+
+enum GatewayStatus {
+  CONNECTED
+  DISCONNECTED
 }
 
 /// A platform subscription tier a seller can subscribe to (used from C4).
@@ -227,6 +248,31 @@ model WalletTransaction {
 
   @@index([tenantId, createdAt])
   @@map("wallet_transactions")
+}
+
+/// A seller's OWN payment gateway (C6). Buyer payments are created on THIS
+/// account so funds settle seller-direct and NEVER pass through InvoxAI (RBI
+/// hard rule).
+///
+/// SECURITY: `keyId` is not secret (it is the Basic-auth username and is exposed
+/// to the browser by Checkout), so it is stored plaintext for display. The
+/// `secretEnc` field is the API secret, stored ENCRYPTED (AES-256-GCM) — the
+/// plaintext secret never lives in the DB and is never sent to the browser.
+/// RLS: deny-anon lockdown; server (Prisma) only.
+model SellerGateway {
+  id          String          @id @default(uuid()) @db.Uuid
+  tenantId    String          @unique @map("tenant_id") @db.Uuid
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider    GatewayProvider @default(RAZORPAY)
+  keyId       String          @map("key_id") // e.g. rzp_test_… (NOT secret)
+  secretEnc   String          @map("secret_enc") // AES-256-GCM ciphertext bundle
+  mode        GatewayMode
+  status      GatewayStatus   @default(CONNECTED)
+  connectedAt DateTime        @default(now()) @map("connected_at")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@map("seller_gateways")
 }
 
 /// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`

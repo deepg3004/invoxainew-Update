@@ -64,6 +64,31 @@ export async function createRazorpayOrder(input: {
   return (await res.json()) as RazorpayOrder;
 }
 
+/**
+ * Validate an ARBITRARY Razorpay key id + secret (a seller's own keys, C6) by
+ * making a cheap authenticated read against Razorpay. 200 → valid; 401 → bad
+ * credentials. Unlike createRazorpayOrder (which uses InvoxAI's platform keys
+ * from env), this takes the caller-supplied keys explicitly and never persists
+ * them.
+ */
+export async function validateRazorpayCredentials(
+  keyId: string,
+  keySecret: string,
+): Promise<{ ok: true } | { ok: false; reason: "invalid" | "error" }> {
+  const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+  try {
+    const res = await fetch("https://api.razorpay.com/v1/payments?count=1", {
+      method: "GET",
+      headers: { Authorization: `Basic ${auth}` },
+    });
+    if (res.ok) return { ok: true };
+    if (res.status === 401) return { ok: false, reason: "invalid" };
+    return { ok: false, reason: "error" };
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+}
+
 /** Constant-time compare of two hex digests (avoids timing leaks). */
 function safeEqualHex(a: string, b: string): boolean {
   const ab = Buffer.from(a, "utf8");

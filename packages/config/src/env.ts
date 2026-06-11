@@ -41,6 +41,13 @@ const serverSchema = z.object({
   NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().optional().default(""),
   RAZORPAY_KEY_SECRET: z.string().optional().default(""),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(""),
+
+  // Symmetric key for encrypting seller gateway secrets at rest (C6).
+  // base64 of 32 random bytes (`openssl rand -base64 32`). SERVER ONLY. Rotating
+  // it invalidates existing ciphertexts (needs a re-encrypt migration). Optional
+  // here so non-gateway deploys don't fail; the crypto helper throws clearly if
+  // a gateway op runs without it.
+  GATEWAY_ENCRYPTION_KEY: z.string().optional().default(""),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

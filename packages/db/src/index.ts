@@ -38,3 +38,8 @@ export {
   debitWallet,
   type DebitResult,
 } from "./wallet";
+export {
+  getSellerGateway,
+  connectSellerGateway,
+  disconnectSellerGateway,
+} from "./gateway";

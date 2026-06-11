@@ -78,6 +78,17 @@ export default async function Dashboard() {
             Open wallet →
           </Link>
         </Card>
+        <Card title="Payment gateway">
+          <p className="text-sm text-neutral-500">
+            Connect your own Razorpay so buyers pay you directly.
+          </p>
+          <Link
+            href="/gateway"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Connect gateway →
+          </Link>
+        </Card>
       </div>
     </main>
   );

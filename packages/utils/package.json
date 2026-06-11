@@ -8,6 +8,7 @@
     "./username": "./src/username.ts",
     "./host": "./src/host.ts",
     "./money": "./src/money.ts",
+    "./crypto": "./src/crypto.ts",
     "./redis": "./src/redis.ts"
   },
   "scripts": {
@@ -15,7 +16,8 @@
   },
   "dependencies": {
     "@invoxai/config": "workspace:*",
-    "ioredis": "^5.4.2"
+    "ioredis": "^5.4.2",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
