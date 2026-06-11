@@ -6,6 +6,8 @@ packages:
 allowBuilds:
   "@prisma/client": true
   "@prisma/engines": true
+  # source-map upload CLI only; not needed for our env-gated server init.
+  "@sentry/cli": false
   esbuild: true
   prisma: true
   sharp: true

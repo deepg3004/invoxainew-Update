@@ -64,6 +64,30 @@ systemctl restart invox-web invox-app invox-admin invox-tenant
 systemctl reload caddy                # only if /etc/caddy/Caddyfile changed
 ```
 
+## Monitoring & observability (Phase 1.4)
+
+**Lightweight monitor** — `infra/monitor/healthcheck.mjs`, run every 5 min by the
+`invox-monitor.timer` systemd timer (units in `infra/systemd/`). Pings all four
+`/health` endpoints and runs DB anomaly checks (negative wallets, stuck CREATED
+orders, low wallets, DUE-commission total); logs to the journal and exits
+non-zero on failure. Set `ALERT_WEBHOOK_URL` in `.env` (e.g. a Slack incoming
+webhook) to also receive POSTed alerts. Install on a fresh box:
+
+```bash
+cp infra/systemd/invox-monitor.{service,timer} /etc/systemd/system/
+systemctl daemon-reload && systemctl enable --now invox-monitor.timer
+journalctl -u invox-monitor.service -f      # watch results
+```
+
+**Sentry** — the apps initialise Sentry server-side via `instrumentation.ts`,
+env-gated on `SENTRY_DSN` (no-op when unset). Add `SENTRY_DSN` to `.env` and
+redeploy to start reporting. Client-side capture + source-map upload would add a
+`withSentryConfig` wrap in each `next.config.js` (a follow-up).
+
+**Uptime** — point an external uptime monitor (UptimeRobot, BetterStack, etc.)
+at `https://app.invoxai.io/health` (and admin/tenant/web), alerting on non-200 or
+`ok:false`. This catches a full-box outage the on-box monitor can't report.
+
 ## Caddy
 
 Config: `/etc/caddy/Caddyfile` (repo copy: `infra/Caddyfile`). TLS is automatic

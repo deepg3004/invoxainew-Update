@@ -84,6 +84,7 @@ export {
   getTenantAdminDetail,
   setTenantSuspended,
   adminAdjustWallet,
+  markChargeback,
   listAdminAuditLog,
   getRevenueReport,
   getWalletAttention,

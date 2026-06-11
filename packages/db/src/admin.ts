@@ -234,6 +234,82 @@ export async function setTenantSuspended(input: {
   });
 }
 
+export type ChargebackResult =
+  | { ok: true; alreadyDone: boolean; commissionReversedPaise: number }
+  | { ok: false; reason: "not_found" | "not_paid" };
+
+/**
+ * Mark a buyer payment as charged back (the bank reversed it on the seller's
+ * gateway). InvoxAI reverses the commission on the still-live portion (amount
+ * minus anything already refunded), computed from the recorded bps so it's
+ * independent of prior partial reversals: PAID commission → wallet CREDIT;
+ * DUE → reduce the outstanding amount. Idempotent via `chargebackAt`. Audited.
+ */
+export async function markChargeback(input: {
+  tenantId: string;
+  orderId: string;
+  adminEmail: string;
+}): Promise<ChargebackResult> {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.buyerPayment.findFirst({
+      where: { id: input.orderId, tenantId: input.tenantId },
+      include: { commission: true },
+    });
+    if (!order) return { ok: false, reason: "not_found" };
+    if (order.status !== "PAID") return { ok: false, reason: "not_paid" };
+    if (order.chargebackAt) {
+      return { ok: true, alreadyDone: true, commissionReversedPaise: 0 };
+    }
+
+    const liveAmount = order.amountPaise - order.refundedPaise;
+    let reversed = 0;
+    if (order.commission && liveAmount > 0) {
+      reversed = Math.floor((liveAmount * order.commission.bps) / 10000);
+      if (reversed > 0) {
+        if (order.commission.status === "PAID") {
+          const wallet = await tx.wallet.upsert({
+            where: { tenantId: input.tenantId },
+            create: { tenantId: input.tenantId, balancePaise: reversed },
+            update: { balancePaise: { increment: reversed } },
+          });
+          await tx.walletTransaction.create({
+            data: {
+              walletId: wallet.id,
+              tenantId: input.tenantId,
+              direction: "CREDIT",
+              amountPaise: reversed,
+              balanceAfter: wallet.balancePaise,
+              reason: "Commission reversal (chargeback)",
+              referenceType: "chargeback",
+              referenceId: `chargeback_${order.id}`,
+            },
+          });
+        } else {
+          await tx.commissionCharge.update({
+            where: { id: order.commission.id },
+            data: { amountPaise: Math.max(0, order.commission.amountPaise - reversed) },
+          });
+        }
+      }
+    }
+
+    await tx.buyerPayment.update({
+      where: { id: order.id },
+      data: { chargebackAt: new Date(), refundedPaise: order.amountPaise },
+    });
+    await tx.adminAuditLog.create({
+      data: {
+        adminEmail: input.adminEmail,
+        action: "order.chargeback",
+        tenantId: input.tenantId,
+        amountPaise: liveAmount,
+        detail: `Chargeback on order ${order.id}; commission reversed ${reversed}p`,
+      },
+    });
+    return { ok: true, alreadyDone: false, commissionReversedPaise: reversed };
+  });
+}
+
 export type AdminWalletResult =
   | { ok: true; balancePaise: number }
   | { ok: false; reason: "insufficient_funds" };

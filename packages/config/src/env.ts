@@ -42,6 +42,13 @@ const serverSchema = z.object({
   RAZORPAY_KEY_SECRET: z.string().optional().default(""),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(""),
 
+  // Sentry error reporting (Phase 1.4) — optional. When set, the apps report
+  // server-side errors. Also exposed as NEXT_PUBLIC_SENTRY_DSN for the browser.
+  SENTRY_DSN: z.string().optional().default(""),
+
+  // Optional webhook (e.g. Slack) the monitor cron posts alerts to.
+  ALERT_WEBHOOK_URL: z.string().optional().default(""),
+
   // Symmetric key for encrypting seller gateway secrets at rest (C6).
   // base64 of 32 random bytes (`openssl rand -base64 32`). SERVER ONLY. Rotating
   // it invalidates existing ciphertexts (needs a re-encrypt migration). Optional

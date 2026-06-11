@@ -1,0 +1,8 @@
+[Unit]
+Description=InvoxAI lightweight monitor (health + anomaly checks)
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/invoxai
+ExecStart=/root/.nvm/versions/node/v22.22.3/bin/node /root/invoxai/infra/monitor/healthcheck.mjs

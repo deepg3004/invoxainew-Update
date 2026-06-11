@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { setTenantSuspended, adminAdjustWallet } from "@invoxai/db";
+import { setTenantSuspended, adminAdjustWallet, markChargeback } from "@invoxai/db";
 import { rupeeStringToPaise } from "@invoxai/utils/money";
 import { requireAdmin } from "../../../lib/auth";
 
@@ -23,6 +23,17 @@ export async function toggleSuspendAction(
     reason,
   });
   revalidatePath(`/tenants/${id}`);
+}
+
+/** Mark a chargeback on an order (form action). Reverses commission + audits. */
+export async function markChargebackAction(
+  tenantId: string,
+  orderId: string,
+) {
+  const gate = await requireAdmin();
+  if (!gate.ok) return;
+  await markChargeback({ tenantId, orderId, adminEmail: gate.user.email ?? "unknown" });
+  revalidatePath(`/tenants/${tenantId}`);
 }
 
 /** Manual wallet credit/debit (useActionState). Validates + audits. */

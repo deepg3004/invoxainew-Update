@@ -11,7 +11,7 @@ import { maskKeyId } from "@invoxai/utils/crypto";
 import { requireAdmin } from "../../../lib/auth";
 import { AdminShell } from "../../components/AdminShell";
 import { NotAuthorized } from "../../components/NotAuthorized";
-import { toggleSuspendAction } from "./actions";
+import { toggleSuspendAction, markChargebackAction } from "./actions";
 import { WalletAdjustForm } from "./WalletAdjustForm";
 
 export const dynamic = "force-dynamic";
@@ -214,10 +214,30 @@ export default async function TenantDetail({
             <tbody>
               {t.buyerPayments.map((o) => (
                 <tr key={o.id} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-2 font-medium text-neutral-900">{o.paymentPage.title}</td>
+                  <td className="px-4 py-2 font-medium text-neutral-900">
+                    {o.paymentPage.title}
+                    {o.refundedPaise > 0 && !o.chargebackAt ? (
+                      <span className="ml-2 text-xs text-amber-600">
+                        refunded {formatRupees(o.refundedPaise)}
+                      </span>
+                    ) : null}
+                  </td>
                   <td className="px-4 py-2 text-neutral-500">{o.buyerEmail ?? "—"}</td>
                   <td className="px-4 py-2 text-neutral-500">{o.fulfillmentStatus}</td>
                   <td className="px-4 py-2 text-right">{formatRupees(o.amountPaise)}</td>
+                  <td className="px-4 py-2 text-right">
+                    {o.chargebackAt ? (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                        CHARGEBACK
+                      </span>
+                    ) : (
+                      <form action={markChargebackAction.bind(null, t.id, o.id)}>
+                        <button className="text-xs text-red-700 underline hover:text-red-900">
+                          Mark chargeback
+                        </button>
+                      </form>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
