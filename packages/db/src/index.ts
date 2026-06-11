@@ -26,8 +26,15 @@ export {
   getSubscriptionByTenant,
   createPlatformOrder,
   getPlatformOrderByRazorpayId,
-  markOrderPaidAndActivate,
+  markPlatformOrderPaid,
   activateFreePlan,
   recordPaymentEvent,
-  type ActivateResult,
+  type PaidOrderResult,
 } from "./subscription";
+export {
+  getWalletByTenant,
+  ensureWallet,
+  listWalletTransactions,
+  debitWallet,
+  type DebitResult,
+} from "./wallet";

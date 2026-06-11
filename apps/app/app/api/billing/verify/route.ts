@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getPlatformOrderByRazorpayId,
-  markOrderPaidAndActivate,
+  markPlatformOrderPaid,
   getTenantByOwnerId,
 } from "@invoxai/db";
 import { getSessionUser } from "../../../../lib/auth";
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
   }
 
-  const result = await markOrderPaidAndActivate({
+  const result = await markPlatformOrderPaid({
     razorpayOrderId: orderId,
     razorpayPaymentId: paymentId,
   });

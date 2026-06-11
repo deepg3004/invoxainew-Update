@@ -65,6 +65,7 @@ export async function startCheckout(
   await createPlatformOrder({
     razorpayOrderId: order.id,
     tenantId: tenant.id,
+    purpose: "SUBSCRIPTION",
     planId: plan.id,
     billingCycle: cycle,
     amountPaise,

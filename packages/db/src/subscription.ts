@@ -32,20 +32,26 @@ export function getSubscriptionByTenant(tenantId: string) {
   });
 }
 
-/** Record a checkout order created against the platform gateway. */
+/**
+ * Record a checkout order created against the platform gateway. `purpose`
+ * decides what paying it does (subscription vs wallet top-up); planId/cycle are
+ * required for SUBSCRIPTION and omitted for WALLET_TOPUP.
+ */
 export function createPlatformOrder(input: {
   razorpayOrderId: string;
   tenantId: string;
-  planId: string;
-  billingCycle: "MONTHLY" | "YEARLY";
+  purpose: "SUBSCRIPTION" | "WALLET_TOPUP";
+  planId?: string | null;
+  billingCycle?: "MONTHLY" | "YEARLY" | null;
   amountPaise: number;
 }) {
   return prisma.platformOrder.create({
     data: {
       razorpayOrderId: input.razorpayOrderId,
       tenantId: input.tenantId,
-      planId: input.planId,
-      billingCycle: input.billingCycle,
+      purpose: input.purpose,
+      planId: input.planId ?? null,
+      billingCycle: input.billingCycle ?? null,
       amountPaise: input.amountPaise,
     },
     select: { id: true, razorpayOrderId: true },
@@ -59,24 +65,29 @@ export function getPlatformOrderByRazorpayId(razorpayOrderId: string) {
   });
 }
 
-export type ActivateResult =
-  | { ok: true; alreadyProcessed: boolean }
+export type PaidOrderResult =
+  | { ok: true; alreadyProcessed: boolean; purpose: "SUBSCRIPTION" | "WALLET_TOPUP" }
   | { ok: false; reason: "order_not_found" };
 
 /**
- * Mark a paid order processed and activate/extend the tenant's subscription.
- * IDEMPOTENT and concurrency-safe: the `updateMany ... where status = CREATED`
- * is an atomic claim — only the first caller flips CREATED→PAID and proceeds to
- * extend the period; any later/duplicate call sees 0 rows claimed and no-ops.
- * So the verify callback and the webhook can both call this freely.
+ * Single idempotent entry point for a paid platform order (C5 unifies
+ * subscriptions and wallet top-ups here). Concurrency-safe: the
+ * `updateMany ... where status = CREATED` is an ATOMIC CLAIM — only the first
+ * caller flips CREATED→PAID and runs the side effect; any later/duplicate call
+ * (the verify callback racing the webhook, or a webhook redelivery) sees 0 rows
+ * claimed and no-ops. The side effect runs in the SAME transaction as the claim,
+ * so the order, the subscription/wallet, and the ledger move together or not at
+ * all.
  *
- * The new period extends from the later of "now" or the current period end, so
- * an early renewal stacks time rather than truncating it.
+ * Dispatch is by the order's server-trusted `purpose`:
+ *  - SUBSCRIPTION → extend the plan period (from max(now, currentPeriodEnd) so
+ *    early renewals stack rather than truncate).
+ *  - WALLET_TOPUP → credit the prepaid wallet and append a ledger row.
  */
-export async function markOrderPaidAndActivate(input: {
+export async function markPlatformOrderPaid(input: {
   razorpayOrderId: string;
   razorpayPaymentId?: string | null;
-}): Promise<ActivateResult> {
+}): Promise<PaidOrderResult> {
   return prisma.$transaction(async (tx) => {
     const now = new Date();
 
@@ -89,22 +100,45 @@ export async function markOrderPaidAndActivate(input: {
       },
     });
 
-    if (claim.count === 0) {
-      // Either already processed (idempotent no-op) or the order is unknown.
-      const existing = await tx.platformOrder.findUnique({
-        where: { razorpayOrderId: input.razorpayOrderId },
-        select: { id: true },
-      });
-      return existing
-        ? { ok: true, alreadyProcessed: true }
-        : { ok: false, reason: "order_not_found" };
-    }
-
-    // We won the claim — load the (server-trusted) order and activate.
-    const order = await tx.platformOrder.findUniqueOrThrow({
+    const order = await tx.platformOrder.findUnique({
       where: { razorpayOrderId: input.razorpayOrderId },
     });
 
+    if (claim.count === 0) {
+      // Either already processed (idempotent no-op) or the order is unknown.
+      return order
+        ? { ok: true, alreadyProcessed: true, purpose: order.purpose }
+        : { ok: false, reason: "order_not_found" };
+    }
+
+    // We won the claim — `order` is the server-trusted record. Run the effect.
+    if (!order) return { ok: false, reason: "order_not_found" };
+
+    if (order.purpose === "WALLET_TOPUP") {
+      const wallet = await tx.wallet.upsert({
+        where: { tenantId: order.tenantId },
+        create: { tenantId: order.tenantId, balancePaise: order.amountPaise },
+        update: { balancePaise: { increment: order.amountPaise } },
+      });
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          tenantId: order.tenantId,
+          direction: "CREDIT",
+          amountPaise: order.amountPaise,
+          balanceAfter: wallet.balancePaise,
+          reason: "Wallet top-up",
+          referenceType: "platform_order",
+          referenceId: order.id,
+        },
+      });
+      return { ok: true, alreadyProcessed: false, purpose: "WALLET_TOPUP" };
+    }
+
+    // SUBSCRIPTION — planId/billingCycle are always set for this purpose.
+    if (!order.planId || !order.billingCycle) {
+      throw new Error(`Subscription order ${order.id} missing plan/cycle`);
+    }
     const sub = await tx.subscription.findUnique({
       where: { tenantId: order.tenantId },
       select: { currentPeriodEnd: true },
@@ -132,7 +166,7 @@ export async function markOrderPaidAndActivate(input: {
       },
     });
 
-    return { ok: true, alreadyProcessed: false };
+    return { ok: true, alreadyProcessed: false, purpose: "SUBSCRIPTION" };
   });
 }
 

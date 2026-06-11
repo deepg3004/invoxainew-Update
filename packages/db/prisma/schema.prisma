@@ -53,6 +53,8 @@ model Tenant {
   // C4: a tenant has at most one platform subscription, and many checkout orders.
   subscription Subscription?
   orders       PlatformOrder[]
+  // C5: a tenant has at most one prepaid wallet (for InvoxAI fees only).
+  wallet       Wallet?
 }
 
 /// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =
@@ -74,6 +76,21 @@ enum OrderStatus {
   CREATED
   PAID
   FAILED
+}
+
+/// What a paid platform order does (C5 unifies the two money flows through one
+/// idempotent paid-order path). SUBSCRIPTION extends the plan period;
+/// WALLET_TOPUP credits the prepaid wallet.
+enum OrderPurpose {
+  SUBSCRIPTION
+  WALLET_TOPUP
+}
+
+/// Wallet ledger entry direction. CREDIT = money in (top-up); DEBIT = money out
+/// (InvoxAI fee). Buyer money NEVER appears here (hard rule).
+enum WalletTxnDirection {
+  CREDIT
+  DEBIT
 }
 
 /// A platform subscription tier a seller can subscribe to (used from C4).
@@ -153,22 +170,63 @@ model Subscription {
 /// idempotent, so a replayed webhook or a double client callback can't extend
 /// the period twice. Amount is integer paise.
 model PlatformOrder {
-  id              String       @id @default(uuid()) @db.Uuid
-  razorpayOrderId String       @unique @map("razorpay_order_id")
-  tenantId        String       @map("tenant_id") @db.Uuid
-  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  planId          String       @map("plan_id") @db.Uuid
-  plan            Plan         @relation(fields: [planId], references: [id])
-  billingCycle    BillingCycle @map("billing_cycle")
-  amountPaise     Int          @map("amount_paise")
-  status          OrderStatus  @default(CREATED)
-  razorpayPaymentId String?    @map("razorpay_payment_id")
-  paidAt          DateTime?    @map("paid_at")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  id              String        @id @default(uuid()) @db.Uuid
+  razorpayOrderId String        @unique @map("razorpay_order_id")
+  tenantId        String        @map("tenant_id") @db.Uuid
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purpose         OrderPurpose  @default(SUBSCRIPTION)
+  // Set only for SUBSCRIPTION orders; null for WALLET_TOPUP.
+  planId          String?       @map("plan_id") @db.Uuid
+  plan            Plan?         @relation(fields: [planId], references: [id])
+  billingCycle    BillingCycle? @map("billing_cycle")
+  amountPaise     Int           @map("amount_paise")
+  status          OrderStatus   @default(CREATED)
+  razorpayPaymentId String?     @map("razorpay_payment_id")
+  paidAt          DateTime?     @map("paid_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   @@index([tenantId])
   @@map("platform_orders")
+}
+
+/// A seller's prepaid wallet (C5). One per tenant. Holds ONLY the seller's own
+/// money for InvoxAI's fees (commission, ₹149 AI-page, add-ons) — NEVER buyer
+/// money (hard rule). `balancePaise` is the cached balance; it is only ever
+/// mutated inside the same transaction that appends a WalletTransaction, so the
+/// ledger and the balance never diverge. RLS: deny-anon lockdown.
+model Wallet {
+  id           String              @id @default(uuid()) @db.Uuid
+  tenantId     String              @unique @map("tenant_id") @db.Uuid
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  balancePaise Int                 @default(0) @map("balance_paise")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+/// Append-only wallet ledger (C5). Every credit/debit is one row carrying the
+/// `balanceAfter` snapshot for auditability. `referenceId` is an idempotency key
+/// (unique): a credit uses the platform order id, a debit uses the fee event id,
+/// so a retried credit/debit can't double-apply. Null referenceId is allowed
+/// (Postgres lets multiple NULLs coexist under a unique index).
+model WalletTransaction {
+  id            String             @id @default(uuid()) @db.Uuid
+  walletId      String             @map("wallet_id") @db.Uuid
+  wallet        Wallet             @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  tenantId      String             @map("tenant_id") @db.Uuid
+  direction     WalletTxnDirection
+  amountPaise   Int                @map("amount_paise")
+  balanceAfter  Int                @map("balance_after")
+  reason        String
+  referenceType String?            @map("reference_type")
+  referenceId   String?            @unique @map("reference_id")
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("wallet_transactions")
 }
 
 /// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`

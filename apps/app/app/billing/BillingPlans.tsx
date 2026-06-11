@@ -4,13 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { bpsToPercentString } from "@invoxai/utils/money";
+import { runRazorpayCheckout } from "../../lib/checkout-client";
 import { startCheckout } from "./actions";
-
-declare global {
-  interface Window {
-    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
 
 type Cycle = "MONTHLY" | "YEARLY";
 
@@ -58,35 +53,20 @@ export function BillingPlans({
         return;
       }
 
-      if (!window.Razorpay) {
-        setError("Payment library failed to load. Refresh and try again.");
-        return;
-      }
-
-      const rzp = new window.Razorpay({
-        key: result.keyId,
-        order_id: result.orderId,
-        amount: result.amountPaise,
-        currency: "INR",
+      const outcome = await runRazorpayCheckout({
+        keyId: result.keyId,
+        orderId: result.orderId,
+        amountPaise: result.amountPaise,
         name: "InvoxAI",
         description: `${result.planName} (${cycle.toLowerCase()})`,
-        handler: async (response: Record<string, string>) => {
-          // Confirm synchronously; the webhook is the authoritative backstop.
-          const verify = await fetch("/api/billing/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(response),
-          });
-          if (verify.ok) {
-            startTransition(() => router.refresh());
-          } else {
-            setError(
-              "Payment captured — confirming may take a moment. Refresh shortly.",
-            );
-          }
-        },
       });
-      rzp.open();
+      if (outcome.status === "paid") {
+        startTransition(() => router.refresh());
+      } else if (outcome.status === "pending") {
+        setError("Payment captured — confirming may take a moment. Refresh shortly.");
+      } else {
+        setError(outcome.message);
+      }
     } catch {
       setError("Could not start checkout. Please try again.");
     } finally {

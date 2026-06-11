@@ -67,6 +67,17 @@ export default async function Dashboard() {
             Manage billing →
           </Link>
         </Card>
+        <Card title="Wallet">
+          <p className="text-sm text-neutral-500">
+            Prepaid balance for InvoxAI fees (commission, AI pages, add-ons).
+          </p>
+          <Link
+            href="/wallet"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Open wallet →
+          </Link>
+        </Card>
       </div>
     </main>
   );

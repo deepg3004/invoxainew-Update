@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   recordPaymentEvent,
-  markOrderPaidAndActivate,
+  markPlatformOrderPaid,
 } from "@invoxai/db";
 import { verifyWebhookSignature } from "../../../../lib/razorpay";
 
@@ -63,13 +63,13 @@ export async function POST(request: NextRequest) {
 
   // We only act on successful-payment events; others are logged and ack'd.
   if ((type === "order.paid" || type === "payment.captured") && razorpayOrderId) {
-    const result = await markOrderPaidAndActivate({
+    const result = await markPlatformOrderPaid({
       razorpayOrderId,
       razorpayPaymentId: razorpayPaymentId ?? null,
     });
     // order_not_found can happen for events from another environment — ack so
     // Razorpay stops retrying; the event is already logged for audit.
-    return NextResponse.json({ ok: true, activated: result.ok });
+    return NextResponse.json({ ok: true, processed: result.ok });
   }
 
   return NextResponse.json({ ok: true, ignored: type });
