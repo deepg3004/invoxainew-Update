@@ -29,6 +29,28 @@ systemctl restart invox-tenant       # restart after a rebuild
 journalctl -u invox-app -f           # logs
 ```
 
+### Hardening (interim — services still run as root, Phase 0)
+
+Each unit has a sandboxing drop-in at
+`/etc/systemd/system/invox-<svc>.service.d/hardening.conf` (repo copy:
+`infra/systemd/invox-hardening.conf`). Node-safe set — deliberately omits
+`MemoryDenyWriteExecute` (breaks V8 JIT) and `ProtectHome` (app lives under
+`/root`). To (re)apply on a fresh box:
+
+```bash
+for s in web app admin tenant; do
+  mkdir -p /etc/systemd/system/invox-$s.service.d
+  cp infra/systemd/invox-hardening.conf /etc/systemd/system/invox-$s.service.d/hardening.conf
+done
+systemctl daemon-reload && systemctl restart invox-web invox-app invox-admin invox-tenant
+```
+
+**TODO (planned window): run services as non-root.** Blocked because the app
+(`/root/invoxai`) and node (`/root/.nvm`) live under `/root` (700). Migration =
+relocate app to `/opt/invoxai`, install system-wide node, chown to the `deep`
+user, rewrite units (`User=deep`, new paths, `HOME=/home/deep`), move `.env`,
+rebuild, restart.
+
 ## Deploy a new build
 
 ```bash
