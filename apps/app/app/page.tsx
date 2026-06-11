@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card } from "@invoxai/ui";
 import { getTenantByOwnerId } from "@invoxai/db";
@@ -40,7 +41,7 @@ export default async function Dashboard() {
         </form>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <Card title="Your address is live">
           <a
             href={siteUrl}
@@ -54,6 +55,17 @@ export default async function Dashboard() {
             This resolves to your public buyer-facing site (host-based tenant
             resolution). Building it out comes in later steps.
           </p>
+        </Card>
+        <Card title="Plan & billing">
+          <p className="text-sm text-neutral-500">
+            Choose a subscription to raise your limits and lower commission.
+          </p>
+          <Link
+            href="/billing"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Manage billing →
+          </Link>
         </Card>
       </div>
     </main>

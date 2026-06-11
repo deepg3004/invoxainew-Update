@@ -32,7 +32,13 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isAuthPath = pathname === "/login" || pathname.startsWith("/auth");
+  // /api/webhooks/* is called by external services (e.g. Razorpay) with no
+  // session — it must never be redirected to /login. Its own handler verifies
+  // the request via signature, not the session cookie.
+  const isAuthPath =
+    pathname === "/login" ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api/webhooks");
 
   if (!user && !isAuthPath) {
     const url = request.nextUrl.clone();

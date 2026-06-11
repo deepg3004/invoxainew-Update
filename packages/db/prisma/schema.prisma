@@ -49,6 +49,31 @@ model Tenant {
 
   @@index([username])
   @@map("tenants")
+
+  // C4: a tenant has at most one platform subscription, and many checkout orders.
+  subscription Subscription?
+  orders       PlatformOrder[]
+}
+
+/// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =
+/// paid and within the period; PAST_DUE = period lapsed without renewal;
+/// CANCELED = explicitly ended.
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum OrderStatus {
+  CREATED
+  PAID
+  FAILED
 }
 
 /// A platform subscription tier a seller can subscribe to (used from C4).
@@ -77,6 +102,9 @@ model Plan {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  subscriptions Subscription[]
+  orders        PlatformOrder[]
+
   @@index([isActive, sortOrder])
   @@map("plans")
 }
@@ -93,4 +121,68 @@ model PricingSetting {
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("pricing_settings")
+}
+
+/// A seller's platform subscription (C4). Exactly one per tenant (`tenantId`
+/// unique). This is the seller paying InvoxAI's OWN fees via InvoxAI's platform
+/// gateway — NOT buyer money (hard rule). `currentPeriodEnd` is extended on each
+/// paid order; status flips to PAST_DUE when it lapses.
+///
+/// Tenant isolation: every read/write is scoped by `tenantId` derived from the
+/// authenticated session, never from request input. RLS: deny-anon lockdown
+/// (platform/server-only via Prisma).
+model Subscription {
+  id               String             @id @default(uuid()) @db.Uuid
+  tenantId         String             @unique @map("tenant_id") @db.Uuid
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId           String             @map("plan_id") @db.Uuid
+  plan             Plan               @relation(fields: [planId], references: [id])
+  status           SubscriptionStatus @default(PENDING)
+  billingCycle     BillingCycle       @map("billing_cycle")
+  currentPeriodEnd DateTime?          @map("current_period_end")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+/// One checkout attempt against the platform gateway (C4). We create the
+/// Razorpay order server-side and store it here BEFORE redirecting to checkout,
+/// so the amount/plan/cycle are server-trusted (never taken from the client at
+/// confirm time). `razorpayOrderId` is unique — the activation keyed on it is
+/// idempotent, so a replayed webhook or a double client callback can't extend
+/// the period twice. Amount is integer paise.
+model PlatformOrder {
+  id              String       @id @default(uuid()) @db.Uuid
+  razorpayOrderId String       @unique @map("razorpay_order_id")
+  tenantId        String       @map("tenant_id") @db.Uuid
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId          String       @map("plan_id") @db.Uuid
+  plan            Plan         @relation(fields: [planId], references: [id])
+  billingCycle    BillingCycle @map("billing_cycle")
+  amountPaise     Int          @map("amount_paise")
+  status          OrderStatus  @default(CREATED)
+  razorpayPaymentId String?    @map("razorpay_payment_id")
+  paidAt          DateTime?    @map("paid_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("platform_orders")
+}
+
+/// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`
+/// is Razorpay's event id with a UNIQUE constraint — the webhook records the
+/// event first and a duplicate delivery trips the constraint, so the handler
+/// no-ops instead of activating twice. Never trusted until its signature is
+/// verified upstream.
+model PaymentEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  eventId   String   @unique @map("event_id")
+  type      String
+  tenantId  String?  @map("tenant_id") @db.Uuid
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("payment_events")
 }

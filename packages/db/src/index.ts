@@ -22,3 +22,12 @@ export {
   type PlanInput,
   type CreatePlanResult,
 } from "./pricing";
+export {
+  getSubscriptionByTenant,
+  createPlatformOrder,
+  getPlatformOrderByRazorpayId,
+  markOrderPaidAndActivate,
+  activateFreePlan,
+  recordPaymentEvent,
+  type ActivateResult,
+} from "./subscription";

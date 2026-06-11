@@ -32,6 +32,15 @@ const serverSchema = z.object({
   // the allowlist is matched case-insensitively against the verified session
   // email. Empty in non-admin deployments. SERVER ONLY.
   ADMIN_EMAILS: z.string().optional().default(""),
+
+  // Platform Razorpay gateway (C4) — InvoxAI's OWN account, used only to collect
+  // InvoxAI's subscription/AI-page fees from sellers (NOT buyer→seller money).
+  // KEY_ID is also exposed to the browser via NEXT_PUBLIC_* for Checkout; the
+  // SECRET and WEBHOOK_SECRET are SERVER ONLY. Optional until C4 goes live so
+  // earlier deploys don't fail validation.
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().optional().default(""),
+  RAZORPAY_KEY_SECRET: z.string().optional().default(""),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional().default(""),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
