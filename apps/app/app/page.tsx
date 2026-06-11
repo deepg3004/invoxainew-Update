@@ -158,6 +158,17 @@ export default async function Dashboard() {
             View usage →
           </Link>
         </Card>
+        <Card title="Ads tracking">
+          <p className="text-sm text-neutral-500">
+            Add Meta Pixel / GA4 so your pages fire ad events.
+          </p>
+          <Link
+            href="/tracking"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Set up tracking →
+          </Link>
+        </Card>
       </div>
     </main>
   );

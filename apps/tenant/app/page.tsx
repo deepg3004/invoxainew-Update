@@ -3,8 +3,9 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Card } from "@invoxai/ui";
 import { tenantUsernameFromHost } from "@invoxai/utils/host";
-import { getTenantByUsername } from "@invoxai/db";
+import { getTenantByUsername, getTenantTracking } from "@invoxai/db";
 import { StoreUnavailable } from "./StoreUnavailable";
+import { TrackingScripts } from "./TrackingScripts";
 
 // Resolved per-request from the Host header, so never cache.
 export const dynamic = "force-dynamic";
@@ -40,9 +41,11 @@ export default async function TenantHome() {
   const tenant = await getTenantByUsername(username);
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
+  const tracking = await getTenantTracking(tenant.id);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
+      <TrackingScripts ids={tracking ?? {}} />
       <div className="flex items-start justify-between">
         <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
           {tenant.username}.invoxai.io

@@ -2,8 +2,9 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { tenantUsernameFromHost } from "@invoxai/utils/host";
-import { getTenantByUsername, getPublishedAiPage } from "@invoxai/db";
+import { getTenantByUsername, getPublishedAiPage, getTenantTracking } from "@invoxai/db";
 import { StoreUnavailable } from "../StoreUnavailable";
+import { TrackingScripts } from "../TrackingScripts";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +44,11 @@ export default async function AiLandingPage({
   const page = await getPublishedAiPage(tenant.id, slug);
   if (!page || !isContent(page.content)) notFound();
   const content = page.content;
+  const tracking = await getTenantTracking(tenant.id);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-20">
+      <TrackingScripts ids={tracking ?? {}} />
       <header className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
           {content.title}

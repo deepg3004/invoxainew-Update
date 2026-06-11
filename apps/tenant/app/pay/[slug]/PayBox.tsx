@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Script from "next/script";
 import { startBuyerCheckout } from "./actions";
+import { firePurchase } from "../../TrackingScripts";
 
 declare global {
   interface Window {
@@ -48,6 +49,7 @@ export function PayBox({ paymentPageId }: { paymentPageId: string }) {
             body: JSON.stringify(response),
           });
           if (verify.ok) {
+            firePurchase(result.amountPaise);
             setStatus("paid");
           } else {
             setError("Payment received — confirming. If you were charged, you’re all set.");

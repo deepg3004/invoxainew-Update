@@ -5,10 +5,12 @@ import {
   getTenantByUsername,
   getActivePaymentPage,
   getSellerGateway,
+  getTenantTracking,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { PayBox } from "./PayBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
+import { TrackingScripts } from "../../TrackingScripts";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +33,11 @@ export default async function PayPage({
 
   const gateway = await getSellerGateway(tenant.id);
   const sellerReady = Boolean(gateway && gateway.status === "CONNECTED");
+  const tracking = await getTenantTracking(tenant.id);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+      <TrackingScripts ids={tracking ?? {}} />
       <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
         {tenant.name ?? tenant.username}
       </p>

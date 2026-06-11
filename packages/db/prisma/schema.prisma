@@ -69,6 +69,24 @@ model Tenant {
   buyerAccounts BuyerAccount[]
   // C9: AI-generated landing pages on the tenant's site.
   aiPages      AiPage[]
+  // Ads tracking: per-tenant pixel/measurement IDs injected on public pages.
+  tracking     TenantTracking?
+}
+
+/// Per-tenant ads/analytics tracking IDs (Final Plan §21). Injected on the
+/// seller's public pages so their PageView/Purchase events flow to Meta/Google.
+/// All optional; blank fields inject nothing. RLS: deny-anon (read server-side).
+model TenantTracking {
+  tenantId         String   @id @map("tenant_id") @db.Uuid
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  metaPixelId      String?  @map("meta_pixel_id")
+  ga4MeasurementId String?  @map("ga4_measurement_id")
+  googleAdsId      String?  @map("google_ads_id")
+  gtmId            String?  @map("gtm_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("tenant_tracking")
 }
 
 /// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =
