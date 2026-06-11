@@ -482,7 +482,13 @@ model PaymentEvent {
   type      String
   tenantId  String?  @map("tenant_id") @db.Uuid
   payload   Json
+  // Phase 1.5: processing state for retry-safety. Null processedAt = not yet
+  // successfully handled, so a redelivery should reprocess (handler is idempotent).
+  processedAt DateTime? @map("processed_at")
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([processedAt])
   @@map("payment_events")
 }

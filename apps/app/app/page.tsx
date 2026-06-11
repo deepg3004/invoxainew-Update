@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card } from "@invoxai/ui";
-import { getTenantByOwnerId } from "@invoxai/db";
+import { getTenantByOwnerId, getWalletStatus } from "@invoxai/db";
 import { getSessionUser } from "../lib/auth";
+import { LowBalanceBanner } from "./components/LowBalanceBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function Dashboard() {
   if (!tenant) redirect("/onboarding");
 
   const siteUrl = publicSiteUrl(tenant.username);
+  const wallet = await getWalletStatus(tenant.id);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
@@ -41,7 +43,14 @@ export default async function Dashboard() {
         </form>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="mt-8">
+        <LowBalanceBanner
+          balancePaise={wallet.balancePaise}
+          dueCommissionPaise={wallet.dueCommissionPaise}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card title="Your address is live">
           <a
             href={siteUrl}

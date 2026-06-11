@@ -54,6 +54,15 @@ async function checkData(prisma) {
   const negative = await prisma.wallet.count({ where: { balancePaise: { lt: 0 } } });
   if (negative > 0) problems.push(`${negative} wallet(s) NEGATIVE`);
 
+  // Webhook events stuck unprocessed >10m (retry not converging) — a real issue.
+  const stuckEvents = await prisma.paymentEvent.count({
+    where: {
+      processedAt: null,
+      createdAt: { lt: new Date(Date.now() - 10 * 60_000) },
+    },
+  });
+  if (stuckEvents > 0) problems.push(`${stuckEvents} webhook event(s) UNPROCESSED >10m`);
+
   const cutoff = new Date(Date.now() - STUCK_ORDER_MINUTES * 60_000);
   const stuck = await prisma.buyerPayment.count({
     where: { status: "CREATED", createdAt: { lt: cutoff } },

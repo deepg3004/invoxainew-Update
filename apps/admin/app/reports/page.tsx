@@ -121,6 +121,15 @@ export default async function ReportsPage() {
                 <tr key={e.id} className="border-b border-neutral-100 last:border-0">
                   <td className="px-4 py-2 text-neutral-500">{fmtDateTime(e.createdAt)}</td>
                   <td className="px-4 py-2 font-medium">{e.type}</td>
+                  <td className="px-4 py-2">
+                    {e.processedAt ? (
+                      <span className="text-xs text-green-700">processed</span>
+                    ) : (
+                      <span className="text-xs font-medium text-red-700">
+                        UNPROCESSED{e.attempts > 1 ? ` (${e.attempts} tries)` : ""}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-2 text-right text-xs text-neutral-400">{e.eventId}</td>
                 </tr>
               ))}

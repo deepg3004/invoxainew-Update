@@ -197,12 +197,20 @@ export function searchBuyerPayments(query: string, take = 50) {
   });
 }
 
-/** Recent accepted webhook events (the idempotency/audit log). */
+/** Recent accepted webhook events with processing state (Phase 1.5). */
 export function listRecentPaymentEvents(take = 30) {
   return prisma.paymentEvent.findMany({
     orderBy: { createdAt: "desc" },
     take,
-    select: { id: true, eventId: true, type: true, tenantId: true, createdAt: true },
+    select: {
+      id: true,
+      eventId: true,
+      type: true,
+      createdAt: true,
+      processedAt: true,
+      attempts: true,
+      lastError: true,
+    },
   });
 }
 

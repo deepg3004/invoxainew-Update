@@ -19,6 +19,26 @@ export function getWalletByTenant(tenantId: string) {
   return prisma.wallet.findUnique({ where: { tenantId } });
 }
 
+/** Balance + outstanding commission for low-balance warnings (Phase 1.5). */
+export async function getWalletStatus(
+  tenantId: string,
+): Promise<{ balancePaise: number; dueCommissionPaise: number }> {
+  const [wallet, due] = await Promise.all([
+    prisma.wallet.findUnique({
+      where: { tenantId },
+      select: { balancePaise: true },
+    }),
+    prisma.commissionCharge.aggregate({
+      where: { tenantId, status: "DUE" },
+      _sum: { amountPaise: true },
+    }),
+  ]);
+  return {
+    balancePaise: wallet?.balancePaise ?? 0,
+    dueCommissionPaise: due._sum.amountPaise ?? 0,
+  };
+}
+
 /** Ensure a wallet row exists for the tenant (idempotent), returning it. */
 export function ensureWallet(tenantId: string) {
   return prisma.wallet.upsert({

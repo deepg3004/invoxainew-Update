@@ -29,11 +29,15 @@ export {
   getPlatformOrderByRazorpayId,
   markPlatformOrderPaid,
   activateFreePlan,
-  recordPaymentEvent,
+  claimPaymentEvent,
+  markPaymentEventProcessed,
+  recordPaymentEventError,
+  countUnprocessedEvents,
   type PaidOrderResult,
 } from "./subscription";
 export {
   getWalletByTenant,
+  getWalletStatus,
   ensureWallet,
   listWalletTransactions,
   debitWallet,

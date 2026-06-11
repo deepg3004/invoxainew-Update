@@ -201,30 +201,54 @@ export function activateFreePlan(input: {
 }
 
 /**
- * Record a webhook event for idempotency + audit. Returns `isNew: false` when
- * this `eventId` was already stored (duplicate delivery), so the caller skips
- * reprocessing. The unique constraint on `eventId` is the dedup boundary.
+ * Claim a webhook event for processing (Phase 1.5, retry-safe). Upserts by the
+ * unique `eventId`: records it on first delivery, bumps `attempts` on a redelivery.
+ * Returns `alreadyProcessed: true` only when a PRIOR delivery COMPLETED
+ * successfully (processedAt set) — so a redelivery of an event that was recorded
+ * but failed mid-processing is NOT skipped; it gets reprocessed (the handler is
+ * idempotent). The caller marks it processed on success.
  */
-export async function recordPaymentEvent(input: {
+export async function claimPaymentEvent(input: {
   eventId: string;
   type: string;
   tenantId?: string | null;
   payload: Prisma.InputJsonValue;
-}): Promise<{ isNew: boolean }> {
-  try {
-    await prisma.paymentEvent.create({
-      data: {
-        eventId: input.eventId,
-        type: input.type,
-        tenantId: input.tenantId ?? null,
-        payload: input.payload,
-      },
-    });
-    return { isNew: true };
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-      return { isNew: false };
-    }
-    throw e;
-  }
+}): Promise<{ alreadyProcessed: boolean }> {
+  const ev = await prisma.paymentEvent.upsert({
+    where: { eventId: input.eventId },
+    create: {
+      eventId: input.eventId,
+      type: input.type,
+      tenantId: input.tenantId ?? null,
+      payload: input.payload,
+      attempts: 1,
+    },
+    update: { attempts: { increment: 1 } },
+    select: { processedAt: true },
+  });
+  return { alreadyProcessed: ev.processedAt !== null };
+}
+
+/** Mark a webhook event successfully handled (clears any prior error). */
+export function markPaymentEventProcessed(eventId: string) {
+  return prisma.paymentEvent.update({
+    where: { eventId },
+    data: { processedAt: new Date(), lastError: null },
+  });
+}
+
+/** Record why processing an event failed (kept for the retry sweep + admin). */
+export function recordPaymentEventError(eventId: string, error: string) {
+  return prisma.paymentEvent.update({
+    where: { eventId },
+    data: { lastError: error.slice(0, 500) },
+  });
+}
+
+/** Count webhook events still unprocessed after `olderThanMinutes` (monitor). */
+export function countUnprocessedEvents(olderThanMinutes = 10) {
+  const cutoff = new Date(Date.now() - olderThanMinutes * 60_000);
+  return prisma.paymentEvent.count({
+    where: { processedAt: null, createdAt: { lt: cutoff } },
+  });
 }

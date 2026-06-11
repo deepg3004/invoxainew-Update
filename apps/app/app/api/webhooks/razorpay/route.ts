@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  recordPaymentEvent,
+  claimPaymentEvent,
+  markPaymentEventProcessed,
+  recordPaymentEventError,
   markPlatformOrderPaid,
 } from "@invoxai/db";
 import { verifyWebhookSignature } from "../../../../lib/razorpay";
@@ -51,26 +53,32 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-razorpay-event-id") ??
     `${type}:${razorpayOrderId ?? "?"}:${razorpayPaymentId ?? "?"}`;
 
-  const { isNew } = await recordPaymentEvent({
-    eventId,
-    type,
-    payload: event,
-  });
-  if (!isNew) {
-    // Already processed this delivery — acknowledge without reprocessing.
+  // Claim the event. `alreadyProcessed` is true only if a PRIOR delivery
+  // COMPLETED — an event recorded but failed mid-processing is reprocessed
+  // (retry-safe; the handlers below are idempotent).
+  const { alreadyProcessed } = await claimPaymentEvent({ eventId, type, payload: event });
+  if (alreadyProcessed) {
     return NextResponse.json({ ok: true, deduped: true });
   }
 
-  // We only act on successful-payment events; others are logged and ack'd.
-  if ((type === "order.paid" || type === "payment.captured") && razorpayOrderId) {
-    const result = await markPlatformOrderPaid({
-      razorpayOrderId,
-      razorpayPaymentId: razorpayPaymentId ?? null,
-    });
-    // order_not_found can happen for events from another environment — ack so
-    // Razorpay stops retrying; the event is already logged for audit.
-    return NextResponse.json({ ok: true, processed: result.ok });
+  try {
+    // We only act on successful-payment events; others are terminal no-ops.
+    if ((type === "order.paid" || type === "payment.captured") && razorpayOrderId) {
+      await markPlatformOrderPaid({
+        razorpayOrderId,
+        razorpayPaymentId: razorpayPaymentId ?? null,
+      });
+      // order_not_found (e.g. event from another environment) is terminal — we
+      // still mark processed below so Razorpay stops retrying.
+    }
+    await markPaymentEventProcessed(eventId);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    // Transient failure: record it and return 500 so Razorpay redelivers. The
+    // event stays unprocessed, so the redelivery reprocesses it.
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("webhook processing failed", eventId, message);
+    await recordPaymentEventError(eventId, message).catch(() => {});
+    return NextResponse.json({ ok: false, error: "processing_failed" }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true, ignored: type });
 }
