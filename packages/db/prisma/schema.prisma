@@ -1,0 +1,19 @@
+// InvoxAI database schema.
+//
+// Runtime (Prisma Client) connects via the pooled DATABASE_URL (PgBouncer,
+// port 6543). Migrations (Prisma CLI) use the direct DIRECT_URL (port 5432) —
+// migrations hang on the pooler, so `directUrl` is required here.
+//
+// No application models yet (C1 only proves connectivity via `SELECT 1`).
+// When models are added in C2+, run a migration and then ENABLE RLS on every
+// new table in Supabase before exposing it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
