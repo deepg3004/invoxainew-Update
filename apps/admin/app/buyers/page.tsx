@@ -76,7 +76,7 @@ export default async function BuyersPage({
                       {r.tenant.username}
                     </Link>
                   </td>
-                  <td className="px-4 py-3">{r.paymentPage.title}</td>
+                  <td className="px-4 py-3">{r.itemTitle ?? r.paymentPage?.title ?? "—"}</td>
                   <td className="px-4 py-3">
                     <span className="text-xs text-neutral-500">{r.status}</span>
                     {r.status === "PAID" ? (

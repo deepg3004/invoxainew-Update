@@ -56,6 +56,7 @@ export async function startBuyerCheckout(
     razorpayOrderId: order.id,
     tenantId: page.tenantId,
     paymentPageId: page.id,
+    itemTitle: page.title,
     amountPaise: page.amountPaise,
     buyerProfileId: user?.id ?? null,
     buyerEmail: buyer.email ?? user?.email ?? null,

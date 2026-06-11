@@ -25,7 +25,7 @@ export async function GET() {
     ],
     orders.map((o) => [
       o.paidAt?.toISOString() ?? "",
-      o.paymentPage.title,
+      o.itemTitle ?? o.paymentPage?.title ?? "",
       o.buyerEmail ?? "",
       o.buyerContact ?? "",
       paiseToRupeeString(o.amountPaise),

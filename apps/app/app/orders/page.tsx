@@ -77,7 +77,12 @@ export default async function OrdersPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-medium text-neutral-900">
-                    {o.paymentPage.title}
+                    {o.itemTitle ?? o.paymentPage?.title ?? "Order"}
+                    {o.quantity > 1 ? (
+                      <span className="ml-1 text-sm font-normal text-neutral-400">
+                        ×{o.quantity}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="mt-0.5 text-sm text-neutral-500">
                     {formatRupees(o.amountPaise)} · {formatDate(o.paidAt)}

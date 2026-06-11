@@ -116,6 +116,9 @@ model Product {
   @@unique([tenantId, slug])
   @@index([tenantId, status])
   @@map("products")
+
+  // Store slice 2: buyer orders placed against this product.
+  buyerPayments BuyerPayment[]
 }
 
 enum ProductKind {
@@ -459,8 +462,16 @@ model BuyerPayment {
   razorpayOrderId   String             @unique @map("razorpay_order_id")
   tenantId          String             @map("tenant_id") @db.Uuid
   tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  paymentPageId     String             @map("payment_page_id") @db.Uuid
-  paymentPage       PaymentPage        @relation(fields: [paymentPageId], references: [id])
+  // An order is placed against EITHER a payment page (C7) OR a store product
+  // (Store slice 2). Exactly one of these is set; both stay nullable in the
+  // schema and the app guarantees one. `itemTitle` snapshots the name at sale
+  // time so order history survives the product/page being edited or removed.
+  paymentPageId     String?            @map("payment_page_id") @db.Uuid
+  paymentPage       PaymentPage?       @relation(fields: [paymentPageId], references: [id])
+  productId         String?            @map("product_id") @db.Uuid
+  product           Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  quantity          Int                @default(1)
+  itemTitle         String?            @map("item_title")
   amountPaise       Int                @map("amount_paise")
   status            BuyerPaymentStatus @default(CREATED)
   // C8: set when the buyer was logged in at checkout, to attribute the order.

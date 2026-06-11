@@ -86,7 +86,8 @@ export default async function BuyerCorner() {
                 {orders.map((o) => (
                   <tr key={o.id} className="border-b border-neutral-100 last:border-0">
                     <td className="px-4 py-3 font-medium text-neutral-900">
-                      {o.paymentPage.title}
+                      {o.itemTitle ?? o.paymentPage?.title ?? "Order"}
+                      {o.quantity > 1 ? ` ×${o.quantity}` : ""}
                     </td>
                     <td className="px-4 py-3 text-neutral-500">{formatDate(o.paidAt)}</td>
                     <td className="px-4 py-3">

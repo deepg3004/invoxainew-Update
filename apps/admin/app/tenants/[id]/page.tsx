@@ -215,7 +215,7 @@ export default async function TenantDetail({
               {t.buyerPayments.map((o) => (
                 <tr key={o.id} className="border-b border-neutral-100 last:border-0">
                   <td className="px-4 py-2 font-medium text-neutral-900">
-                    {o.paymentPage.title}
+                    {o.itemTitle ?? o.paymentPage?.title ?? "—"}
                     {o.refundedPaise > 0 && !o.chargebackAt ? (
                       <span className="ml-2 text-xs text-amber-600">
                         refunded {formatRupees(o.refundedPaise)}

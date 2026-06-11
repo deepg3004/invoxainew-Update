@@ -63,8 +63,10 @@ export default async function TenantHome() {
             <strong>{host}</strong> resolved to tenant{" "}
             <strong>{tenant.username}</strong>.
           </p>
-          <p className="mt-2 text-sm text-neutral-500">
-            Buyer Corner, payment pages, and content come in later steps.
+          <p className="mt-3">
+            <Link href="/store" className="font-medium text-blue-600 underline">
+              Visit the store →
+            </Link>
           </p>
         </Card>
       </div>

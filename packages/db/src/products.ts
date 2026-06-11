@@ -81,6 +81,12 @@ export function getPublishedProduct(tenantId: string, slug: string) {
   });
 }
 
+/** A PUBLISHED product by id — used by the buyer checkout action so the price
+ *  and stock are read server-trusted from the DB, never from the client. */
+export function getPublishedProductById(id: string) {
+  return prisma.product.findFirst({ where: { id, status: "PUBLISHED" } });
+}
+
 export function updateProduct(
   tenantId: string,
   id: string,

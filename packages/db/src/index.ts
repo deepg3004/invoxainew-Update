@@ -93,6 +93,7 @@ export {
   getProductById,
   listPublishedProducts,
   getPublishedProduct,
+  getPublishedProductById,
   updateProduct,
   setProductStatus,
   type CreateProductResult,

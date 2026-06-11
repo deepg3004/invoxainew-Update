@@ -132,10 +132,18 @@ export function getCommissionBpsForTenant(tenantId: string) {
 
 // ── Buyer payments ───────────────────────────────────────────────────────────
 
+/**
+ * Create a pending buyer order against EITHER a payment page (C7) or a store
+ * product (Store slice 2). Exactly one of paymentPageId/productId must be set;
+ * `itemTitle` snapshots the name so order history is source-independent.
+ */
 export function createBuyerPayment(input: {
   razorpayOrderId: string;
   tenantId: string;
-  paymentPageId: string;
+  paymentPageId?: string | null;
+  productId?: string | null;
+  quantity?: number;
+  itemTitle: string;
   amountPaise: number;
   buyerProfileId?: string | null;
   buyerEmail?: string | null;
@@ -145,7 +153,10 @@ export function createBuyerPayment(input: {
     data: {
       razorpayOrderId: input.razorpayOrderId,
       tenantId: input.tenantId,
-      paymentPageId: input.paymentPageId,
+      paymentPageId: input.paymentPageId ?? null,
+      productId: input.productId ?? null,
+      quantity: input.quantity ?? 1,
+      itemTitle: input.itemTitle,
       amountPaise: input.amountPaise,
       buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
@@ -379,6 +390,21 @@ export async function markBuyerPaymentPaid(input: {
         : { ok: false, reason: "not_found" };
     }
     if (!payment) return { ok: false, reason: "not_found" };
+
+    // Store slice 2: decrement tracked stock for product orders (the claim
+    // winner only, so it can't double-decrement on a refreshed callback). Stock
+    // is reduced at PAID — the safe point, since only paid orders consume stock.
+    // Clamped at 0; a rare concurrent-oversell can't drive it negative.
+    if (payment.productId) {
+      await tx.product.updateMany({
+        where: { id: payment.productId, stockQty: { not: null } },
+        data: { stockQty: { decrement: payment.quantity } },
+      });
+      await tx.product.updateMany({
+        where: { id: payment.productId, stockQty: { lt: 0 } },
+        data: { stockQty: 0 },
+      });
+    }
 
     const bps = await commissionBpsForTenant(tx, payment.tenantId);
     const commissionPaise = Math.floor((payment.amountPaise * bps) / 10000);
