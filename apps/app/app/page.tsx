@@ -147,6 +147,17 @@ export default async function Dashboard() {
             View invoices →
           </Link>
         </Card>
+        <Card title="Usage & limits">
+          <p className="text-sm text-neutral-500">
+            See your plan’s free allowances and what you’ve used this month.
+          </p>
+          <Link
+            href="/usage"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            View usage →
+          </Link>
+        </Card>
       </div>
     </main>
   );

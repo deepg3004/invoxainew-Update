@@ -100,9 +100,11 @@ export {
   listPlanFeatureLimits,
   getFeatureUsage,
   getFeatureQuota,
+  getTenantFeatureUsageSummary,
   consumeFeature,
   type ConsumeResult,
   type FeatureQuota,
+  type FeatureUsageRow,
 } from "./feature";
 export {
   getPlatformOverview,

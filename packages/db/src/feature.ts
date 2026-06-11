@@ -79,6 +79,53 @@ export function getFeatureUsage(tenantId: string, featureKey: string) {
   });
 }
 
+export interface FeatureUsageRow {
+  featureKey: string;
+  name: string;
+  freeLimit: number; // -1 = unlimited
+  used: number;
+  remaining: number; // -1 = unlimited
+  totalPaise: number; // overage price incl GST
+}
+
+/** Per-feature usage + allowance for a tenant this month (seller usage page). */
+export async function getTenantFeatureUsageSummary(
+  tenantId: string,
+): Promise<{ planName: string | null; features: FeatureUsageRow[] }> {
+  const [rules, sub] = await Promise.all([
+    prisma.featureRule.findMany({ where: { active: true }, orderBy: { featureKey: "asc" } }),
+    prisma.subscription.findUnique({
+      where: { tenantId },
+      select: { planId: true, plan: { select: { name: true } } },
+    }),
+  ]);
+  const period = currentPeriod();
+  const features: FeatureUsageRow[] = [];
+  for (const r of rules) {
+    let freeLimit = 0;
+    if (sub) {
+      const lim = await prisma.planFeatureLimit.findUnique({
+        where: { planId_featureKey: { planId: sub.planId, featureKey: r.featureKey } },
+      });
+      freeLimit = lim?.freeLimit ?? 0;
+    }
+    const usage = await prisma.featureUsage.findUnique({
+      where: { tenantId_featureKey_period: { tenantId, featureKey: r.featureKey, period } },
+    });
+    const used = usage?.count ?? 0;
+    const gst = Math.round((r.basePaise * r.gstRateBps) / 10000);
+    features.push({
+      featureKey: r.featureKey,
+      name: r.name,
+      freeLimit,
+      used,
+      remaining: freeLimit < 0 ? -1 : Math.max(0, freeLimit - used),
+      totalPaise: r.basePaise + gst,
+    });
+  }
+  return { planName: sub?.plan?.name ?? null, features };
+}
+
 // ── The engine ───────────────────────────────────────────────────────────────
 
 export interface FeatureQuota {
