@@ -6,6 +6,7 @@ import {
 } from "@invoxai/db";
 import { getSessionUser } from "../../../../lib/auth";
 import { verifyPaymentSignature } from "../../../../lib/razorpay";
+import { notifyOnPlatformPaid } from "../../../../lib/billing-notify";
 
 /**
  * Synchronous success path: Razorpay Checkout calls this from the browser after
@@ -49,5 +50,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: result.reason }, { status: 409 });
   }
 
+  await notifyOnPlatformPaid(orderId, result); // best-effort, fires once
   return NextResponse.json({ ok: true });
 }

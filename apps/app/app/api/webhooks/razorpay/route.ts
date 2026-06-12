@@ -6,6 +6,7 @@ import {
   markPlatformOrderPaid,
 } from "@invoxai/db";
 import { verifyWebhookSignature } from "../../../../lib/razorpay";
+import { notifyOnPlatformPaid } from "../../../../lib/billing-notify";
 
 // Ensure the Node runtime (node:crypto + Prisma) and never cache.
 export const runtime = "nodejs";
@@ -64,10 +65,12 @@ export async function POST(request: NextRequest) {
   try {
     // We only act on successful-payment events; others are terminal no-ops.
     if ((type === "order.paid" || type === "payment.captured") && razorpayOrderId) {
-      await markPlatformOrderPaid({
+      const result = await markPlatformOrderPaid({
         razorpayOrderId,
         razorpayPaymentId: razorpayPaymentId ?? null,
       });
+      // Best-effort seller notification (fires once — gated on newly-paid).
+      await notifyOnPlatformPaid(razorpayOrderId, result);
       // order_not_found (e.g. event from another environment) is terminal — we
       // still mark processed below so Razorpay stops retrying.
     }
