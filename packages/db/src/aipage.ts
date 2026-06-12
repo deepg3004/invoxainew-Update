@@ -160,6 +160,16 @@ export function updateAiPageContent(
   });
 }
 
+/** Publish / unpublish a tenant's own AI page (scoped). Unpublishing takes it
+ *  offline immediately — getPublishedAiPage filters on isPublished — without
+ *  deleting it, so it can be brought back. */
+export function setAiPagePublished(tenantId: string, id: string, isPublished: boolean) {
+  return prisma.aiPage.updateMany({
+    where: { id, tenantId },
+    data: { isPublished },
+  });
+}
+
 /** Delete a tenant's own AI page (scoped). */
 export function deleteAiPage(tenantId: string, id: string) {
   return prisma.aiPage.deleteMany({ where: { id, tenantId } });

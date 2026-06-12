@@ -3,7 +3,7 @@ import { Card } from "@invoxai/ui";
 import { listAiPages, getWalletByTenant, getFeatureQuota } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
-import { deleteAiPageAction } from "./actions";
+import { deleteAiPageAction, setAiPagePublishedAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -88,20 +88,40 @@ export default async function AiPagesPage() {
               <div key={p.id} className="rounded-xl border border-neutral-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="font-medium text-neutral-900">{p.title}</div>
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 block truncate text-sm text-blue-600 underline"
-                    >
-                      {url}
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-neutral-900">{p.title}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          p.isPublished
+                            ? "bg-green-50 text-green-700"
+                            : "bg-neutral-100 text-neutral-500"
+                        }`}
+                      >
+                        {p.isPublished ? "Published" : "Hidden"}
+                      </span>
+                    </div>
+                    {p.isPublished ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 block truncate text-sm text-blue-600 underline"
+                      >
+                        {url}
+                      </a>
+                    ) : (
+                      <span className="mt-1 block truncate text-sm text-neutral-400">/{p.slug}</span>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-sm">
                     <Link href={`/ai-pages/${p.id}/edit`} className="text-blue-600 underline">
                       Edit
                     </Link>
+                    <form action={setAiPagePublishedAction.bind(null, p.id, !p.isPublished)}>
+                      <button className="text-neutral-500 underline hover:text-neutral-900">
+                        {p.isPublished ? "Unpublish" : "Publish"}
+                      </button>
+                    </form>
                     <form action={deleteAiPageAction.bind(null, p.id)}>
                       <button className="text-neutral-500 underline hover:text-red-700">
                         Delete

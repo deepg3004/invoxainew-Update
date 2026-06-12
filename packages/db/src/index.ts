@@ -157,6 +157,7 @@ export {
   getPublishedAiPage,
   getAiPageForOwner,
   updateAiPageContent,
+  setAiPagePublished,
   deleteAiPage,
   type ChargeCreateResult,
   type CreateAiPageResult,

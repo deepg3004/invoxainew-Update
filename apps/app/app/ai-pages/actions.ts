@@ -9,6 +9,7 @@ import {
   createAiPage,
   setAiPageChargeRef,
   updateAiPageContent,
+  setAiPagePublished,
   deleteAiPage,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
@@ -159,6 +160,12 @@ export async function createFromTemplateAction(
 
   revalidatePath("/ai-pages");
   redirect(`/ai-pages/${created.id}/edit`);
+}
+
+export async function setAiPagePublishedAction(id: string, isPublished: boolean) {
+  const { tenant } = await requireTenant();
+  await setAiPagePublished(tenant.id, id, isPublished);
+  revalidatePath("/ai-pages");
 }
 
 export async function deleteAiPageAction(id: string) {
