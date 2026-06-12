@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Card } from "@invoxai/ui";
-import { listDomains } from "@invoxai/db";
+import { listDomains, planAllowsCustomDomain } from "@invoxai/db";
 import { serverEnv } from "@invoxai/config";
 import { requireTenant } from "../../lib/tenant";
 import { AddDomainForm } from "./AddDomainForm";
@@ -22,7 +23,11 @@ export default async function DomainsPage({
   searchParams: Promise<{ msg?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const [domains, { msg }] = await Promise.all([listDomains(tenant.id), searchParams]);
+  const [domains, { msg }, allowed] = await Promise.all([
+    listDomains(tenant.id),
+    searchParams,
+    planAllowsCustomDomain(tenant.id),
+  ]);
   const aTarget = serverEnv().CUSTOM_DOMAIN_A_TARGET;
   const banner = msg ? MSG[msg] : null;
 
@@ -45,11 +50,28 @@ export default async function DomainsPage({
         </p>
       ) : null}
 
-      <div className="mt-6">
-        <Card title="Add a domain">
-          <AddDomainForm />
-        </Card>
-      </div>
+      {!allowed ? (
+        <div className="mt-6">
+          <Card title="Upgrade to connect a custom domain">
+            <p className="text-sm text-neutral-500">
+              Custom domains are a premium feature. Upgrade your plan to serve your
+              site on your own domain.
+            </p>
+            <Link
+              href="/billing"
+              className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+            >
+              View plans →
+            </Link>
+          </Card>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <Card title="Add a domain">
+            <AddDomainForm />
+          </Card>
+        </div>
+      )}
 
       {domains.length > 0 ? (
         <div className="mt-6 space-y-4">

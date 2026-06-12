@@ -20,6 +20,7 @@ export {
   createPlan,
   updatePlan,
   setPlanActive,
+  planAllowsCustomDomain,
   listPricingSettings,
   getPricingSetting,
   upsertPricingSetting,

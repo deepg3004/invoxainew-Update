@@ -47,6 +47,7 @@ export interface PlanInput {
   commissionBps: number; // basis points
   maxProducts?: number | null; // null = unlimited
   maxAiPages?: number | null; // null = unlimited
+  customDomainAllowed?: boolean; // premium custom-domain feature
   sortOrder?: number;
 }
 
@@ -67,6 +68,7 @@ export async function createPlan(input: PlanInput): Promise<CreatePlanResult> {
         commissionBps: input.commissionBps,
         maxProducts: input.maxProducts ?? null,
         maxAiPages: input.maxAiPages ?? null,
+        customDomainAllowed: input.customDomainAllowed ?? false,
         sortOrder: input.sortOrder ?? 0,
       },
       select: { id: true },
@@ -99,6 +101,7 @@ export function updatePlan(
       commissionBps: input.commissionBps,
       maxProducts: input.maxProducts ?? null,
       maxAiPages: input.maxAiPages ?? null,
+      customDomainAllowed: input.customDomainAllowed ?? false,
       sortOrder: input.sortOrder ?? 0,
     },
   });
@@ -107,6 +110,24 @@ export function updatePlan(
 /** Retire / restore a plan. We never hard-delete (sellers may be subscribed). */
 export function setPlanActive(id: string, isActive: boolean) {
   return prisma.plan.update({ where: { id }, data: { isActive } });
+}
+
+/**
+ * Whether a tenant's plan allows connecting a custom domain (Phase 15 gating).
+ * Reads the active subscription's plan, falling back to the Free plan when
+ * unsubscribed. Defaults to false if no plan resolves.
+ */
+export async function planAllowsCustomDomain(tenantId: string): Promise<boolean> {
+  const sub = await prisma.subscription.findUnique({
+    where: { tenantId },
+    include: { plan: { select: { customDomainAllowed: true } } },
+  });
+  if (sub) return sub.plan.customDomainAllowed;
+  const free = await prisma.plan.findUnique({
+    where: { key: "free" },
+    select: { customDomainAllowed: true },
+  });
+  return free?.customDomainAllowed ?? false;
 }
 
 // ── Pricing settings (global key/value) ──────────────────────────────────────

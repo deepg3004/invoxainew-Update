@@ -352,6 +352,8 @@ model Plan {
   commissionBps Int      @default(0) @map("commission_bps") // basis points
   maxProducts   Int?     @map("max_products") // null = unlimited
   maxAiPages    Int?     @map("max_ai_pages") // null = unlimited
+  // Custom domains (Phase 15) are a premium feature; gated per plan.
+  customDomainAllowed Boolean @default(false) @map("custom_domain_allowed")
   isActive      Boolean  @default(true) @map("is_active")
   sortOrder     Int      @default(0) @map("sort_order")
   createdAt     DateTime @default(now()) @map("created_at")

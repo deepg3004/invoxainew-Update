@@ -8,6 +8,7 @@ import {
   getDomainById,
   deleteDomain,
   markDomainVerified,
+  planAllowsCustomDomain,
 } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 
@@ -18,6 +19,13 @@ export async function addDomainAction(
   form: FormData,
 ): Promise<DomainFormState> {
   const { tenant } = await requireTenant();
+
+  // Premium feature: gate on the seller's plan (defence-in-depth — the UI also
+  // hides the form when not allowed).
+  if (!(await planAllowsCustomDomain(tenant.id))) {
+    return { error: "Custom domains aren’t included on your plan. Upgrade to connect one." };
+  }
+
   const raw = String(form.get("domain") ?? "");
   const result = await addDomain(tenant.id, raw);
   if (!result.ok) {

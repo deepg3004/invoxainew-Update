@@ -17,6 +17,7 @@ export interface PlanFormValues {
   commissionBps: number;
   maxProducts: number | null;
   maxAiPages: number | null;
+  customDomainAllowed: boolean;
   sortOrder: number;
 }
 
@@ -156,6 +157,16 @@ export function PlanForm({
           />
         </Field>
       </div>
+
+      <label className="flex items-center gap-2 pt-1">
+        <input
+          type="checkbox"
+          name="customDomainAllowed"
+          defaultChecked={initial?.customDomainAllowed ?? false}
+          className="h-4 w-4"
+        />
+        <span className="text-sm text-neutral-700">Allow custom domains (premium)</span>
+      </label>
 
       <Field label="Sort order" hint="Lower numbers show first.">
         <input

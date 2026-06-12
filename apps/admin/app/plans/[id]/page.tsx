@@ -41,6 +41,7 @@ export default async function EditPlanPage({
             commissionBps: plan.commissionBps,
             maxProducts: plan.maxProducts,
             maxAiPages: plan.maxAiPages,
+            customDomainAllowed: plan.customDomainAllowed,
             sortOrder: plan.sortOrder,
           }}
         />

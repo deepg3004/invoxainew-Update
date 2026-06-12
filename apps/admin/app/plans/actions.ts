@@ -36,6 +36,7 @@ function parseEditableFields(form: FormData):
         commissionBps: number;
         maxProducts: number | null;
         maxAiPages: number | null;
+        customDomainAllowed: boolean;
         sortOrder: number;
       };
     }
@@ -76,6 +77,7 @@ function parseEditableFields(form: FormData):
       commissionBps: commission.bps,
       maxProducts: maxProducts.value,
       maxAiPages: maxAiPages.value,
+      customDomainAllowed: form.get("customDomainAllowed") === "on",
       sortOrder,
     },
   };
