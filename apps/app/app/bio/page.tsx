@@ -1,7 +1,8 @@
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
+import { Button, GlassCard, ImageUpload, PageHeader } from "@invoxai/ui";
 import { getBioLink, getBioLinkClickStats } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 import { saveBioLinkAction } from "./actions";
+import { uploadTenantImageAction } from "../upload-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -87,8 +88,16 @@ export default async function BioEditorPage() {
           <textarea name="bio" rows={3} defaultValue={bio?.bio ?? ""} placeholder="A line about you or your business." className={inputCls} />
         </div>
         <div>
-          <label className="text-sm font-medium">Avatar image URL</label>
-          <input name="avatarUrl" defaultValue={bio?.avatarUrl ?? ""} placeholder="https://…" className={inputCls} />
+          <label className="text-sm font-medium">Avatar image</label>
+          <div className="mt-1.5">
+            <ImageUpload
+              name="avatarUrl"
+              defaultValue={bio?.avatarUrl ?? ""}
+              action={uploadTenantImageAction}
+              recommend="Square image recommended, ~256×256px."
+              previewClassName="rounded-full"
+            />
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

@@ -33,10 +33,12 @@ const ADMIN_NAV: NavGroup[] = [
 export function AdminShellClient({
   email,
   alerts = 0,
+  logoUrl,
   children,
 }: {
   email: string | null | undefined;
   alerts?: number;
+  logoUrl?: string;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -45,6 +47,7 @@ export function AdminShellClient({
       pathname={pathname}
       nav={ADMIN_NAV}
       brandSuffix="admin"
+      logoUrl={logoUrl}
       barePrefixes={["/login"]}
       user={{ name: email ?? "Admin", email }}
       notificationsHref="/notifications"

@@ -9,6 +9,7 @@ export type Chrome = {
   email: string | null;
   walletLabel: string;
   unread: number;
+  logoUrl?: string;
 } | null;
 
 // Thin client wrapper: supplies the path + seller nav + header data (wallet,
@@ -20,6 +21,7 @@ export function Shell({ chrome, children }: { chrome: Chrome; children: ReactNod
     <DashboardShell
       pathname={pathname}
       nav={SELLER_NAV}
+      logoUrl={chrome?.logoUrl}
       user={chrome ? { name: chrome.name, email: chrome.email } : null}
       walletLabel={chrome?.walletLabel ?? null}
       notificationsHref="/notifications"

@@ -94,11 +94,37 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-function Brand({ href, suffix, mark }: { href: string; suffix?: string; mark?: boolean }) {
+function Brand({
+  href,
+  suffix,
+  mark,
+  logoUrl,
+}: {
+  href: string;
+  suffix?: string;
+  mark?: boolean;
+  logoUrl?: string;
+}) {
   if (mark) {
     return (
-      <Link href={href} className="grid h-8 w-8 place-items-center rounded-lg bg-brand-gradient font-display text-sm font-bold text-white">
-        IA
+      <Link
+        href={href}
+        className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg bg-brand-gradient font-display text-sm font-bold text-white"
+      >
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+        ) : (
+          "IA"
+        )}
+      </Link>
+    );
+  }
+  if (logoUrl) {
+    return (
+      <Link href={href} className="flex items-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoUrl} alt="InvoxAI" className="h-8 w-auto" />
       </Link>
     );
   }
@@ -216,6 +242,7 @@ export function DashboardShell({
   nav = SELLER_NAV,
   brandHref = "/",
   brandSuffix,
+  logoUrl,
   barePrefixes = ["/login", "/onboarding"],
   user,
   walletLabel,
@@ -229,6 +256,7 @@ export function DashboardShell({
   nav?: NavGroup[];
   brandHref?: string;
   brandSuffix?: string;
+  logoUrl?: string;
   barePrefixes?: string[];
   user?: ShellUser | null;
   walletLabel?: string | null;
@@ -267,12 +295,12 @@ export function DashboardShell({
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-zinc-200 bg-white shadow-[6px_0_28px_-20px_rgba(15,23,42,0.45)] transition-[width] duration-200 lg:flex",
+          "fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-zinc-200 bg-white shadow-[6px_0_28px_-20px_rgba(15,23,42,0.45)] transition-[width] duration-200 lg:flex print:hidden",
           collapsed ? "w-16" : "w-64",
         )}
       >
         <div className={cn("flex h-16 items-center", collapsed ? "justify-center px-0" : "justify-between px-6")}>
-          <Brand href={brandHref} suffix={brandSuffix} mark={collapsed} />
+          <Brand href={brandHref} suffix={brandSuffix} mark={collapsed} logoUrl={logoUrl} />
           {!collapsed ? (
             <button
               onClick={toggleCollapsed}
@@ -300,11 +328,11 @@ export function DashboardShell({
 
       {/* Mobile drawer */}
       {drawer ? (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-40 lg:hidden print:hidden">
           <div className="absolute inset-0 animate-fadein bg-black/30 backdrop-blur-sm" onClick={() => setDrawer(false)} />
           <aside className="absolute inset-y-0 left-0 flex w-64 animate-slidein flex-col border-r border-zinc-200 bg-white shadow-2xl">
             <div className="flex h-16 items-center justify-between px-6">
-              <Brand href={brandHref} suffix={brandSuffix} />
+              <Brand href={brandHref} suffix={brandSuffix} logoUrl={logoUrl} />
               <button onClick={() => setDrawer(false)} aria-label="Close menu" className="rounded-lg p-1.5 text-muted hover:bg-zinc-100 hover:text-zinc-900">
                 <X size={18} />
               </button>
@@ -316,8 +344,8 @@ export function DashboardShell({
       ) : null}
 
       {/* Main column */}
-      <div className={cn("transition-[padding] duration-200", collapsed ? "lg:pl-16" : "lg:pl-64")}>
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-zinc-200 bg-ink/85 px-4 backdrop-blur-xl sm:px-6">
+      <div className={cn("transition-[padding] duration-200 print:!pl-0", collapsed ? "lg:pl-16" : "lg:pl-64")}>
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-zinc-200 bg-ink/85 px-4 backdrop-blur-xl sm:px-6 print:hidden">
           <button
             onClick={() => setDrawer(true)}
             aria-label="Open menu"
@@ -326,7 +354,7 @@ export function DashboardShell({
             <Menu size={18} />
           </button>
           <span className="lg:hidden">
-            <Brand href={brandHref} suffix={brandSuffix} />
+            <Brand href={brandHref} suffix={brandSuffix} logoUrl={logoUrl} />
           </span>
           <div className="ml-auto flex items-center gap-2">
             {walletLabel != null ? (
@@ -356,7 +384,7 @@ export function DashboardShell({
           </div>
         </header>
 
-        <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 py-6 sm:px-6 lg:px-8 print:!p-0">{children}</main>
       </div>
     </div>
   );

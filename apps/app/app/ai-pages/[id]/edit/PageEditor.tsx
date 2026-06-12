@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { GripVertical, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { ImageUpload } from "@invoxai/ui";
 import {
   type Block,
   type Theme,
@@ -12,6 +13,7 @@ import {
   toEmbedUrl,
 } from "@invoxai/utils/blocks";
 import { saveAiPageAction } from "../../actions";
+import { uploadTenantImageAction } from "../../../upload-actions";
 
 const inputCls =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
@@ -331,7 +333,12 @@ export function PageEditor({
 
                 {b.type === "image" ? (
                   <div className="space-y-2">
-                    <input value={b.url} onChange={(e) => update(i, { url: e.target.value })} placeholder="https://…/image.jpg" className={inputCls} />
+                    <ImageUpload
+                      defaultValue={b.url}
+                      action={uploadTenantImageAction}
+                      onChange={(url) => update(i, { url })}
+                      recommend="Upload or paste an image URL."
+                    />
                     <input value={b.alt} onChange={(e) => update(i, { alt: e.target.value })} placeholder="Alt text" className={inputCls} />
                   </div>
                 ) : null}

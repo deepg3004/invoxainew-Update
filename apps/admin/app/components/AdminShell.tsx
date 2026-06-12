@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { getWalletAttention, listRecentPaymentEvents } from "@invoxai/db";
+import { getWalletAttention, listRecentPaymentEvents, getBranding } from "@invoxai/db";
 import { AdminShellClient } from "./AdminShellClient";
 
 /** Left-sidebar chrome shared by every authorized admin page. Keeps the same
@@ -15,17 +15,20 @@ export async function AdminShell({
   children: ReactNode;
 }) {
   let alerts = 0;
+  let logoUrl: string | undefined;
   try {
-    const [attention, events] = await Promise.all([
+    const [attention, events, branding] = await Promise.all([
       getWalletAttention(),
       listRecentPaymentEvents(),
+      getBranding(),
     ]);
     alerts = attention.length + events.filter((e) => !e.processedAt).length;
+    logoUrl = branding.logoUrl;
   } catch {
     alerts = 0;
   }
   return (
-    <AdminShellClient email={email} alerts={alerts}>
+    <AdminShellClient email={email} alerts={alerts} logoUrl={logoUrl}>
       {children}
     </AdminShellClient>
   );

@@ -2,9 +2,11 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { ImageUpload } from "@invoxai/ui";
 import { paiseToRupeeString } from "@invoxai/utils/money";
 import type { ProductKind } from "@invoxai/db";
 import type { ProductFormState } from "./actions";
+import { uploadTenantImageAction } from "../upload-actions";
 
 export interface ProductValues {
   slug: string;
@@ -114,16 +116,17 @@ export function ProductForm({
         </label>
       </div>
 
-      <label className="block">
-        <span className="text-sm font-medium text-zinc-900">Image URL</span>
-        <input
-          name="imageUrl"
-          defaultValue={initial?.imageUrl ?? ""}
-          placeholder="https://…/photo.jpg"
-          className={inputCls}
-        />
-        <span className="mt-1 block text-xs text-muted">Optional.</span>
-      </label>
+      <div className="block">
+        <span className="text-sm font-medium text-zinc-900">Product image</span>
+        <div className="mt-1.5">
+          <ImageUpload
+            name="imageUrl"
+            defaultValue={initial?.imageUrl ?? ""}
+            action={uploadTenantImageAction}
+            recommend="Optional. Square or 4:3 image, ~800px, under 5 MB."
+          />
+        </div>
+      </div>
 
       <label className="block">
         <span className="text-sm font-medium text-zinc-900">Access link</span>

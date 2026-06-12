@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { saveSettingsAction, type SettingsFormState } from "./actions";
+import { ImageUpload } from "@invoxai/ui";
+import { saveSettingsAction, uploadBrandingImageAction, type SettingsFormState } from "./actions";
 
 const inputCls =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
@@ -66,18 +67,28 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
           Paste hosted image URLs (https). The logo appears on tax invoices and the
           marketing site; the favicon is the browser-tab icon on invoxai.io.
         </p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <Field label="Logo URL" hint="Wide/transparent PNG or SVG works best.">
-            <input name="brand_logo_url" defaultValue={initial.brand_logo_url} placeholder="https://…/logo.png" className={inputCls} />
+        <div className="mt-5 grid gap-6 sm:grid-cols-2">
+          <Field label="Logo">
+            <div className="mt-1.5">
+              <ImageUpload
+                name="brand_logo_url"
+                defaultValue={initial.brand_logo_url}
+                action={uploadBrandingImageAction}
+                recommend="Recommended: wide PNG or SVG, ~320×80px, transparent background. Max 5 MB."
+              />
+            </div>
           </Field>
-          <Field label="Favicon URL" hint="Square icon (32×32 or 512×512).">
-            <input name="brand_favicon_url" defaultValue={initial.brand_favicon_url} placeholder="https://…/favicon.png" className={inputCls} />
+          <Field label="Favicon">
+            <div className="mt-1.5">
+              <ImageUpload
+                name="brand_favicon_url"
+                defaultValue={initial.brand_favicon_url}
+                action={uploadBrandingImageAction}
+                recommend="Recommended: square PNG, 512×512px (or a 32×32 .ico). Max 5 MB."
+              />
+            </div>
           </Field>
         </div>
-        {initial.brand_logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={initial.brand_logo_url} alt="Current logo" className="mt-4 h-10 w-auto" />
-        ) : null}
       </section>
 
       {state.error ? (

@@ -2,8 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { upsertPlatformSettings } from "@invoxai/db";
+import { uploadImageFromForm, type ImageUploadResult } from "@invoxai/auth/server";
 import { safeUrl } from "@invoxai/utils/blocks";
 import { requireAdmin } from "../../lib/auth";
+
+/** Upload a branding image (logo/favicon). Admin-only. */
+export async function uploadBrandingImageAction(fd: FormData): Promise<ImageUploadResult> {
+  const gate = await requireAdmin();
+  if (!gate.ok) return { ok: false, error: "Not authorized." };
+  return uploadImageFromForm(fd, "branding");
+}
 
 export type SettingsFormState = { error?: string; ok?: boolean };
 

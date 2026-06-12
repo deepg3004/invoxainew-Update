@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sora, Plus_Jakarta_Sans } from "next/font/google";
+import { getBranding } from "@invoxai/db";
 import "./globals.css";
 
 const sora = Sora({
@@ -14,10 +15,20 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "InvoxAI — Admin",
-  description: "AI website, store, course & payment-page builder.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let icons: Metadata["icons"] | undefined;
+  try {
+    const { faviconUrl } = await getBranding();
+    if (faviconUrl) icons = { icon: faviconUrl };
+  } catch {
+    icons = undefined;
+  }
+  return {
+    title: "InvoxAI — Admin",
+    description: "AI website, store, course & payment-page builder.",
+    icons,
+  };
+}
 
 export default function RootLayout({
   children,
