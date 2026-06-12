@@ -6,6 +6,7 @@ import {
   setOrderFulfillmentStatus,
   getRefundableOrder,
   recordRefund,
+  confirmManualBuyerPayment,
   logActivity,
 } from "@invoxai/db";
 import { rupeeStringToPaise, formatRupees } from "@invoxai/utils/money";
@@ -39,6 +40,20 @@ export async function updateOrderFulfillmentAction(id: string, form: FormData) {
  * The target is validated against the allowed statuses; the DB write is tenant-
  * scoped, so a forged id/target can't touch another seller's order.
  */
+/**
+ * Confirm a manual-UPI order the buyer submitted (PENDING → PAID). Tenant-scoped
+ * + idempotent in the DB layer; on first confirm it charges commission, grants
+ * access, etc. (the shared paid-effects). A double-tap is a no-op.
+ */
+export async function confirmUpiOrderAction(id: string): Promise<void> {
+  const { tenant } = await requireTenant();
+  const res = await confirmManualBuyerPayment(tenant.id, id);
+  if (res.ok && !res.alreadyProcessed) {
+    await logActivity(tenant.id, "order.upi_confirmed").catch(() => {});
+  }
+  revalidatePath("/orders");
+}
+
 export async function advanceOrderAction(id: string, next: string) {
   const { tenant } = await requireTenant();
   if (!(STATUSES as readonly string[]).includes(next)) return;

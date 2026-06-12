@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type BuyerPayment } from "@prisma/client";
 import { prisma } from "./client";
 
 /**
@@ -172,6 +172,11 @@ export function createBuyerPayment(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  // Manual UPI: status PENDING + method/ref. Defaults keep the Razorpay path
+  // (CREATED, RAZORPAY) byte-identical to before.
+  status?: "CREATED" | "PENDING";
+  paymentMethod?: "RAZORPAY" | "UPI_MANUAL";
+  upiRef?: string | null;
 }) {
   return prisma.buyerPayment.create({
     data: {
@@ -190,6 +195,9 @@ export function createBuyerPayment(input: {
       buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerContact: input.buyerContact ?? null,
+      status: input.status ?? "CREATED",
+      paymentMethod: input.paymentMethod ?? "RAZORPAY",
+      upiRef: input.upiRef ?? null,
       ...utmData(input.utm),
     },
     select: { id: true, razorpayOrderId: true },
@@ -357,6 +365,16 @@ export function listTenantOrders(tenantId: string, opts: OrderListOpts = {}) {
  *  Scoped — identical WHERE to listTenantOrders. */
 export function countTenantOrders(tenantId: string, opts: OrderListOpts = {}) {
   return prisma.buyerPayment.count({ where: tenantOrdersWhere(tenantId, opts) });
+}
+
+/** Manual-UPI orders awaiting the seller's confirmation (PENDING). Scoped. */
+export function listPendingUpiOrders(tenantId: string) {
+  return prisma.buyerPayment.findMany({
+    where: { tenantId, status: "PENDING", paymentMethod: "UPI_MANUAL" },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: { paymentPage: { select: { title: true } } },
+  });
 }
 
 /**
@@ -610,6 +628,23 @@ export async function markBuyerPaymentPaid(input: {
     }
     if (!payment) return { ok: false, reason: "not_found" };
 
+    return applyPaidEffects(tx, payment, now);
+  });
+}
+
+/**
+ * Post-PAID side-effects, shared by the Razorpay verify path (markBuyerPaymentPaid)
+ * and the manual-UPI seller-confirm path (confirmManualBuyerPayment): decrement
+ * stock, count the coupon redemption, grant course enrolment, and charge
+ * commission from the wallet (or record it DUE). The caller has ALREADY atomically
+ * claimed the order →PAID, so this runs exactly once per order (claim winner) and
+ * is fully idempotent. Operates on the caller's transaction `tx`.
+ */
+async function applyPaidEffects(
+  tx: Prisma.TransactionClient,
+  payment: BuyerPayment,
+  now: Date,
+): Promise<BuyerPaidResult> {
     // Decrement tracked stock for product orders (the claim winner only, so it
     // can't double-decrement on a refreshed callback). Stock is reduced at PAID
     // — the safe point, since only paid orders consume stock. Clamped at 0; a
@@ -735,6 +770,36 @@ export async function markBuyerPaymentPaid(input: {
       alreadyProcessed: false,
       commission: canCover ? "paid" : "due",
     };
+}
+
+/**
+ * Manual-UPI: the SELLER confirms a buyer-submitted UPI payment. Atomically
+ * claims the order PENDING→PAID (scoped by tenant + id, so a seller can only
+ * confirm their own order and a double-tap can't double-charge), then runs the
+ * same idempotent side-effects as a Razorpay sale. The buyer already paid the
+ * seller's UPI directly — InvoxAI never held the money; this only records the
+ * sale + takes commission from the seller's wallet.
+ */
+export async function confirmManualBuyerPayment(
+  tenantId: string,
+  buyerPaymentId: string,
+): Promise<BuyerPaidResult> {
+  return prisma.$transaction(async (tx) => {
+    const now = new Date();
+    const claim = await tx.buyerPayment.updateMany({
+      where: { id: buyerPaymentId, tenantId, status: "PENDING" },
+      data: { status: "PAID", paidAt: now },
+    });
+    const payment = await tx.buyerPayment.findFirst({
+      where: { id: buyerPaymentId, tenantId },
+    });
+    if (claim.count === 0) {
+      return payment
+        ? { ok: true, alreadyProcessed: true, commission: "none" }
+        : { ok: false, reason: "not_found" };
+    }
+    if (!payment) return { ok: false, reason: "not_found" };
+    return applyPaidEffects(tx, payment, now);
   });
 }
 

@@ -3,6 +3,7 @@
 import {
   getActivePaymentPageById,
   createBuyerPayment,
+  getEnabledSellerUpi,
   isTenantSuspended,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
@@ -72,4 +73,50 @@ export async function startBuyerCheckout(
     keyId: creds.keyId,
     title: page.title,
   };
+}
+
+export type SubmitUpiResult = { ok: true } | { ok: false; error: string };
+
+const UTR_RE = /^[A-Za-z0-9]{6,40}$/;
+
+/**
+ * Buyer submits proof of a manual-UPI payment for a payment page. The buyer has
+ * paid the seller's UPI directly (money never touches InvoxAI); we record a
+ * PENDING order with the submitted reference for the seller to confirm. Amount +
+ * tenant are server-trusted from the page; nothing is marked paid here and no
+ * commission is charged until the seller confirms (slice 3).
+ */
+export async function submitUpiPayment(
+  paymentPageId: string,
+  input: { email?: string; contact?: string; upiRef: string },
+): Promise<SubmitUpiResult> {
+  const page = await getActivePaymentPageById(paymentPageId);
+  if (!page) return { ok: false, error: "This payment page is unavailable." };
+  if (await isTenantSuspended(page.tenantId)) {
+    return { ok: false, error: "This store is temporarily unavailable." };
+  }
+  const upi = await getEnabledSellerUpi(page.tenantId);
+  if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
+
+  const ref = (input.upiRef ?? "").trim();
+  if (!UTR_RE.test(ref)) {
+    return { ok: false, error: "Enter the UPI transaction reference (UTR) from your payment app." };
+  }
+
+  const user = await getSessionUser();
+  await createBuyerPayment({
+    razorpayOrderId: `upi_${crypto.randomUUID()}`,
+    tenantId: page.tenantId,
+    paymentPageId: page.id,
+    itemTitle: page.title,
+    amountPaise: page.amountPaise,
+    status: "PENDING",
+    paymentMethod: "UPI_MANUAL",
+    upiRef: ref,
+    buyerProfileId: user?.id ?? null,
+    buyerEmail: input.email ?? user?.email ?? null,
+    buyerContact: input.contact ?? null,
+    utm: await readUtmCookie(),
+  });
+  return { ok: true };
 }

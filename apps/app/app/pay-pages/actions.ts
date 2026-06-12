@@ -7,6 +7,7 @@ import {
   updatePaymentPage,
   setPaymentPageActive,
   getSellerGateway,
+  getEnabledSellerUpi,
 } from "@invoxai/db";
 import { rupeeStringToPaise } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -33,10 +34,14 @@ export async function createPaymentPageAction(
 ): Promise<PageFormState> {
   const { tenant } = await requireTenant();
 
-  // A payment page is useless without a place for the money to land.
-  const gw = await getSellerGateway(tenant.id);
-  if (!gw) {
-    return { error: "Connect your payment gateway first (Payments → Connect)." };
+  // A payment page is useless without a place for the money to land — Razorpay
+  // or a manual UPI ID.
+  const [gw, upi] = await Promise.all([
+    getSellerGateway(tenant.id),
+    getEnabledSellerUpi(tenant.id),
+  ]);
+  if (!gw && !upi) {
+    return { error: "Set up payments first — connect Razorpay or add a UPI ID (Payments)." };
   }
 
   const slug = String(form.get("slug") ?? "").trim().toLowerCase();

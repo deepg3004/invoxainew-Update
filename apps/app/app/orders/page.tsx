@@ -1,9 +1,14 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import { Button, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
-import { listTenantOrders, countTenantOrders, getTenantSalesSummary } from "@invoxai/db";
+import {
+  listTenantOrders,
+  countTenantOrders,
+  getTenantSalesSummary,
+  listPendingUpiOrders,
+} from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
-import { updateOrderFulfillmentAction, advanceOrderAction } from "./actions";
+import { updateOrderFulfillmentAction, advanceOrderAction, confirmUpiOrderAction } from "./actions";
 import { RefundForm } from "./RefundForm";
 
 export const dynamic = "force-dynamic";
@@ -58,9 +63,10 @@ export default async function OrdersPage({
 
   // Count first so the requested page can be clamped into range, then fetch the
   // page slice. Summary stays GLOBAL (full totals, unaffected by the filter).
-  const [total, summary] = await Promise.all([
+  const [total, summary, pendingUpi] = await Promise.all([
     countTenantOrders(tenant.id, filter),
     getTenantSalesSummary(tenant.id),
+    listPendingUpiOrders(tenant.id),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(
@@ -108,6 +114,37 @@ export default async function OrdersPage({
           accent={summary.commissionDuePaise > 0 ? "warning" : undefined}
         />
       </div>
+
+      {pendingUpi.length > 0 ? (
+        <GlassCard className="mt-8 border-amber-200" title={`Awaiting UPI confirmation (${pendingUpi.length})`}>
+          <p className="text-sm text-muted">
+            The buyer says they paid your UPI. Check your UPI/bank app for the amount and
+            reference, then confirm — confirming finalises the order and charges the InvoxAI
+            commission from your wallet.
+          </p>
+          <ul className="mt-3 divide-y divide-zinc-100">
+            {pendingUpi.map((o) => (
+              <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <div className="min-w-0">
+                  <div className="font-medium text-zinc-900">
+                    {o.itemTitle ?? o.paymentPage?.title ?? "Order"} · {formatRupees(o.amountPaise)}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted">
+                    {formatDate(o.createdAt)}
+                    {o.buyerEmail ? ` · ${o.buyerEmail}` : ""}
+                    {o.upiRef ? <> · UTR <span className="font-mono">{o.upiRef}</span></> : null}
+                  </div>
+                </div>
+                <form action={confirmUpiOrderAction.bind(null, o.id)}>
+                  <button className="whitespace-nowrap rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white">
+                    Confirm payment
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      ) : null}
 
       <div className="mt-8 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-zinc-900">Orders</h2>

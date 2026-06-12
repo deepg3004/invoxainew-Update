@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listPaymentPages, getSellerGateway } from "@invoxai/db";
+import { listPaymentPages, getSellerGateway, getEnabledSellerUpi } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setPaymentPageActiveAction } from "./actions";
@@ -16,10 +16,12 @@ function buyerBase(username: string): string {
 
 export default async function PayPagesPage() {
   const { tenant } = await requireTenant();
-  const [pages, gateway] = await Promise.all([
+  const [pages, gateway, upi] = await Promise.all([
     listPaymentPages(tenant.id),
     getSellerGateway(tenant.id),
+    getEnabledSellerUpi(tenant.id),
   ]);
+  const ready = Boolean(gateway) || Boolean(upi);
   const base = buyerBase(tenant.username);
 
   return (
@@ -28,7 +30,7 @@ export default async function PayPagesPage() {
         eyebrow="InvoxAI · payment pages"
         title="Payment pages"
         actions={
-          gateway ? (
+          ready ? (
             <Button href="/pay-pages/new" size="sm">
               New page
             </Button>
@@ -36,18 +38,18 @@ export default async function PayPagesPage() {
         }
       />
 
-      {!gateway ? (
+      {!ready ? (
         <div>
-          <GlassCard title="Connect a gateway first">
+          <GlassCard title="Set up payments first">
             <p className="text-sm text-muted">
-              Buyers pay you directly through your own Razorpay account. Connect it
+              Buyers pay you directly — connect your own Razorpay account or add a UPI ID
               before creating payment pages.
             </p>
             <Link
               href="/gateway"
               className="mt-3 inline-block text-sm font-medium text-brand-strong underline"
             >
-              Connect gateway →
+              Set up payments →
             </Link>
           </GlassCard>
         </div>

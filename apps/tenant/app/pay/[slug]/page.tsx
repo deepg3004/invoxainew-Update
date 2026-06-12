@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
   getSellerGateway,
+  getEnabledSellerUpi,
   getTenantTracking,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
@@ -47,9 +48,13 @@ export default async function PayPage({
   const page = await cachedPaymentPage(tenant.id, slug);
   if (!page) notFound();
 
-  const gateway = await getSellerGateway(tenant.id);
-  const sellerReady = Boolean(gateway && gateway.status === "CONNECTED");
-  const tracking = await getTenantTracking(tenant.id);
+  const [gateway, upi, tracking] = await Promise.all([
+    getSellerGateway(tenant.id),
+    getEnabledSellerUpi(tenant.id),
+    getTenantTracking(tenant.id),
+  ]);
+  const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
+  const sellerReady = razorpayReady || Boolean(upi);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
@@ -65,11 +70,21 @@ export default async function PayPage({
       <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
         <div className="text-3xl font-bold">{formatRupees(page.amountPaise)}</div>
         <p className="mt-1 text-xs text-muted">
-          Paid securely to {tenant.name ?? tenant.username} via Razorpay.
+          Paid securely to {tenant.name ?? tenant.username}.
         </p>
 
         {sellerReady ? (
-          <PayBox paymentPageId={page.id} />
+          <PayBox
+            paymentPageId={page.id}
+            title={page.title}
+            amountPaise={page.amountPaise}
+            razorpayReady={razorpayReady}
+            upi={
+              upi
+                ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
+                : null
+            }
+          />
         ) : (
           <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
             This seller hasn’t finished setting up payments yet.
