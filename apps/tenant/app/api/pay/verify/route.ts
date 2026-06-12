@@ -3,6 +3,7 @@ import {
   getBuyerPaymentByOrderId,
   markBuyerPaymentPaid,
   notifyTenant,
+  listSoldOutProductsForOrder,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { getGatewayCredentials } from "../../../../lib/gateway";
@@ -71,6 +72,16 @@ export async function POST(request: NextRequest) {
           title: "Wallet low — commission due",
           body: "A sale's commission couldn't be collected. Top up your wallet to clear it.",
           link: "/wallet",
+        });
+      }
+      // Out-of-stock alerts: any product this sale took to zero stock.
+      const soldOut = await listSoldOutProductsForOrder(payment.id);
+      for (const pr of soldOut) {
+        await notifyTenant(payment.tenantId, {
+          type: "out_of_stock",
+          title: "Out of stock",
+          body: `“${pr.title}” just sold out — restock it to keep selling.`,
+          link: "/products",
         });
       }
     } catch {

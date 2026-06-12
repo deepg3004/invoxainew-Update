@@ -236,6 +236,34 @@ export function createCartOrder(input: {
   });
 }
 
+/**
+ * Products referenced by an order that are now at ZERO tracked stock — for the
+ * seller's out-of-stock alert. Call AFTER markBuyerPaymentPaid (which decrements
+ * stock). Covers both a single-product order and a multi-item cart; untracked
+ * (null stock) products are never included. Tenant scope is implied by the order.
+ */
+export async function listSoldOutProductsForOrder(buyerPaymentId: string) {
+  const payment = await prisma.buyerPayment.findUnique({
+    where: { id: buyerPaymentId },
+    select: {
+      productId: true,
+      orderItems: { select: { productId: true } },
+    },
+  });
+  if (!payment) return [];
+  const ids =
+    payment.orderItems.length > 0
+      ? payment.orderItems.map((l) => l.productId).filter((x): x is string => x !== null)
+      : payment.productId
+        ? [payment.productId]
+        : [];
+  if (ids.length === 0) return [];
+  return prisma.product.findMany({
+    where: { id: { in: ids }, stockQty: 0 },
+    select: { id: true, title: true },
+  });
+}
+
 // ── Order tracking (C10) ──────────────────────────────────────────────────────
 
 /** A seller's paid orders, newest first, with item + commission. Scoped. An
