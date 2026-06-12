@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -13,16 +14,38 @@ import { CartLink } from "../CartLink";
 
 export const dynamic = "force-dynamic";
 
-export default async function CoursesListPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  const name = tenant ? (tenant.name ?? tenant.username) : "Courses";
+  return { title: `Courses · ${name}` };
+}
+
+export default async function CoursesListPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
-  const [courses, tracking] = await Promise.all([
+  const [courses, tracking, { q: rawQ }] = await Promise.all([
     listPublishedCourses(tenant.id),
     getTenantTracking(tenant.id),
+    searchParams,
   ]);
+
+  const q = (rawQ ?? "").trim();
+  const needle = q.toLowerCase();
+  const filtered = q
+    ? courses.filter(
+        (c) =>
+          c.title.toLowerCase().includes(needle) ||
+          (c.description?.toLowerCase().includes(needle) ?? false),
+      )
+    : courses;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -35,8 +58,34 @@ export default async function CoursesListPage() {
       {courses.length === 0 ? (
         <p className="mt-8 text-neutral-500">No courses available yet.</p>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          {courses.map((c) => (
+        <>
+          <form className="mt-6 flex gap-2">
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Search courses"
+              className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+            />
+            <button className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white">
+              Search
+            </button>
+            {q ? (
+              <Link href="/courses" className="flex items-center px-2 text-sm text-neutral-500 underline">
+                Clear
+              </Link>
+            ) : null}
+          </form>
+
+          {filtered.length === 0 ? (
+            <p className="mt-8 text-neutral-500">
+              No courses match “{q}”.{" "}
+              <Link href="/courses" className="text-blue-600 underline">
+                Show all
+              </Link>
+            </p>
+          ) : (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {filtered.map((c) => (
             <Link
               key={c.id}
               href={`/c/${c.slug}`}
@@ -57,9 +106,11 @@ export default async function CoursesListPage() {
                 {c._count.lessons} lesson{c._count.lessons === 1 ? "" : "s"}
               </p>
               <div className="mt-2 font-bold">{formatRupees(c.pricePaise)}</div>
-            </Link>
-          ))}
-        </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </main>
   );

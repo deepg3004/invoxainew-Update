@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -12,6 +13,13 @@ import { CartLink } from "../CartLink";
 import { ProductCard } from "./ProductCard";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  const name = tenant ? (tenant.name ?? tenant.username) : "Store";
+  return { title: `Store · ${name}` };
+}
 
 export default async function StorePage({
   searchParams,
