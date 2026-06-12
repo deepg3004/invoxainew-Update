@@ -87,6 +87,22 @@ model Tenant {
   leadSubmissions LeadSubmission[]
   // Bio link (Final Plan §12): one link-in-bio page per tenant.
   bioLink       BioLink?
+  bioLinkClicks BioLinkClick[]
+}
+
+/// A click on a bio-link button/social (append-only analytics). Recorded by the
+/// /bio/r redirect, which only records targets that are in the tenant's own
+/// published bio. RLS: deny-anon; read tenant-scoped (seller stats).
+model BioLinkClick {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  targetUrl String   @map("target_url")
+  label     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("bio_link_clicks")
 }
 
 /// Link-in-bio page for a tenant (Final Plan §12) — a single public page that

@@ -7,8 +7,8 @@ import {
   listPublishedProducts,
   listPublishedCourses,
 } from "@invoxai/db";
-import { safeUrl } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
+import { bioRender, trackHref } from "../../lib/bio";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 
@@ -30,21 +30,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Parse the seller's "Label | https://url" lines into sanitized link buttons.
-function parseLinks(text: string | null): { label: string; href: string }[] {
-  if (!text) return [];
-  return text
-    .split("\n")
-    .slice(0, 30)
-    .map((line) => {
-      const i = line.indexOf("|");
-      const label = (i === -1 ? line : line.slice(0, i)).trim();
-      const href = safeUrl(i === -1 ? "" : line.slice(i + 1));
-      return { label: label || href, href };
-    })
-    .filter((l) => l.href && l.label);
-}
-
 export default async function BioPage() {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
@@ -61,22 +46,11 @@ export default async function BioPage() {
   ]);
 
   const name = bio.displayName ?? tenant.name ?? tenant.username;
-  const links = parseLinks(bio.linksText);
-  const socials: { label: string; href: string }[] = [
-    { label: "Instagram", href: safeUrl(bio.instagram) },
-    { label: "YouTube", href: safeUrl(bio.youtube) },
-    { label: "X", href: safeUrl(bio.twitter) },
-    { label: "Facebook", href: safeUrl(bio.facebook) },
-    { label: "WhatsApp", href: safeUrl(bio.whatsapp) },
-    { label: "Website", href: safeUrl(bio.website) },
-  ].filter((s) => s.href);
-
-  // Auto links to the storefront when there's something to show.
-  const autoLinks: { label: string; href: string }[] = [];
-  if (products.length > 0) autoLinks.push({ label: "🛍️ Visit store", href: "/store" });
-  if (courses.length > 0) autoLinks.push({ label: "🎓 Browse courses", href: "/courses" });
-
-  const allLinks = [...autoLinks, ...links];
+  // Shared with the /bio/r redirect's allowlist (single source of truth).
+  const { socials, buttons: allLinks } = bioRender(bio, {
+    hasProducts: products.length > 0,
+    hasCourses: courses.length > 0,
+  });
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center px-6 py-16 text-center">
@@ -103,7 +77,7 @@ export default async function BioPage() {
           {socials.map((s) => (
             <a
               key={s.label}
-              href={s.href}
+              href={trackHref(s.href)}
               target="_blank"
               rel="noreferrer nofollow"
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition hover:text-white"
@@ -119,7 +93,7 @@ export default async function BioPage() {
           {allLinks.map((l, i) => (
             <a
               key={i}
-              href={l.href}
+              href={trackHref(l.href)}
               {...(l.href.startsWith("/") ? {} : { target: "_blank", rel: "noreferrer nofollow" })}
               className="block w-full rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3.5 font-medium backdrop-blur-xl transition hover:border-brand/40 hover:bg-white/10"
             >

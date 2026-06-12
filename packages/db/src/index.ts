@@ -219,7 +219,10 @@ export {
   getBioLink,
   getPublishedBioLink,
   upsertBioLink,
+  recordBioLinkClick,
+  getBioLinkClickStats,
   type BioLinkInput,
+  type BioClickStat,
 } from "./biolink";
 
 export {

@@ -1,5 +1,5 @@
 import { GlassCard } from "@invoxai/ui";
-import { getBioLink } from "@invoxai/db";
+import { getBioLink, getBioLinkClickStats } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 import { saveBioLinkAction } from "./actions";
 
@@ -25,7 +25,10 @@ const SOCIALS: { name: string; label: string }[] = [
 
 export default async function BioEditorPage() {
   const { tenant } = await requireTenant();
-  const bio = await getBioLink(tenant.id);
+  const [bio, clicks] = await Promise.all([
+    getBioLink(tenant.id),
+    getBioLinkClickStats(tenant.id),
+  ]);
   const publicUrl = `${publicBase(tenant.username)}/bio`;
 
   return (
@@ -50,6 +53,25 @@ export default async function BioEditorPage() {
           )}
         </p>
       </GlassCard>
+
+      {clicks.total > 0 ? (
+        <GlassCard className="mt-4">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display text-base font-semibold">Link clicks</h2>
+            <span className="text-sm text-muted">{clicks.total} total</span>
+          </div>
+          <ul className="mt-3 space-y-1.5 text-sm">
+            {clicks.byTarget.slice(0, 8).map((c) => (
+              <li key={c.targetUrl} className="flex items-center justify-between gap-3">
+                <span className="min-w-0 truncate text-white">
+                  {c.label ?? c.targetUrl}
+                </span>
+                <span className="shrink-0 text-muted">{c.clicks}</span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      ) : null}
 
       <form action={saveBioLinkAction} className="mt-6 space-y-4">
         <div>
