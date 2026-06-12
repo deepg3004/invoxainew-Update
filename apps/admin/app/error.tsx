@@ -25,7 +25,7 @@ export default function AdminError({
         Try again
       </button>
       <div className="mt-3">
-        <Link href="/" className="text-sm text-cyan underline">
+        <Link href="/" className="text-sm text-brand-strong underline">
           Back to admin
         </Link>
       </div>

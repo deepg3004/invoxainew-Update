@@ -1,6 +1,6 @@
 import {formatDateTimeShortIST} from "@invoxai/utils/date";
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { GlassCard, PageHeader, StatCard } from "@invoxai/ui";
 import {
   getRevenueReport,
   getWalletAttention,
@@ -30,32 +30,39 @@ export default async function ReportsPage() {
 
   return (
     <AdminShell email={gate.user.email}>
-      <h1 className="text-2xl font-bold">Reports</h1>
+      <PageHeader eyebrow="InvoxAI · admin" title="Reports" />
 
-      <h2 className="mt-6 text-lg font-bold">InvoxAI revenue</h2>
-      <p className="text-sm text-muted">
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">InvoxAI revenue</h2>
+      <p className="mt-1 text-sm text-muted">
         InvoxAI’s own income only — buyer payments settle to sellers and are never
         counted here.
       </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <GlassCard title="Total earned">
-          <p className="text-2xl font-bold">{formatRupees(rev.totalEarnedPaise)}</p>
-          <p className="mt-1 text-xs text-muted">commission + AI pages + subs</p>
-        </GlassCard>
-        <GlassCard title="Commission">
-          <p className="text-2xl font-bold">{formatRupees(rev.commissionCollectedPaise)}</p>
-          <p className="mt-1 text-xs text-warning">
-            {rev.commissionDuePaise > 0 ? `${formatRupees(rev.commissionDuePaise)} due` : "all collected"}
-          </p>
-        </GlassCard>
-        <GlassCard title="AI page fees">
-          <p className="text-2xl font-bold">{formatRupees(rev.aiPageFeesPaise)}</p>
-          <p className="mt-1 text-xs text-muted">{rev.aiPageCount} pages</p>
-        </GlassCard>
-        <GlassCard title="Subscriptions">
-          <p className="text-2xl font-bold">{formatRupees(rev.subscriptionRevenuePaise)}</p>
-          <p className="mt-1 text-xs text-muted">{rev.subscriptionCount} payments</p>
-        </GlassCard>
+        <StatCard
+          label="Total earned"
+          value={formatRupees(rev.totalEarnedPaise)}
+          hint="commission + AI pages + subs"
+        />
+        <StatCard
+          label="Commission"
+          value={formatRupees(rev.commissionCollectedPaise)}
+          accent="warning"
+          hint={
+            rev.commissionDuePaise > 0
+              ? `${formatRupees(rev.commissionDuePaise)} due`
+              : "all collected"
+          }
+        />
+        <StatCard
+          label="AI page fees"
+          value={formatRupees(rev.aiPageFeesPaise)}
+          hint={`${rev.aiPageCount} pages`}
+        />
+        <StatCard
+          label="Subscriptions"
+          value={formatRupees(rev.subscriptionRevenuePaise)}
+          hint={`${rev.subscriptionCount} payments`}
+        />
       </div>
 
       <GlassCard className="mt-4" title="Revenue mix">
@@ -69,67 +76,69 @@ export default async function ReportsPage() {
       </GlassCard>
 
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <GlassCard title="Wallet top-ups received">
-          <p className="text-xl font-bold">{formatRupees(rev.walletTopupsPaise)}</p>
-        </GlassCard>
-        <GlassCard title="Wallet liability (held seller funds)">
-          <p className="text-xl font-bold">{formatRupees(rev.walletLiabilityPaise)}</p>
-          <p className="mt-1 text-xs text-muted">Prepaid balances InvoxAI holds</p>
-        </GlassCard>
+        <StatCard
+          label="Wallet top-ups received"
+          value={formatRupees(rev.walletTopupsPaise)}
+        />
+        <StatCard
+          label="Wallet liability (held seller funds)"
+          value={formatRupees(rev.walletLiabilityPaise)}
+          hint="Prepaid balances InvoxAI holds"
+        />
       </div>
 
-      <h2 className="mt-8 text-lg font-bold">Needs attention</h2>
-      <p className="text-sm text-muted">
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Needs attention</h2>
+      <p className="mt-1 text-sm text-muted">
         Sellers with outstanding commission or a low wallet (commission pauses /
         AI pages blocked until topped up).
       </p>
       {attention.length === 0 ? (
         <p className="mt-2 text-sm text-green-700">All sellers healthy ✓</p>
       ) : (
-        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
+        <GlassCard className="mt-3 overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-muted">
+            <thead className="bg-zinc-50 text-muted">
               <tr>
-                <th className="px-4 py-2 font-medium">Tenant</th>
-                <th className="px-4 py-2 font-medium text-right">Wallet</th>
-                <th className="px-4 py-2 font-medium text-right">Commission due</th>
+                <th className="px-4 py-3 font-medium">Tenant</th>
+                <th className="px-4 py-3 font-medium text-right">Wallet</th>
+                <th className="px-4 py-3 font-medium text-right">Commission due</th>
               </tr>
             </thead>
             <tbody>
               {attention.map((a) => (
-                <tr key={a.id} className="border-b border-zinc-200 last:border-0">
-                  <td className="px-4 py-2">
-                    <Link href={`/tenants/${a.id}`} className="text-cyan underline">
+                <tr key={a.id} className="border-t border-zinc-100 hover:bg-zinc-50">
+                  <td className="px-4 py-3">
+                    <Link href={`/tenants/${a.id}`} className="text-brand-strong underline">
                       {a.username}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-right">{formatRupees(a.balancePaise)}</td>
-                  <td className={`px-4 py-2 text-right ${a.commissionDuePaise > 0 ? "font-medium text-warning" : "text-muted"}`}>
+                  <td className="px-4 py-3 text-right">{formatRupees(a.balancePaise)}</td>
+                  <td className={`px-4 py-3 text-right ${a.commissionDuePaise > 0 ? "font-medium text-warning" : "text-muted"}`}>
                     {a.commissionDuePaise > 0 ? formatRupees(a.commissionDuePaise) : "—"}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </GlassCard>
       )}
 
-      <h2 className="mt-8 text-lg font-bold">Recent webhook events</h2>
-      <p className="text-sm text-muted">
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Recent webhook events</h2>
+      <p className="mt-1 text-sm text-muted">
         Accepted Razorpay events (signature-verified). Failed/unsigned deliveries
         are rejected at the edge and not stored.
       </p>
       {events.length === 0 ? (
         <p className="mt-2 text-sm text-muted">No events yet.</p>
       ) : (
-        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
+        <GlassCard className="mt-3 overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
             <tbody>
               {events.map((e) => (
-                <tr key={e.id} className="border-b border-zinc-200 last:border-0">
-                  <td className="px-4 py-2 text-muted">{fmtDateTime(e.createdAt)}</td>
-                  <td className="px-4 py-2 font-medium">{e.type}</td>
-                  <td className="px-4 py-2">
+                <tr key={e.id} className="border-t border-zinc-100 first:border-0 hover:bg-zinc-50">
+                  <td className="px-4 py-3 text-muted">{fmtDateTime(e.createdAt)}</td>
+                  <td className="px-4 py-3 font-medium">{e.type}</td>
+                  <td className="px-4 py-3">
                     {e.processedAt ? (
                       <span className="text-xs text-green-700">processed</span>
                     ) : (
@@ -138,12 +147,12 @@ export default async function ReportsPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-right text-xs text-muted">{e.eventId}</td>
+                  <td className="px-4 py-3 text-right text-xs text-muted">{e.eventId}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </GlassCard>
       )}
     </AdminShell>
   );

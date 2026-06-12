@@ -1,3 +1,4 @@
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listPlans, listFeatureRules, listPlanFeatureLimits } from "@invoxai/db";
 import { paiseToRupeeString, bpsToPercentString } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
@@ -23,15 +24,15 @@ export default async function FeaturesPage() {
 
   return (
     <AdminShell email={gate.user.email}>
-      <h1 className="text-2xl font-bold">Feature billing</h1>
-      <p className="mt-2 text-muted">
-        Admin-priced features. Each plan grants a free monthly allowance
-        (−1 = unlimited); beyond it the fee is charged from the seller’s wallet.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · admin"
+        title="Feature billing"
+        description="Admin-priced features. Each plan grants a free monthly allowance (−1 = unlimited); beyond it the fee is charged from the seller’s wallet."
+      />
 
       {/* Rules */}
-      <h2 className="mt-8 text-lg font-bold">Pricing rules</h2>
-      <div className="mt-3 space-y-3">
+      <GlassCard title="Pricing rules">
+      <div className="space-y-3">
         {rules.map((r) => (
           <form
             key={r.featureKey}
@@ -46,7 +47,7 @@ export default async function FeaturesPage() {
             <label className="flex items-center gap-1"><input type="checkbox" name="wallet" defaultChecked={r.walletEnabled} /> wallet</label>
             <label className="flex items-center gap-1"><input type="checkbox" name="direct" defaultChecked={r.directEnabled} /> direct</label>
             <label className="flex items-center gap-1"><input type="checkbox" name="active" defaultChecked={r.active} /> active</label>
-            <button className="rounded-lg bg-brand px-3 py-1 font-medium text-white">Save</button>
+            <Button type="submit" size="sm">Save</Button>
           </form>
         ))}
 
@@ -59,13 +60,14 @@ export default async function FeaturesPage() {
           <label className="flex items-center gap-1"><input type="checkbox" name="wallet" defaultChecked /> wallet</label>
           <label className="flex items-center gap-1"><input type="checkbox" name="direct" /> direct</label>
           <label className="flex items-center gap-1"><input type="checkbox" name="active" defaultChecked /> active</label>
-          <button className="rounded-lg border border-zinc-200 px-3 py-1 font-medium hover:bg-zinc-100">Add</button>
+          <Button type="submit" variant="secondary" size="sm">Add</Button>
         </form>
       </div>
+      </GlassCard>
 
       {/* Free limits per plan */}
-      <h2 className="mt-10 text-lg font-bold">Free monthly allowance (per plan)</h2>
-      <div className="mt-3 space-y-3">
+      <GlassCard className="mt-8" title="Free monthly allowance (per plan)">
+      <div className="space-y-3">
         {rules.map((r) => (
           <form
             key={r.featureKey}
@@ -83,10 +85,11 @@ export default async function FeaturesPage() {
                 />
               </label>
             ))}
-            <button className="rounded-lg bg-brand px-3 py-1 font-medium text-white">Save</button>
+            <Button type="submit" size="sm">Save</Button>
           </form>
         ))}
       </div>
+      </GlassCard>
     </AdminShell>
   );
 }

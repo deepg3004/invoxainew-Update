@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getProductById } from "@invoxai/db";
 import { requireTenant } from "../../../lib/tenant";
 import { ProductForm } from "../ProductForm";
@@ -20,9 +21,12 @@ export default async function EditProductPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-bold">Edit product</h1>
-      <p className="mt-1 text-muted">{product.title}</p>
-      <div className="mt-6">
+      <PageHeader
+        eyebrow="InvoxAI · products"
+        title="Edit product"
+        description={product.title}
+      />
+      <GlassCard>
         <ProductForm
           action={action}
           submitLabel="Save changes"
@@ -38,7 +42,7 @@ export default async function EditProductPage({
             accessUrl: product.accessUrl,
           }}
         />
-      </div>
+      </GlassCard>
     </div>
   );
 }

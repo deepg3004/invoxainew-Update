@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getPaymentPageById } from "@invoxai/db";
 import { requireTenant } from "../../../lib/tenant";
 import { PaymentPageForm } from "../PaymentPageForm";
@@ -20,9 +21,12 @@ export default async function EditPaymentPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-bold">Edit payment page</h1>
-      <p className="mt-1 text-muted">{page.title}</p>
-      <div className="mt-6">
+      <PageHeader
+        eyebrow="InvoxAI · payment pages"
+        title="Edit payment page"
+        description={page.title}
+      />
+      <GlassCard>
         <PaymentPageForm
           action={action}
           submitLabel="Save changes"
@@ -33,7 +37,7 @@ export default async function EditPaymentPage({
             amountPaise: page.amountPaise,
           }}
         />
-      </div>
+      </GlassCard>
     </div>
   );
 }

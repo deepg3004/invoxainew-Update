@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getCourseById, getLesson } from "@invoxai/db";
 import { requireTenant } from "../../../../../lib/tenant";
 import { LessonForm } from "../../../LessonForm";
@@ -22,9 +23,12 @@ export default async function EditLessonPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-bold">Edit lesson</h1>
-      <p className="mt-1 text-muted">{course.title}</p>
-      <div className="mt-6">
+      <PageHeader
+        eyebrow="InvoxAI · store"
+        title="Edit lesson"
+        description={course.title}
+      />
+      <GlassCard>
         <LessonForm
           action={action}
           submitLabel="Save lesson"
@@ -36,7 +40,7 @@ export default async function EditLessonPage({
             sortOrder: lesson.sortOrder,
           }}
         />
-      </div>
+      </GlassCard>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listPaymentPages, getSellerGateway } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -24,25 +24,20 @@ export default async function PayPagesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            InvoxAI · payment pages
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">Payment pages</h1>
-        </div>
-        {gateway ? (
-          <Link
-            href="/pay-pages/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
-          >
-            New page
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        eyebrow="InvoxAI · payment pages"
+        title="Payment pages"
+        actions={
+          gateway ? (
+            <Button href="/pay-pages/new" size="sm">
+              New page
+            </Button>
+          ) : null
+        }
+      />
 
       {!gateway ? (
-        <div className="mt-8">
+        <div>
           <GlassCard title="Connect a gateway first">
             <p className="text-sm text-muted">
               Buyers pay you directly through your own Razorpay account. Connect it
@@ -50,18 +45,20 @@ export default async function PayPagesPage() {
             </p>
             <Link
               href="/gateway"
-              className="mt-3 inline-block text-sm font-medium text-cyan underline"
+              className="mt-3 inline-block text-sm font-medium text-brand-strong underline"
             >
               Connect gateway →
             </Link>
           </GlassCard>
         </div>
       ) : pages.length === 0 ? (
-        <p className="mt-8 text-muted">
-          No payment pages yet. Create your first one.
-        </p>
+        <GlassCard>
+          <p className="text-sm text-muted">
+            No payment pages yet. Create your first one.
+          </p>
+        </GlassCard>
       ) : (
-        <div className="mt-6 space-y-3">
+        <div className="space-y-3">
           {pages.map((p) => {
             const url = `${base}/pay/${p.slug}`;
             return (
@@ -87,7 +84,7 @@ export default async function PayPagesPage() {
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-1 block truncate text-sm text-cyan underline"
+                      className="mt-1 block truncate text-sm text-brand-strong underline"
                     >
                       {url}
                     </a>
@@ -96,7 +93,7 @@ export default async function PayPagesPage() {
                     <div className="font-semibold">{formatRupees(p.amountPaise)}</div>
                     <div className="mt-1 flex items-center gap-3 text-sm">
                       {p.isActive ? <CopyLinkButton url={url} /> : null}
-                      <Link href={`/pay-pages/${p.id}`} className="text-cyan underline">
+                      <Link href={`/pay-pages/${p.id}`} className="text-brand-strong underline">
                         Edit
                       </Link>
                       <form action={setPaymentPageActiveAction.bind(null, p.id, !p.isActive)}>

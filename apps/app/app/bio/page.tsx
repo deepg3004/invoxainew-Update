@@ -1,4 +1,4 @@
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { getBioLink, getBioLinkClickStats } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 import { saveBioLinkAction } from "./actions";
@@ -33,19 +33,22 @@ export default async function BioEditorPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · build
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Bio link</h1>
-      <p className="mt-2 text-muted">
-        One link for your socials — share <code className="text-cyan">{publicUrl}</code>.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · build"
+        title="Bio link"
+        description={
+          <>
+            One link for your socials — share{" "}
+            <code className="text-brand-strong">{publicUrl}</code>.
+          </>
+        }
+      />
 
-      <GlassCard className="mt-4">
+      <GlassCard>
         <p className="text-sm">
           Public link:{" "}
           {bio?.published ? (
-            <a href={publicUrl} target="_blank" rel="noreferrer" className="text-cyan underline">
+            <a href={publicUrl} target="_blank" rel="noreferrer" className="text-brand-strong underline">
               {publicUrl}
             </a>
           ) : (
@@ -57,7 +60,7 @@ export default async function BioEditorPage() {
       {clicks.total > 0 ? (
         <GlassCard className="mt-4">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-base font-semibold">Link clicks</h2>
+            <h2 className="text-lg font-semibold text-zinc-900">Link clicks</h2>
             <span className="text-sm text-muted">{clicks.total} total</span>
           </div>
           <ul className="mt-3 space-y-1.5 text-sm">
@@ -73,7 +76,8 @@ export default async function BioEditorPage() {
         </GlassCard>
       ) : null}
 
-      <form action={saveBioLinkAction} className="mt-6 space-y-4">
+      <GlassCard className="mt-6">
+        <form action={saveBioLinkAction} className="space-y-4">
         <div>
           <label className="text-sm font-medium">Display name</label>
           <input name="displayName" defaultValue={bio?.displayName ?? ""} placeholder={tenant.name ?? tenant.username} className={inputCls} />
@@ -117,10 +121,11 @@ export default async function BioEditorPage() {
           <input type="checkbox" name="published" defaultChecked={bio?.published ?? false} /> Published (page is live)
         </label>
 
-        <button className="w-full rounded-xl bg-brand-gradient px-4 py-2.5 font-medium text-white shadow-glow">
+        <Button type="submit" className="w-full">
           Save bio link
-        </button>
-      </form>
+        </Button>
+        </form>
+      </GlassCard>
     </div>
   );
 }

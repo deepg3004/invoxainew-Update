@@ -1,5 +1,6 @@
 import {formatMonthIST} from "@invoxai/utils/date";
 import Link from "next/link";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getTenantFeatureUsageSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -14,19 +15,21 @@ export default async function UsagePage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · usage
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Usage & limits</h1>
-      <p className="mt-2 text-muted">
-        Your plan{summary.planName ? <> (<strong>{summary.planName}</strong>)</> : null}{" "}
-        free allowances for {thisMonth}. Beyond the free amount, features are
-        charged from your wallet.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · usage"
+        title="Usage & limits"
+        description={
+          <>
+            Your plan{summary.planName ? <> (<strong>{summary.planName}</strong>)</> : null}{" "}
+            free allowances for {thisMonth}. Beyond the free amount, features are
+            charged from your wallet.
+          </>
+        }
+      />
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
+      <GlassCard className="mt-6 overflow-hidden p-0">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-muted">
+          <thead className="bg-zinc-50 text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Feature</th>
               <th className="px-4 py-3 font-medium">Used this month</th>
@@ -38,7 +41,7 @@ export default async function UsagePage() {
             {summary.features.map((f) => {
               const unlimited = f.freeLimit === -1;
               return (
-                <tr key={f.featureKey} className="border-b border-zinc-200 last:border-0">
+                <tr key={f.featureKey} className="border-t border-zinc-100 hover:bg-zinc-50">
                   <td className="px-4 py-3 font-medium text-zinc-900">{f.name}</td>
                   <td className="px-4 py-3">{f.used}</td>
                   <td className="px-4 py-3">
@@ -67,15 +70,15 @@ export default async function UsagePage() {
             ) : null}
           </tbody>
         </table>
-      </div>
+      </GlassCard>
 
       <p className="mt-6 text-sm text-muted">
         Need a higher allowance?{" "}
-        <Link href="/billing" className="text-cyan underline">
+        <Link href="/billing" className="text-brand-strong underline">
           Upgrade your plan
         </Link>{" "}
         or{" "}
-        <Link href="/wallet" className="text-cyan underline">
+        <Link href="/wallet" className="text-brand-strong underline">
           top up your wallet
         </Link>
         .

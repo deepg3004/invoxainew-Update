@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getFeatureQuota } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../../lib/tenant";
@@ -17,21 +18,26 @@ export default async function NewAiPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-bold">Generate an AI page</h1>
-      <p className="mt-1 text-muted">
-        AI writes the copy from your brief and publishes it on your site.{" "}
-        {unlimited
-          ? "Unlimited on your plan."
-          : nextIsFree
-            ? `This one is free (${freeLeft} of your monthly allowance left).`
-            : `The fee (${formatRupees(price)}, incl. GST) is charged from your wallet only if it succeeds.`}
-      </p>
-      <div className="mt-6">
+      <PageHeader
+        eyebrow="InvoxAI · AI pages"
+        title="Generate an AI page"
+        description={
+          <>
+            AI writes the copy from your brief and publishes it on your site.{" "}
+            {unlimited
+              ? "Unlimited on your plan."
+              : nextIsFree
+                ? `This one is free (${freeLeft} of your monthly allowance left).`
+                : `The fee (${formatRupees(price)}, incl. GST) is charged from your wallet only if it succeeds.`}
+          </>
+        }
+      />
+      <GlassCard>
         <AiPageForm priceLabel={priceLabel} />
-      </div>
+      </GlassCard>
       <p className="mt-6 text-sm text-muted">
         Prefer to start from a ready-made design?{" "}
-        <Link href="/ai-pages/templates" className="font-medium text-cyan underline">
+        <Link href="/ai-pages/templates" className="font-medium text-brand-strong underline">
           Browse templates →
         </Link>{" "}
         (free, no AI credits)

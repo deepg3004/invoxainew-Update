@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { listDomains, planAllowsCustomDomain } from "@invoxai/db";
 import { serverEnv } from "@invoxai/config";
 import { requireTenant } from "../../lib/tenant";
@@ -33,12 +33,16 @@ export default async function DomainsPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">InvoxAI</p>
-      <h1 className="mt-1 text-3xl font-bold">Custom domains</h1>
-      <p className="mt-1 text-muted">
-        Serve your site on your own domain. Your default address
-        ({tenant.username}.invoxai.io) keeps working too.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI"
+        title="Custom domains"
+        description={
+          <>
+            Serve your site on your own domain. Your default address
+            ({tenant.username}.invoxai.io) keeps working too.
+          </>
+        }
+      />
 
       {banner ? (
         <p
@@ -59,7 +63,7 @@ export default async function DomainsPage({
             </p>
             <Link
               href="/billing"
-              className="mt-3 inline-block text-sm font-medium text-cyan underline"
+              className="mt-3 inline-block text-sm font-medium text-brand-strong underline"
             >
               View plans →
             </Link>
@@ -74,9 +78,9 @@ export default async function DomainsPage({
       )}
 
       {domains.length > 0 ? (
-        <div className="mt-6 space-y-4">
+        <GlassCard className="mt-6 space-y-4" title="Your domains">
           {domains.map((d) => (
-            <div key={d.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+            <div key={d.id} className="rounded-xl border border-zinc-100 bg-surface p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-zinc-900">{d.domain}</span>
@@ -93,7 +97,7 @@ export default async function DomainsPage({
                 <div className="flex items-center gap-3 text-sm">
                   {d.status !== "VERIFIED" ? (
                     <form action={verifyDomainAction.bind(null, d.id)}>
-                      <button className="font-medium text-cyan underline">Verify</button>
+                      <button className="font-medium text-brand-strong underline">Verify</button>
                     </form>
                   ) : null}
                   <form action={deleteDomainAction.bind(null, d.id)}>
@@ -119,9 +123,11 @@ export default async function DomainsPage({
               ) : null}
             </div>
           ))}
-        </div>
+        </GlassCard>
       ) : (
-        <p className="mt-6 text-sm text-muted">No domains added yet.</p>
+        <GlassCard className="mt-6">
+          <p className="text-sm text-muted">No domains added yet.</p>
+        </GlassCard>
       )}
     </div>
   );

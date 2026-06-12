@@ -1,5 +1,5 @@
 import {formatDateIST} from "@invoxai/utils/date";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { getSellerGateway } from "@invoxai/db";
 import { maskKeyId } from "@invoxai/utils/crypto";
 import { requireTenant } from "../../lib/tenant";
@@ -14,15 +14,17 @@ export default async function GatewayPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · payments
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Payment gateway</h1>
-      <p className="mt-2 text-muted">
-        Connect your own Razorpay account. Buyers pay you <strong>directly</strong>
-        {" "}— their money settles to your Razorpay account and never passes through
-        InvoxAI.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · payments"
+        title="Payment gateway"
+        description={
+          <>
+            Connect your own Razorpay account. Buyers pay you <strong>directly</strong>
+            {" "}— their money settles to your Razorpay account and never passes through
+            InvoxAI.
+          </>
+        }
+      />
 
       {gateway ? (
         <div className="mt-8">
@@ -54,9 +56,9 @@ export default async function GatewayPage() {
                 ) : null}
               </div>
               <form action={disconnectGateway}>
-                <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-100">
+                <Button type="submit" variant="secondary" size="sm">
                   Disconnect
-                </button>
+                </Button>
               </form>
             </div>
           </GlassCard>

@@ -10,3 +10,4 @@ export { DashboardShell, SELLER_NAV } from "./DashboardShell";
 export type { NavItem, NavGroup } from "./DashboardShell";
 export { PaymentSuccess } from "./PaymentSuccess";
 export { Skeleton, PageLoading } from "./Skeleton";
+export { PageHeader } from "./PageHeader";

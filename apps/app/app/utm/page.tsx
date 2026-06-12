@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 
 const inputCls =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
@@ -43,15 +44,16 @@ export default function UtmBuilderPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <a href="/analytics" className="text-sm text-cyan underline">
+      <a href="/analytics" className="text-sm text-brand-strong underline">
         ← Analytics
       </a>
-      <h1 className="mt-3 text-3xl font-bold">UTM builder</h1>
-      <p className="mt-2 text-muted">
-        Tag a link so sales from it show up under “Top sources” in analytics.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · marketing"
+        title="UTM builder"
+        description="Tag a link so sales from it show up under “Top sources” in analytics."
+      />
 
-      <div className="mt-6 space-y-4">
+      <GlassCard className="space-y-4">
         <div>
           <label className="text-sm font-medium">Destination URL</label>
           <input
@@ -74,7 +76,7 @@ export default function UtmBuilderPage() {
             </div>
           ))}
         </div>
-      </div>
+      </GlassCard>
 
       {error ? (
         <p className="mt-6 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -83,18 +85,15 @@ export default function UtmBuilderPage() {
       ) : null}
 
       {result ? (
-        <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
+        <GlassCard className="mt-6">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             Your tagged link
           </p>
-          <p className="mt-1 break-all text-sm text-cyan">{result}</p>
-          <button
-            onClick={copy}
-            className="mt-3 rounded-lg bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-glow"
-          >
+          <p className="mt-1 break-all text-sm text-brand-strong">{result}</p>
+          <Button onClick={copy} size="sm" className="mt-3">
             {copied ? "Copied ✓" : "Copy link"}
-          </button>
-        </div>
+          </Button>
+        </GlassCard>
       ) : null}
     </div>
   );

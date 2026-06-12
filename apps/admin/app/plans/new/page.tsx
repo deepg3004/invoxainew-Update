@@ -1,3 +1,4 @@
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { requireAdmin } from "../../../lib/auth";
 import { AdminShell } from "../../components/AdminShell";
 import { NotAuthorized } from "../../components/NotAuthorized";
@@ -12,13 +13,15 @@ export default async function NewPlanPage() {
 
   return (
     <AdminShell email={gate.user.email}>
-      <h1 className="text-2xl font-bold">New plan</h1>
-      <p className="mt-1 text-muted">
-        Define a subscription tier. Prices and commission are editable later;
-        the key is permanent.
-      </p>
-      <div className="mt-6 max-w-xl">
-        <PlanForm action={createPlanAction} submitLabel="Create plan" />
+      <PageHeader
+        eyebrow="InvoxAI · admin"
+        title="New plan"
+        description="Define a subscription tier. Prices and commission are editable later; the key is permanent."
+      />
+      <div className="max-w-xl">
+        <GlassCard>
+          <PlanForm action={createPlanAction} submitLabel="Create plan" />
+        </GlassCard>
       </div>
     </AdminShell>
   );

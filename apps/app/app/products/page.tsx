@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listProducts, getSellerGateway } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -30,22 +30,15 @@ export default async function ProductsPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            InvoxAI · store
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">Products</h1>
-        </div>
-        {gateway ? (
-          <Link
-            href="/products/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
-          >
-            New product
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        eyebrow="InvoxAI · store"
+        title="Products"
+        actions={
+          gateway ? (
+            <Button href="/products/new">New product</Button>
+          ) : null
+        }
+      />
 
       {!gateway ? (
         <div className="mt-8">
@@ -56,7 +49,7 @@ export default async function ProductsPage() {
             </p>
             <Link
               href="/gateway"
-              className="mt-3 inline-block text-sm font-medium text-cyan underline"
+              className="mt-3 inline-block text-sm font-medium text-brand-strong underline"
             >
               Connect gateway →
             </Link>
@@ -67,7 +60,7 @@ export default async function ProductsPage() {
           No products yet. Add your first one.
         </p>
       ) : (
-        <div className="mt-6 space-y-3">
+        <GlassCard className="mt-6 space-y-3 p-3">
           {products.map((p) => {
             const url = `${base}/p/${p.slug}`;
             return (
@@ -92,7 +85,7 @@ export default async function ProductsPage() {
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-1 block truncate text-sm text-cyan underline"
+                        className="mt-1 block truncate text-sm text-brand-strong underline"
                       >
                         {url}
                       </a>
@@ -110,7 +103,7 @@ export default async function ProductsPage() {
                     <div className="font-semibold">{formatRupees(p.pricePaise)}</div>
                     <div className="mt-1 flex items-center gap-3 text-sm">
                       {p.status === "PUBLISHED" ? <CopyLinkButton url={url} /> : null}
-                      <Link href={`/products/${p.id}`} className="text-cyan underline">
+                      <Link href={`/products/${p.id}`} className="text-brand-strong underline">
                         Edit
                       </Link>
                       {p.status === "PUBLISHED" ? (
@@ -145,7 +138,7 @@ export default async function ProductsPage() {
               </div>
             );
           })}
-        </div>
+        </GlassCard>
       )}
     </div>
   );

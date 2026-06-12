@@ -1,3 +1,4 @@
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../../lib/tenant";
 import { CouponForm } from "../CouponForm";
 import { createCouponAction } from "../actions";
@@ -8,14 +9,14 @@ export default async function NewCouponPage() {
   await requireTenant();
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-bold">New coupon</h1>
-      <p className="mt-1 text-muted">
-        Buyers enter this code at checkout. The discount applies to your store
-        sales; your InvoxAI commission is taken on the discounted total.
-      </p>
-      <div className="mt-6">
+      <PageHeader
+        eyebrow="InvoxAI · store"
+        title="New coupon"
+        description="Buyers enter this code at checkout. The discount applies to your store sales; your InvoxAI commission is taken on the discounted total."
+      />
+      <GlassCard>
         <CouponForm action={createCouponAction} submitLabel="Create coupon" />
-      </div>
+      </GlassCard>
     </div>
   );
 }

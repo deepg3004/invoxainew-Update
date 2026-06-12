@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getPlanById } from "@invoxai/db";
 import { requireAdmin } from "../../../lib/auth";
 import { AdminShell } from "../../components/AdminShell";
@@ -26,9 +27,8 @@ export default async function EditPlanPage({
 
   return (
     <AdminShell email={gate.user.email}>
-      <h1 className="text-2xl font-bold">Edit plan</h1>
-      <p className="mt-1 text-muted">{plan.name}</p>
-      <div className="mt-6 max-w-xl">
+      <PageHeader eyebrow="InvoxAI · admin" title="Edit plan" description={plan.name} />
+      <GlassCard className="max-w-xl">
         <PlanForm
           action={action}
           submitLabel="Save changes"
@@ -45,7 +45,7 @@ export default async function EditPlanPage({
             sortOrder: plan.sortOrder,
           }}
         />
-      </div>
+      </GlassCard>
     </AdminShell>
   );
 }

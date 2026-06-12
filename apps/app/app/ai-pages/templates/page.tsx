@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Button, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../../lib/tenant";
 import { TEMPLATES } from "../../../lib/templates";
 import { TemplateCard } from "./TemplateCard";
@@ -10,21 +10,16 @@ export default async function TemplatesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            AI builder
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">Start from a template</h1>
-          <p className="mt-1 text-muted">
-            Pick a ready-made page, give it an address, then edit it. Free — no AI
-            credits used.
-          </p>
-        </div>
-        <Link href="/ai-pages/new" className="text-sm text-cyan underline">
-          Generate with AI instead →
-        </Link>
-      </div>
+      <PageHeader
+        eyebrow="AI builder"
+        title="Start from a template"
+        description="Pick a ready-made page, give it an address, then edit it. Free — no AI credits used."
+        actions={
+          <Button href="/ai-pages/new" variant="secondary">
+            Generate with AI instead →
+          </Button>
+        }
+      />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {TEMPLATES.map((t) => {

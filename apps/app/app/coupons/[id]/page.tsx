@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getCouponById } from "@invoxai/db";
 import { requireTenant } from "../../../lib/tenant";
 import { CouponForm } from "../CouponForm";
@@ -39,9 +40,12 @@ export default async function EditCouponPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-bold">Edit coupon</h1>
-      <p className="mt-1 font-mono text-muted">{coupon.code}</p>
-      <div className="mt-6">
+      <PageHeader
+        eyebrow="InvoxAI · coupons"
+        title="Edit coupon"
+        description={<span className="font-mono">{coupon.code}</span>}
+      />
+      <GlassCard>
         <CouponForm
           action={action}
           submitLabel="Save changes"
@@ -55,7 +59,7 @@ export default async function EditCouponPage({
             expiresAt: toLocalInput(coupon.expiresAt),
           }}
         />
-      </div>
+      </GlassCard>
     </div>
   );
 }

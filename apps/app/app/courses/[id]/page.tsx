@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { getCourseById, listLessons } from "@invoxai/db";
 import { requireTenant } from "../../../lib/tenant";
 import { CourseForm } from "../CourseForm";
@@ -28,10 +29,13 @@ export default async function EditCoursePage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="text-2xl font-bold">Edit course</h1>
-      <p className="mt-1 text-muted">{course.title}</p>
+      <PageHeader
+        eyebrow="InvoxAI · store"
+        title="Edit course"
+        description={course.title}
+      />
 
-      <section className="mt-6">
+      <GlassCard>
         <CourseForm
           action={courseAction}
           submitLabel="Save course"
@@ -44,10 +48,10 @@ export default async function EditCoursePage({
             sortOrder: course.sortOrder,
           }}
         />
-      </section>
+      </GlassCard>
 
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold">Curriculum</h2>
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-zinc-900">Curriculum</h2>
         {lessons.length === 0 ? (
           <p className="mt-2 text-sm text-muted">No lessons yet. Add the first below.</p>
         ) : (
@@ -58,14 +62,14 @@ export default async function EditCoursePage({
                 <div className="min-w-0 flex-1">
                   <span className="truncate font-medium text-zinc-900">{l.title}</span>
                   {l.isPreview ? (
-                    <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
+                    <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-brand-strong">
                       Preview
                     </span>
                   ) : null}
                 </div>
                 <Link
                   href={`/courses/${course.id}/lessons/${l.id}`}
-                  className="text-sm text-cyan underline"
+                  className="text-sm text-brand-strong underline"
                 >
                   Edit
                 </Link>
@@ -79,16 +83,13 @@ export default async function EditCoursePage({
           </ul>
         )}
 
-        <div className="mt-5 rounded-xl border border-dashed border-zinc-200 p-4">
-          <h3 className="text-sm font-semibold text-zinc-700">Add a lesson</h3>
-          <div className="mt-3">
-            <LessonForm
-              action={addLessonAction}
-              submitLabel="Add lesson"
-              courseId={course.id}
-            />
-          </div>
-        </div>
+        <GlassCard className="mt-5" title="Add a lesson">
+          <LessonForm
+            action={addLessonAction}
+            submitLabel="Add lesson"
+            courseId={course.id}
+          />
+        </GlassCard>
       </section>
     </div>
   );

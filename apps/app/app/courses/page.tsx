@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listCourses, getSellerGateway } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -30,22 +30,15 @@ export default async function CoursesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            InvoxAI · courses
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">Courses</h1>
-        </div>
-        {gateway ? (
-          <Link
-            href="/courses/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
-          >
-            New course
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        eyebrow="InvoxAI · courses"
+        title="Courses"
+        actions={
+          gateway ? (
+            <Button href="/courses/new">New course</Button>
+          ) : null
+        }
+      />
 
       {!gateway ? (
         <div className="mt-8">
@@ -56,22 +49,22 @@ export default async function CoursesPage() {
             </p>
             <Link
               href="/gateway"
-              className="mt-3 inline-block text-sm font-medium text-cyan underline"
+              className="mt-3 inline-block text-sm font-medium text-brand-strong underline"
             >
               Connect gateway →
             </Link>
           </GlassCard>
         </div>
       ) : courses.length === 0 ? (
-        <p className="mt-8 text-muted">
-          No courses yet. Create your first one.
-        </p>
+        <GlassCard className="mt-8">
+          <p className="text-sm text-muted">No courses yet. Create your first one.</p>
+        </GlassCard>
       ) : (
-        <div className="mt-6 space-y-3">
+        <GlassCard className="mt-6 space-y-3">
           {courses.map((c) => {
             const url = `${base}/c/${c.slug}`;
             return (
-              <div key={c.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+              <div key={c.id} className="rounded-xl border border-zinc-100 bg-surface p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -89,7 +82,7 @@ export default async function CoursesPage() {
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-1 block truncate text-sm text-cyan underline"
+                        className="mt-1 block truncate text-sm text-brand-strong underline"
                       >
                         {url}
                       </a>
@@ -105,7 +98,7 @@ export default async function CoursesPage() {
                     <div className="font-semibold">{formatRupees(c.pricePaise)}</div>
                     <div className="mt-1 flex items-center gap-3 text-sm">
                       {c.status === "PUBLISHED" ? <CopyLinkButton url={url} /> : null}
-                      <Link href={`/courses/${c.id}`} className="text-cyan underline">
+                      <Link href={`/courses/${c.id}`} className="text-brand-strong underline">
                         Edit
                       </Link>
                       {c.status === "PUBLISHED" ? (
@@ -140,7 +133,7 @@ export default async function CoursesPage() {
               </div>
             );
           })}
-        </div>
+        </GlassCard>
       )}
     </div>
   );

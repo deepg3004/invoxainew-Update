@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Badge, Button, GlassCard, StatCard } from "@invoxai/ui";
+import { Badge, Button, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
 import {
   getTenantByOwnerId,
   getWalletStatus,
@@ -48,26 +48,21 @@ export default async function Dashboard() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            Dashboard
-          </p>
-          <h1 className="mt-1 font-display text-3xl font-bold">
-            {tenant.name ?? "Your site"}
-          </h1>
-          <p className="mt-1 text-sm text-muted">Signed in as {user.email}</p>
-        </div>
-        <a href={siteUrl} target="_blank" rel="noreferrer">
-          <Badge tone="success">
-            <span className="h-1.5 w-1.5 rounded-full bg-success" />
-            {tenant.username}.invoxai.io
-          </Badge>
-        </a>
-      </div>
+      <PageHeader
+        eyebrow="InvoxAI · dashboard"
+        title={tenant.name ?? "Your site"}
+        description={`Signed in as ${user.email}`}
+        actions={
+          <a href={siteUrl} target="_blank" rel="noreferrer">
+            <Badge tone="success">
+              <span className="h-1.5 w-1.5 rounded-full bg-success" />
+              {tenant.username}.invoxai.io
+            </Badge>
+          </a>
+        }
+      />
 
-      <div className="mt-6 space-y-3">
+      <div className="space-y-3">
         <LowBalanceBanner
           balancePaise={wallet.balancePaise}
           dueCommissionPaise={wallet.dueCommissionPaise}
@@ -107,7 +102,7 @@ export default async function Dashboard() {
             href={siteUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-lg font-medium text-cyan underline"
+            className="text-lg font-medium text-brand-strong underline"
           >
             {tenant.username}.invoxai.io
           </a>
@@ -127,7 +122,7 @@ export default async function Dashboard() {
       </div>
 
       {/* Quick start */}
-      <h2 className="mt-10 font-display text-lg font-semibold">Quick start</h2>
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Quick start</h2>
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {QUICK_LINKS.map((q) => (
           <Link key={q.href} href={q.href}>
@@ -142,7 +137,7 @@ export default async function Dashboard() {
       {unread > 0 ? (
         <p className="mt-8 text-sm text-muted">
           You have{" "}
-          <Link href="/notifications" className="text-cyan underline">
+          <Link href="/notifications" className="text-brand-strong underline">
             {unread} unread notification{unread === 1 ? "" : "s"}
           </Link>
           .

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listPlans } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
@@ -20,24 +21,24 @@ export default async function PlansPage() {
 
   return (
     <AdminShell email={gate.user.email}>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Plans</h1>
-        <Link
-          href="/plans/new"
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
-        >
-          New plan
-        </Link>
-      </div>
+      <PageHeader
+        eyebrow="InvoxAI · admin"
+        title="Plans"
+        actions={
+          <Button href="/plans/new" size="sm">
+            New plan
+          </Button>
+        }
+      />
 
       {plans.length === 0 ? (
-        <p className="mt-8 text-muted">
-          No plans yet. Create the first one.
-        </p>
+        <GlassCard>
+          <p className="text-sm text-muted">No plans yet. Create the first one.</p>
+        </GlassCard>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
+        <GlassCard className="overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-muted">
+            <thead className="bg-zinc-50 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Plan</th>
                 <th className="px-4 py-3 font-medium">Monthly</th>
@@ -51,7 +52,7 @@ export default async function PlansPage() {
             </thead>
             <tbody>
               {plans.map((p) => (
-                <tr key={p.id} className="border-b border-zinc-200 last:border-0">
+                <tr key={p.id} className="border-t border-zinc-100 hover:bg-zinc-50">
                   <td className="px-4 py-3">
                     <div className="font-medium text-zinc-900">{p.name}</div>
                     <div className="text-xs text-muted">{p.key}</div>
@@ -76,7 +77,7 @@ export default async function PlansPage() {
                     <div className="flex items-center justify-end gap-3">
                       <Link
                         href={`/plans/${p.id}`}
-                        className="text-cyan underline"
+                        className="text-brand-strong underline"
                       >
                         Edit
                       </Link>
@@ -91,7 +92,7 @@ export default async function PlansPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </GlassCard>
       )}
     </AdminShell>
   );

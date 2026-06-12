@@ -1,9 +1,9 @@
 import {formatDateIST} from "@invoxai/utils/date";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { serverEnv } from "@invoxai/config";
 import { getInvoice } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
+import { Button, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../../lib/tenant";
 import { PrintButton } from "./PrintButton";
 
@@ -27,11 +27,20 @@ export default async function InvoiceDetail({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-center justify-between print:hidden">
-        <Link href="/invoices" className="text-sm text-cyan underline">
-          ← Invoices
-        </Link>
-        <PrintButton />
+      <div className="print:hidden">
+        <PageHeader
+          eyebrow="InvoxAI · billing"
+          title="Invoice"
+          description={inv.number}
+          actions={
+            <>
+              <Button href="/invoices" variant="secondary" size="sm">
+                ← Invoices
+              </Button>
+              <PrintButton />
+            </>
+          }
+        />
       </div>
 
       <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-8">
@@ -76,20 +85,22 @@ export default async function InvoiceDetail({
           </div>
         </div>
 
-        <table className="mt-8 w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-muted">
-            <tr>
-              <th className="py-2 font-medium">Description</th>
-              <th className="py-2 text-right font-medium">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-zinc-200">
-              <td className="py-2">{inv.descriptionLine}</td>
-              <td className="py-2 text-right">{formatRupees(inv.basePaise)}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="mt-8 overflow-hidden rounded-xl border border-zinc-200">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-zinc-50 text-muted">
+              <tr>
+                <th className="px-4 py-3 font-medium">Description</th>
+                <th className="px-4 py-3 text-right font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t border-zinc-100 hover:bg-zinc-50">
+                <td className="px-4 py-3">{inv.descriptionLine}</td>
+                <td className="px-4 py-3 text-right">{formatRupees(inv.basePaise)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div className="mt-4 ml-auto w-full max-w-xs space-y-1 text-sm">
           <div className="flex justify-between">

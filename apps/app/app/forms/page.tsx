@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listLeadForms } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 
@@ -17,29 +17,22 @@ export default async function FormsPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            InvoxAI · grow
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">Lead forms</h1>
-          <p className="mt-2 text-muted">
+      <PageHeader
+        eyebrow="InvoxAI · grow"
+        title="Lead forms"
+        description={
+          <>
             Collect enquiries, sign-ups and leads from your site — submissions
             land here for you to follow up.
-          </p>
-        </div>
-        <Link
-          href="/forms/new"
-          className="rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-medium text-white shadow-glow"
-        >
-          New form
-        </Link>
-      </div>
+          </>
+        }
+        actions={<Button href="/forms/new">New form</Button>}
+      />
 
       {forms.length === 0 ? (
         <GlassCard className="mt-8 text-center">
           <p className="text-muted">No lead forms yet.</p>
-          <Link href="/forms/new" className="mt-3 inline-block text-cyan underline">
+          <Link href="/forms/new" className="mt-3 inline-block text-brand-strong underline">
             Create your first form →
           </Link>
         </GlassCard>

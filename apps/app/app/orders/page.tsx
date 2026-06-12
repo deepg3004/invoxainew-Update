@@ -1,5 +1,5 @@
 import {formatDateIST} from "@invoxai/utils/date";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
 import { listTenantOrders, countTenantOrders, getTenantSalesSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -84,45 +84,37 @@ export default async function OrdersPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · orders
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Orders</h1>
-      <p className="mt-2 text-muted">
-        Every paid order, with fulfillment status your buyers can see.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · orders"
+        title="Orders"
+        description="Every paid order, with fulfillment status your buyers can see."
+      />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <GlassCard title="Orders">
-          <p className="text-2xl font-bold">{summary.orderCount}</p>
-        </GlassCard>
-        <GlassCard title="Gross sales">
-          <p className="text-2xl font-bold">{formatRupees(summary.grossPaise)}</p>
-          <p className="mt-1 text-xs text-muted">Settled to your gateway</p>
-        </GlassCard>
-        <GlassCard title="InvoxAI commission">
-          <p className="text-2xl font-bold">
-            {formatRupees(summary.commissionPaidPaise)}
-          </p>
-          {summary.commissionDuePaise > 0 ? (
-            <p className="mt-1 text-xs text-warning">
-              {formatRupees(summary.commissionDuePaise)} due (settles on top-up)
-            </p>
-          ) : (
-            <p className="mt-1 text-xs text-muted">From your wallet</p>
-          )}
-        </GlassCard>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatCard label="Orders" value={summary.orderCount} />
+        <StatCard
+          label="Gross sales"
+          value={formatRupees(summary.grossPaise)}
+          hint="Settled to your gateway"
+        />
+        <StatCard
+          label="InvoxAI commission"
+          value={formatRupees(summary.commissionPaidPaise)}
+          hint={
+            summary.commissionDuePaise > 0
+              ? `${formatRupees(summary.commissionDuePaise)} due (settles on top-up)`
+              : "From your wallet"
+          }
+          accent={summary.commissionDuePaise > 0 ? "warning" : undefined}
+        />
       </div>
 
-      <div className="mt-10 flex items-center justify-between">
-        <h2 className="text-xl font-bold">Orders</h2>
+      <div className="mt-8 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-zinc-900">Orders</h2>
         {total > 0 ? (
-          <a
-            href={exportHref}
-            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
-          >
+          <Button href={exportHref} variant="secondary" size="sm">
             Export CSV
-          </a>
+          </Button>
         ) : null}
       </div>
 
@@ -136,9 +128,9 @@ export default async function OrdersPage({
           placeholder="Search buyer email, phone, item, payment id…"
           className="w-full max-w-xs rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
         />
-        <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50">
+        <Button type="submit" variant="secondary" size="sm">
           Search
-        </button>
+        </Button>
         {search ? (
           <a
             href={buildHref({ status: activeStatus })}
@@ -165,20 +157,22 @@ export default async function OrdersPage({
       </div>
 
       {orders.length === 0 ? (
-        <p className="mt-4 text-muted">
-          {search
-            ? `No orders match “${search}”${
-                activeStatus ? ` in ${activeStatus.toLowerCase()}` : ""
-              }.`
-            : activeStatus
-              ? `No ${activeStatus.toLowerCase()} orders.`
-              : "No orders yet."}
-        </p>
+        <GlassCard className="mt-4">
+          <p className="text-sm text-muted">
+            {search
+              ? `No orders match “${search}”${
+                  activeStatus ? ` in ${activeStatus.toLowerCase()}` : ""
+                }.`
+              : activeStatus
+                ? `No ${activeStatus.toLowerCase()} orders.`
+                : "No orders yet."}
+          </p>
+        </GlassCard>
       ) : (
         <>
         <div className="mt-4 space-y-3">
           {orders.map((o) => (
-            <div key={o.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+            <GlassCard key={o.id} className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-medium text-zinc-900">
@@ -225,9 +219,9 @@ export default async function OrdersPage({
                         nextStatus(o.fulfillmentStatus)!,
                       )}
                     >
-                      <button className="whitespace-nowrap rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white shadow-glow">
+                      <Button type="submit" size="sm" className="whitespace-nowrap">
                         Mark {titleCase(nextStatus(o.fulfillmentStatus)!)} →
-                      </button>
+                      </Button>
                     </form>
                   ) : null}
                   <form
@@ -251,9 +245,9 @@ export default async function OrdersPage({
                       placeholder="Tracking / note"
                       className="w-44 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
                     />
-                    <button className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white">
+                    <Button type="submit" size="sm">
                       Save
-                    </button>
+                    </Button>
                   </form>
                 </div>
               </div>
@@ -262,7 +256,7 @@ export default async function OrdersPage({
                   <RefundForm orderId={o.id} remainingPaise={o.amountPaise - o.refundedPaise} />
                 </div>
               ) : null}
-            </div>
+            </GlassCard>
           ))}
         </div>
 

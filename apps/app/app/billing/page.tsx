@@ -1,5 +1,5 @@
 import {formatDateIST} from "@invoxai/utils/date";
-import { GlassCard } from "@invoxai/ui";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import { listActivePlans, getSubscriptionByTenant } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -21,16 +21,13 @@ export default async function BillingPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · billing
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Plan & subscription</h1>
-      <p className="mt-2 text-muted">
-        Subscribe to a plan to unlock higher limits and lower commission. You pay
-        InvoxAI securely via Razorpay.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · billing"
+        title="Plan & subscription"
+        description="Subscribe to a plan to unlock higher limits and lower commission. You pay InvoxAI securely via Razorpay."
+      />
 
-      <div className="mt-8">
+      <div>
         <GlassCard title="Current plan">
           {subscription ? (
             <div className="text-sm">
@@ -51,7 +48,7 @@ export default async function BillingPage() {
         </GlassCard>
       </div>
 
-      <h2 className="mt-10 text-xl font-bold">Choose a plan</h2>
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Choose a plan</h2>
       <BillingPlans
         plans={plans.map((p) => ({
           id: p.id,

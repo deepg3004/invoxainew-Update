@@ -1,5 +1,6 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { searchBuyerPayments } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
@@ -26,31 +27,37 @@ export default async function BuyersPage({
 
   return (
     <AdminShell email={gate.user.email}>
-      <h1 className="text-2xl font-bold">Buyer lookup</h1>
-      <p className="mt-1 text-sm text-muted">
-        Find a buyer’s payments across all sellers by email or phone (support).
-      </p>
-
-      <form method="get" className="mt-4 flex gap-2">
-        <input
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="buyer email or phone"
-          className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
-        />
-        <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
-          Search
-        </button>
-      </form>
+      <PageHeader
+        eyebrow="InvoxAI · admin"
+        title="Buyer lookup"
+        description="Find a buyer’s payments across all sellers by email or phone (support)."
+        actions={
+          <form method="get" className="flex gap-2">
+            <input
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="buyer email or phone"
+              className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
+            />
+            <Button type="submit" size="sm">
+              Search
+            </Button>
+          </form>
+        }
+      />
 
       {!q ? (
-        <p className="mt-6 text-sm text-muted">Enter an email or phone to search.</p>
+        <GlassCard>
+          <p className="text-sm text-muted">Enter an email or phone to search.</p>
+        </GlassCard>
       ) : results.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">No payments found for “{q}”.</p>
+        <GlassCard>
+          <p className="text-sm text-muted">No payments found for “{q}”.</p>
+        </GlassCard>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
+        <div className="overflow-x-auto rounded-2xl border border-zinc-200/80 bg-white shadow-card">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-muted">
+            <thead className="bg-zinc-50 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Buyer</th>
@@ -62,14 +69,14 @@ export default async function BuyersPage({
             </thead>
             <tbody>
               {results.map((r) => (
-                <tr key={r.id} className="border-b border-zinc-200 last:border-0">
+                <tr key={r.id} className="border-t border-zinc-100 hover:bg-zinc-50">
                   <td className="px-4 py-3 text-muted">{fmtDate(r.paidAt ?? r.createdAt)}</td>
                   <td className="px-4 py-3">
                     <div>{r.buyerEmail ?? "—"}</div>
                     {r.buyerContact ? <div className="text-xs text-muted">{r.buyerContact}</div> : null}
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/tenants/${r.tenant.id}`} className="text-cyan underline">
+                    <Link href={`/tenants/${r.tenant.id}`} className="text-brand-strong underline">
                       {r.tenant.username}
                     </Link>
                   </td>

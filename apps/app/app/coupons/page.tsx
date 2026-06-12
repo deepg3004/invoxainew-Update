@@ -1,6 +1,6 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listCoupons, getSellerGateway } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -30,25 +30,20 @@ export default async function CouponsPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            InvoxAI · store
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">Coupons</h1>
-        </div>
-        {gateway ? (
-          <Link
-            href="/coupons/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
-          >
-            New coupon
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        eyebrow="InvoxAI · store"
+        title="Coupons"
+        actions={
+          gateway ? (
+            <Button href="/coupons/new" size="sm">
+              New coupon
+            </Button>
+          ) : null
+        }
+      />
 
       {!gateway ? (
-        <div className="mt-8">
+        <div>
           <GlassCard title="Connect a gateway first">
             <p className="text-sm text-muted">
               Coupons discount your store sales, which run on your own Razorpay
@@ -56,18 +51,20 @@ export default async function CouponsPage() {
             </p>
             <Link
               href="/gateway"
-              className="mt-3 inline-block text-sm font-medium text-cyan underline"
+              className="mt-3 inline-block text-sm font-medium text-brand-strong underline"
             >
               Connect gateway →
             </Link>
           </GlassCard>
         </div>
       ) : coupons.length === 0 ? (
-        <p className="mt-8 text-muted">
-          No coupons yet. Create a discount code for your store.
-        </p>
+        <GlassCard>
+          <p className="text-muted">
+            No coupons yet. Create a discount code for your store.
+          </p>
+        </GlassCard>
       ) : (
-        <div className="mt-6 space-y-3">
+        <GlassCard className="divide-y divide-zinc-100 p-0">
           {coupons.map((c) => {
             const win = windowLabel(c.startsAt, c.expiresAt);
             const usage =
@@ -75,7 +72,7 @@ export default async function CouponsPage() {
                 ? `${c.redeemedCount} used`
                 : `${c.redeemedCount} / ${c.maxRedemptions} used`;
             return (
-              <div key={c.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+              <div key={c.id} className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -101,7 +98,7 @@ export default async function CouponsPage() {
                   </div>
                   <div className="shrink-0 text-right text-sm">
                     <div className="flex items-center gap-3">
-                      <Link href={`/coupons/${c.id}`} className="text-cyan underline">
+                      <Link href={`/coupons/${c.id}`} className="text-brand-strong underline">
                         Edit
                       </Link>
                       {c.isActive ? (
@@ -128,7 +125,7 @@ export default async function CouponsPage() {
               </div>
             );
           })}
-        </div>
+        </GlassCard>
       )}
     </div>
   );

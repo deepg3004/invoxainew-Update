@@ -31,9 +31,11 @@ const ADMIN_NAV: NavGroup[] = [
 /** Client shell wrapper for the admin app — collapsible left sidebar + profile. */
 export function AdminShellClient({
   email,
+  alerts = 0,
   children,
 }: {
   email: string | null | undefined;
+  alerts?: number;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -44,6 +46,8 @@ export function AdminShellClient({
       brandSuffix="admin"
       barePrefixes={["/login"]}
       user={{ name: email ?? "Admin", email }}
+      notificationsHref="/notifications"
+      unreadCount={alerts}
     >
       {children}
     </DashboardShell>

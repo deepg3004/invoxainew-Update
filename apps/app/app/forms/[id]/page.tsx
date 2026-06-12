@@ -1,7 +1,7 @@
 import {formatDateTimeShortIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import {
   getLeadFormById,
   listLeadSubmissions,
@@ -37,39 +37,37 @@ export default async function FormDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link href="/forms" className="text-sm text-cyan underline">
+      <Link href="/forms" className="text-sm text-brand-strong underline">
         ← Lead forms
       </Link>
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold">{form.title}</h1>
-          <p className="mt-1 text-sm text-muted">
-            {submissions.length} submission{submissions.length === 1 ? "" : "s"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {isPublished ? (
-            <form action={setLeadFormStatusAction.bind(null, form.id, "DRAFT")}>
-              <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-100">
-                Unpublish
-              </button>
-            </form>
-          ) : (
-            <form action={setLeadFormStatusAction.bind(null, form.id, "PUBLISHED")}>
-              <button className="rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white shadow-glow">
-                Publish
-              </button>
-            </form>
-          )}
-          {form.status !== "ARCHIVED" ? (
-            <form action={setLeadFormStatusAction.bind(null, form.id, "ARCHIVED")}>
-              <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-muted hover:bg-zinc-100">
-                Archive
-              </button>
-            </form>
-          ) : null}
-        </div>
-      </div>
+      <PageHeader
+        title={form.title}
+        description={`${submissions.length} submission${submissions.length === 1 ? "" : "s"}`}
+        actions={
+          <>
+            {isPublished ? (
+              <form action={setLeadFormStatusAction.bind(null, form.id, "DRAFT")}>
+                <Button type="submit" variant="secondary" size="sm">
+                  Unpublish
+                </Button>
+              </form>
+            ) : (
+              <form action={setLeadFormStatusAction.bind(null, form.id, "PUBLISHED")}>
+                <Button type="submit" size="sm">
+                  Publish
+                </Button>
+              </form>
+            )}
+            {form.status !== "ARCHIVED" ? (
+              <form action={setLeadFormStatusAction.bind(null, form.id, "ARCHIVED")}>
+                <Button type="submit" variant="secondary" size="sm">
+                  Archive
+                </Button>
+              </form>
+            ) : null}
+          </>
+        }
+      />
 
       {/* Share link */}
       <GlassCard className="mt-6">
@@ -79,7 +77,7 @@ export default async function FormDetailPage({
             href={publicUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-1 block break-all text-cyan underline"
+            className="mt-1 block break-all text-brand-strong underline"
           >
             {publicUrl}
           </a>
@@ -90,21 +88,23 @@ export default async function FormDetailPage({
         )}
       </GlassCard>
 
-      <h2 className="mt-10 text-xl font-bold">Submissions</h2>
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Submissions</h2>
       {submissions.length === 0 ? (
-        <p className="mt-3 text-muted">
-          No submissions yet. Share the link above to start collecting leads.
-        </p>
+        <GlassCard className="mt-4">
+          <p className="text-sm text-muted">
+            No submissions yet. Share the link above to start collecting leads.
+          </p>
+        </GlassCard>
       ) : (
-        <div className="mt-4 space-y-3">
+        <GlassCard className="mt-4 space-y-3">
           {submissions.map((s) => (
-            <div key={s.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+            <div key={s.id} className="rounded-xl border border-zinc-100 bg-surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="font-medium text-zinc-900">{s.name ?? "—"}</div>
                   <div className="mt-0.5 space-x-2 text-sm">
                     {s.email ? (
-                      <a href={`mailto:${s.email}`} className="text-cyan underline">
+                      <a href={`mailto:${s.email}`} className="text-brand-strong underline">
                         {s.email}
                       </a>
                     ) : null}
@@ -127,7 +127,7 @@ export default async function FormDetailPage({
               </div>
             </div>
           ))}
-        </div>
+        </GlassCard>
       )}
     </div>
   );

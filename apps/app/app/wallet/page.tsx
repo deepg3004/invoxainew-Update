@@ -1,5 +1,5 @@
 import {formatDateTimeIST} from "@invoxai/utils/date";
-import { GlassCard } from "@invoxai/ui";
+import { GlassCard, PageHeader } from "@invoxai/ui";
 import {
   getWalletByTenant,
   listWalletTransactions,
@@ -24,16 +24,13 @@ export default async function WalletPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · wallet
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Prepaid wallet</h1>
-      <p className="mt-2 text-muted">
-        Your wallet pays InvoxAI’s fees (commission, AI pages, add-ons). It holds
-        only your own funds — buyer payments never touch it.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · wallet"
+        title="Prepaid wallet"
+        description="Your wallet pays InvoxAI’s fees (commission, AI pages, add-ons). It holds only your own funds — buyer payments never touch it."
+      />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <GlassCard title="Balance">
           <p className="text-3xl font-bold text-zinc-900">
             {formatRupees(balance)}
@@ -44,13 +41,13 @@ export default async function WalletPage() {
         </GlassCard>
       </div>
 
-      <h2 className="mt-10 text-xl font-bold">Transactions</h2>
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Transactions</h2>
       {txns.length === 0 ? (
         <p className="mt-3 text-sm text-muted">No transactions yet.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
+        <GlassCard className="mt-4 overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-muted">
+            <thead className="bg-zinc-50 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">When</th>
                 <th className="px-4 py-3 font-medium">Reason</th>
@@ -62,7 +59,7 @@ export default async function WalletPage() {
               {txns.map((t) => {
                 const credit = t.direction === "CREDIT";
                 return (
-                  <tr key={t.id} className="border-b border-zinc-200 last:border-0">
+                  <tr key={t.id} className="border-t border-zinc-100 hover:bg-zinc-50">
                     <td className="px-4 py-3 text-muted">
                       {formatDateTime(t.createdAt)}
                     </td>
@@ -83,7 +80,7 @@ export default async function WalletPage() {
               })}
             </tbody>
           </table>
-        </div>
+        </GlassCard>
       )}
     </div>
   );

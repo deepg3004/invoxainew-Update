@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listAiPages, getWalletByTenant, getFeatureQuota } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -30,13 +30,11 @@ export default async function AiPagesPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            InvoxAI · AI pages
-          </p>
-          <h1 className="mt-1 text-3xl font-bold">AI landing pages</h1>
-          <p className="mt-1 text-muted">
+      <PageHeader
+        eyebrow="InvoxAI · AI pages"
+        title="AI landing pages"
+        description={
+          <>
             Describe your business and AI writes a published page.{" "}
             {unlimited ? (
               <strong>Unlimited on your plan.</strong>
@@ -45,23 +43,17 @@ export default async function AiPagesPage() {
             ) : (
               <>Next page <strong>{formatRupees(price)}</strong> from your wallet.</>
             )}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Link
-            href="/ai-pages/templates"
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
-          >
-            Templates
-          </Link>
-          <Link
-            href="/ai-pages/new"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
-          >
-            Generate page
-          </Link>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            <Button href="/ai-pages/templates" variant="secondary">
+              Templates
+            </Button>
+            <Button href="/ai-pages/new">Generate page</Button>
+          </>
+        }
+      />
 
       <div className="mt-6">
         <GlassCard title="Wallet">
@@ -70,7 +62,7 @@ export default async function AiPagesPage() {
             {!nextIsFree && balance < price ? (
               <>
                 {" "}— too low for a paid page ({formatRupees(price)}).{" "}
-                <Link href="/wallet" className="text-cyan underline">
+                <Link href="/wallet" className="text-brand-strong underline">
                   Top up
                 </Link>
               </>
@@ -80,13 +72,15 @@ export default async function AiPagesPage() {
       </div>
 
       {pages.length === 0 ? (
-        <p className="mt-8 text-muted">No AI pages yet. Generate your first one.</p>
+        <GlassCard className="mt-6 text-muted">
+          No AI pages yet. Generate your first one.
+        </GlassCard>
       ) : (
         <div className="mt-6 space-y-3">
           {pages.map((p) => {
             const url = `${base}/${p.slug}`;
             return (
-              <div key={p.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+              <GlassCard key={p.id} className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -106,7 +100,7 @@ export default async function AiPagesPage() {
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-1 block truncate text-sm text-cyan underline"
+                        className="mt-1 block truncate text-sm text-brand-strong underline"
                       >
                         {url}
                       </a>
@@ -116,7 +110,7 @@ export default async function AiPagesPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-sm">
                     {p.isPublished ? <CopyLinkButton url={url} /> : null}
-                    <Link href={`/ai-pages/${p.id}/edit`} className="text-cyan underline">
+                    <Link href={`/ai-pages/${p.id}/edit`} className="text-brand-strong underline">
                       Edit
                     </Link>
                     <form action={setAiPagePublishedAction.bind(null, p.id, !p.isPublished)}>
@@ -131,7 +125,7 @@ export default async function AiPagesPage() {
                     </form>
                   </div>
                 </div>
-              </div>
+              </GlassCard>
             );
           })}
         </div>

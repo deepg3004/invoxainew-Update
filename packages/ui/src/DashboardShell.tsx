@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import Link from "next/link";
 import {
   Bell,
   Wallet,
@@ -96,18 +97,18 @@ function isActive(pathname: string, href: string): boolean {
 function Brand({ href, suffix, mark }: { href: string; suffix?: string; mark?: boolean }) {
   if (mark) {
     return (
-      <a href={href} className="grid h-8 w-8 place-items-center rounded-lg bg-brand-gradient font-display text-sm font-bold text-white">
+      <Link href={href} className="grid h-8 w-8 place-items-center rounded-lg bg-brand-gradient font-display text-sm font-bold text-white">
         IA
-      </a>
+      </Link>
     );
   }
   return (
-    <a href={href} className="font-display text-lg font-bold tracking-tight text-zinc-900">
+    <Link href={href} className="font-display text-lg font-bold tracking-tight text-zinc-900">
       Invox<span className="text-gradient">AI</span>
       {suffix ? (
         <span className="ml-1.5 text-[0.7rem] font-semibold uppercase tracking-wide text-muted">{suffix}</span>
       ) : null}
-    </a>
+    </Link>
   );
 }
 
@@ -138,7 +139,7 @@ function NavLinks({
               const active = isActive(pathname, item.href);
               const I = item.icon;
               return (
-                <a
+                <Link
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
@@ -161,7 +162,7 @@ function NavLinks({
                     className={active ? "text-brand-strong" : "text-muted transition group-hover:text-zinc-700"}
                   />
                   {!collapsed ? item.label : null}
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -329,17 +330,17 @@ export function DashboardShell({
           </span>
           <div className="ml-auto flex items-center gap-2">
             {walletLabel != null ? (
-              <a
+              <Link
                 href={walletHref}
                 className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                 title="Wallet balance"
               >
                 <Wallet size={16} className="text-brand-strong" />
                 {walletLabel}
-              </a>
+              </Link>
             ) : null}
             {notificationsHref ? (
-              <a
+              <Link
                 href={notificationsHref}
                 aria-label="Notifications"
                 className="relative rounded-lg border border-zinc-200 p-2 text-zinc-700 transition hover:bg-zinc-50"
@@ -350,7 +351,7 @@ export function DashboardShell({
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 ) : null}
-              </a>
+              </Link>
             ) : null}
           </div>
         </header>

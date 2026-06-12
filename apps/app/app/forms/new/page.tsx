@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../../lib/tenant";
 import { createLeadFormAction } from "../actions";
 
@@ -19,10 +20,10 @@ export default async function NewFormPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link href="/forms" className="text-sm text-cyan underline">
+      <Link href="/forms" className="text-sm text-brand-strong underline">
         ← Lead forms
       </Link>
-      <h1 className="mt-3 text-3xl font-bold">New lead form</h1>
+      <PageHeader title="New lead form" />
 
       {error ? (
         <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -30,7 +31,8 @@ export default async function NewFormPage({
         </p>
       ) : null}
 
-      <form action={createLeadFormAction} className="mt-6 space-y-4">
+      <GlassCard className="mt-6">
+      <form action={createLeadFormAction} className="space-y-4">
         <div>
           <label className="text-sm font-medium">Title</label>
           <input
@@ -68,7 +70,7 @@ export default async function NewFormPage({
           </div>
         </div>
 
-        <div className="space-y-2 rounded-xl border border-zinc-200 bg-white p-4">
+        <div className="space-y-2 rounded-xl border border-zinc-100 bg-surface p-4">
           <p className="text-sm font-medium">Fields to collect</p>
           <p className="text-xs text-muted">Name and email are always collected.</p>
           <label className="flex items-center gap-2 text-sm">
@@ -83,10 +85,11 @@ export default async function NewFormPage({
           <input type="checkbox" name="publish" /> Publish now (make the form live)
         </label>
 
-        <button className="w-full rounded-xl bg-brand-gradient px-4 py-2.5 font-medium text-white shadow-glow">
+        <Button type="submit" className="w-full">
           Create form
-        </button>
+        </Button>
       </form>
+      </GlassCard>
     </div>
   );
 }

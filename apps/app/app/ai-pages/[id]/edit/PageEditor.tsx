@@ -103,7 +103,7 @@ export function PageEditor({
           </p>
           <h1 className="mt-1 text-2xl font-bold">Edit page</h1>
         </div>
-        <a href={liveUrl} target="_blank" rel="noreferrer" className="text-sm text-cyan underline">
+        <a href={liveUrl} target="_blank" rel="noreferrer" className="text-sm text-brand-strong underline">
           View live ↗
         </a>
       </div>

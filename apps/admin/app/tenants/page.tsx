@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listTenantsAdmin } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
@@ -20,33 +21,35 @@ export default async function TenantsPage({
 
   return (
     <AdminShell email={gate.user.email}>
-      <h1 className="text-2xl font-bold">Tenants</h1>
+      <PageHeader
+        eyebrow="InvoxAI · admin"
+        title="Tenants"
+        description={`${tenants.length} tenant${tenants.length === 1 ? "" : "s"}${
+          q ? ` matching "${q}"` : ""
+        } (max 100)`}
+        actions={
+          <form method="get" className="flex flex-wrap items-center gap-2">
+            <input
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="Search by username, name, or owner email"
+              className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
+            />
+            <Button type="submit" size="sm">
+              Search
+            </Button>
+            {q ? (
+              <Link href="/tenants" className="px-3 py-2 text-sm text-muted underline">
+                Clear
+              </Link>
+            ) : null}
+          </form>
+        }
+      />
 
-      <form method="get" className="mt-4 flex gap-2">
-        <input
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="Search by username, name, or owner email"
-          className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
-        />
-        <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
-          Search
-        </button>
-        {q ? (
-          <Link href="/tenants" className="px-3 py-2 text-sm text-muted underline">
-            Clear
-          </Link>
-        ) : null}
-      </form>
-
-      <p className="mt-4 text-sm text-muted">
-        {tenants.length} tenant{tenants.length === 1 ? "" : "s"}
-        {q ? ` matching "${q}"` : ""} (max 100)
-      </p>
-
-      <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
+      <GlassCard className="overflow-x-auto p-0">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-muted">
+          <thead className="bg-zinc-50 text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Tenant</th>
               <th className="px-4 py-3 font-medium">Owner</th>
@@ -58,9 +61,9 @@ export default async function TenantsPage({
           </thead>
           <tbody>
             {tenants.map((t) => (
-              <tr key={t.id} className="border-b border-zinc-200 last:border-0">
+              <tr key={t.id} className="border-t border-zinc-100 hover:bg-zinc-50">
                 <td className="px-4 py-3">
-                  <Link href={`/tenants/${t.id}`} className="font-medium text-cyan underline">
+                  <Link href={`/tenants/${t.id}`} className="font-medium text-brand-strong underline">
                     {t.username}
                   </Link>
                   {t.suspendedAt ? (
@@ -99,7 +102,7 @@ export default async function TenantsPage({
               </tr>
             ))}
             {tenants.length === 0 ? (
-              <tr>
+              <tr className="border-t border-zinc-100">
                 <td colSpan={6} className="px-4 py-6 text-center text-muted">
                   No tenants found.
                 </td>
@@ -107,7 +110,7 @@ export default async function TenantsPage({
             ) : null}
           </tbody>
         </table>
-      </div>
+      </GlassCard>
     </AdminShell>
   );
 }

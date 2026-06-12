@@ -1,4 +1,4 @@
-import { Badge, StatCard } from "@invoxai/ui";
+import { Badge, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
 import { listContacts } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -39,16 +39,13 @@ export default async function ContactsPage({
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · grow
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Contacts</h1>
-      <p className="mt-2 text-muted">
-        Everyone who submitted a form or started a checkout — your CRM, built from
-        your leads and buyers.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · grow"
+        title="Contacts"
+        description="Everyone who submitted a form or started a checkout — your CRM, built from your leads and buyers."
+      />
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <StatCard label="Contacts" value={contacts.length} />
         <StatCard label="Buyers" value={buyers} />
         <StatCard label="Leads only" value={contacts.length - buyers} />
@@ -64,15 +61,17 @@ export default async function ContactsPage({
       </form>
 
       {filtered.length === 0 ? (
-        <p className="mt-8 text-muted">
-          {q ? `No contacts match “${rawQ}”.` : "No contacts yet. They’ll appear as people submit forms or start checkouts."}
-        </p>
+        <GlassCard className="mt-6">
+          <p className="text-muted">
+            {q ? `No contacts match “${rawQ}”.` : "No contacts yet. They’ll appear as people submit forms or start checkouts."}
+          </p>
+        </GlassCard>
       ) : (
-        <div className="mt-6 space-y-2">
+        <GlassCard className="mt-6 divide-y divide-zinc-100 p-0">
           {filtered.map((c) => (
             <div
               key={c.email.toLowerCase()}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4"
+              className="flex flex-wrap items-center justify-between gap-3 p-4"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -80,7 +79,7 @@ export default async function ContactsPage({
                   {c.isBuyer ? <Badge tone="success">Buyer</Badge> : <Badge tone="cyan">Lead</Badge>}
                 </div>
                 <div className="mt-0.5 space-x-2 text-sm">
-                  <a href={`mailto:${c.email}`} className="text-cyan underline">
+                  <a href={`mailto:${c.email}`} className="text-brand-strong underline">
                     {c.email}
                   </a>
                   {c.phone ? (
@@ -112,7 +111,7 @@ export default async function ContactsPage({
               </div>
             </div>
           ))}
-        </div>
+        </GlassCard>
       )}
     </div>
   );

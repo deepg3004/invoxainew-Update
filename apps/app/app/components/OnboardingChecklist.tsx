@@ -40,7 +40,7 @@ export function OnboardingChecklist({ status }: { status: OnboardingStatus }) {
     <div className="mb-8 rounded-2xl border border-zinc-200 bg-white p-5 backdrop-blur-xl">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-zinc-900">Finish setting up</h2>
-        <span className="text-sm font-medium text-cyan">
+        <span className="text-sm font-medium text-brand-strong">
           {doneCount}/{steps.length} done
         </span>
       </div>
@@ -69,7 +69,7 @@ export function OnboardingChecklist({ status }: { status: OnboardingStatus }) {
               ) : null}
             </div>
             {!s.done ? (
-              <Link href={s.href} className="shrink-0 text-sm font-medium text-cyan underline">
+              <Link href={s.href} className="shrink-0 text-sm font-medium text-brand-strong underline">
                 Do it →
               </Link>
             ) : null}

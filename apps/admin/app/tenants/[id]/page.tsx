@@ -1,7 +1,7 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GlassCard } from "@invoxai/ui";
+import { GlassCard, PageHeader, StatCard } from "@invoxai/ui";
 import {
   getTenantAdminDetail,
   getTenantSalesSummary,
@@ -41,23 +41,28 @@ export default async function TenantDetail({
 
   return (
     <AdminShell email={gate.user.email}>
-      <Link href="/tenants" className="text-sm text-cyan underline">
+      <Link href="/tenants" className="text-sm text-brand-strong underline">
         ← Tenants
       </Link>
-      <h1 className="mt-2 flex items-center gap-3 text-2xl font-bold">
-        {t.name ?? t.username}
-        {suspended ? (
-          <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-            SUSPENDED
-          </span>
-        ) : null}
-      </h1>
-      <p className="mt-1 text-sm text-muted">
-        {t.username}.invoxai.io · owner {t.owner.email ?? "—"} · joined{" "}
-        {fmtDate(t.createdAt)}
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · admin"
+        title={t.name ?? t.username}
+        description={
+          <>
+            {t.username}.invoxai.io · owner {t.owner.email ?? "—"} · joined{" "}
+            {fmtDate(t.createdAt)}
+          </>
+        }
+        actions={
+          suspended ? (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+              SUSPENDED
+            </span>
+          ) : null
+        }
+      />
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3">
         <GlassCard title="Subscription">
           {t.subscription ? (
             <p className="text-sm">
@@ -72,11 +77,7 @@ export default async function TenantDetail({
             <p className="text-sm text-muted">No subscription</p>
           )}
         </GlassCard>
-        <GlassCard title="Wallet">
-          <p className="text-2xl font-bold">
-            {formatRupees(t.wallet?.balancePaise ?? 0)}
-          </p>
-        </GlassCard>
+        <StatCard label="Wallet" value={formatRupees(t.wallet?.balancePaise ?? 0)} />
         <GlassCard title="Gateway">
           {t.gateway ? (
             <p className="text-sm">
@@ -94,23 +95,23 @@ export default async function TenantDetail({
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <GlassCard title="Orders">
-          <p className="text-xl font-bold">{summary.orderCount}</p>
-        </GlassCard>
-        <GlassCard title="GMV">
-          <p className="text-xl font-bold">{formatRupees(summary.grossPaise)}</p>
-        </GlassCard>
-        <GlassCard title="Commission">
-          <p className="text-xl font-bold">{formatRupees(summary.commissionPaidPaise)}</p>
-          {summary.commissionDuePaise > 0 ? (
-            <p className="text-xs text-warning">{formatRupees(summary.commissionDuePaise)} due</p>
-          ) : null}
-        </GlassCard>
+        <StatCard label="Orders" value={summary.orderCount} />
+        <StatCard label="GMV" value={formatRupees(summary.grossPaise)} />
+        <StatCard
+          label="Commission"
+          value={formatRupees(summary.commissionPaidPaise)}
+          hint={
+            summary.commissionDuePaise > 0
+              ? `${formatRupees(summary.commissionDuePaise)} due`
+              : undefined
+          }
+          accent={summary.commissionDuePaise > 0 ? "warning" : undefined}
+        />
       </div>
 
       {/* Admin actions */}
-      <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50/40 p-5">
-        <h2 className="text-lg font-bold">Admin actions</h2>
+      <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-card">
+        <h2 className="text-lg font-semibold text-zinc-900">Admin actions</h2>
 
         <div className="mt-4">
           <p className="text-sm font-medium text-muted">
@@ -149,69 +150,69 @@ export default async function TenantDetail({
 
       {/* Audit log */}
       {audit.length > 0 ? (
-        <div className="mt-6">
-          <h2 className="text-lg font-bold">Admin audit log</h2>
-          <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-zinc-900">Admin audit log</h2>
+          <GlassCard className="mt-2 overflow-x-auto p-0">
             <table className="w-full text-left text-sm">
               <tbody>
                 {audit.map((a) => (
-                  <tr key={a.id} className="border-b border-zinc-200 last:border-0">
-                    <td className="px-4 py-2 text-muted">{fmtDate(a.createdAt)}</td>
-                    <td className="px-4 py-2 font-medium">{a.action}</td>
-                    <td className="px-4 py-2 text-muted">
+                  <tr key={a.id} className="border-t border-zinc-100 first:border-0 hover:bg-zinc-50">
+                    <td className="px-4 py-3 text-muted">{fmtDate(a.createdAt)}</td>
+                    <td className="px-4 py-3 font-medium">{a.action}</td>
+                    <td className="px-4 py-3 text-muted">
                       {a.amountPaise != null ? formatRupees(a.amountPaise) + " · " : ""}
                       {a.detail ?? ""}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs text-muted">
+                    <td className="px-4 py-3 text-right text-xs text-muted">
                       {a.adminEmail}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </GlassCard>
         </div>
       ) : null}
 
       {/* Recent wallet ledger */}
-      <h2 className="mt-8 text-lg font-bold">Wallet ledger (recent)</h2>
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Wallet ledger (recent)</h2>
       {t.wallet && t.wallet.transactions.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
+        <GlassCard className="mt-2 overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
             <tbody>
               {t.wallet.transactions.map((tx) => (
-                <tr key={tx.id} className="border-b border-zinc-200 last:border-0">
-                  <td className="px-4 py-2 text-muted">{fmtDate(tx.createdAt)}</td>
-                  <td className="px-4 py-2">{tx.reason}</td>
+                <tr key={tx.id} className="border-t border-zinc-100 first:border-0 hover:bg-zinc-50">
+                  <td className="px-4 py-3 text-muted">{fmtDate(tx.createdAt)}</td>
+                  <td className="px-4 py-3">{tx.reason}</td>
                   <td
-                    className={`px-4 py-2 text-right font-medium ${
+                    className={`px-4 py-3 text-right font-medium ${
                       tx.direction === "CREDIT" ? "text-green-700" : "text-zinc-900"
                     }`}
                   >
                     {tx.direction === "CREDIT" ? "+" : "−"}
                     {formatRupees(tx.amountPaise)}
                   </td>
-                  <td className="px-4 py-2 text-right text-muted">
+                  <td className="px-4 py-3 text-right text-muted">
                     {formatRupees(tx.balanceAfter)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </GlassCard>
       ) : (
         <p className="mt-2 text-sm text-muted">No wallet activity.</p>
       )}
 
       {/* Recent orders */}
-      <h2 className="mt-8 text-lg font-bold">Recent orders</h2>
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Recent orders</h2>
       {t.buyerPayments.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
+        <GlassCard className="mt-2 overflow-x-auto p-0">
           <table className="w-full text-left text-sm">
             <tbody>
               {t.buyerPayments.map((o) => (
-                <tr key={o.id} className="border-b border-zinc-200 last:border-0">
-                  <td className="px-4 py-2 font-medium text-zinc-900">
+                <tr key={o.id} className="border-t border-zinc-100 first:border-0 hover:bg-zinc-50">
+                  <td className="px-4 py-3 font-medium text-zinc-900">
                     {o.itemTitle ?? o.paymentPage?.title ?? "—"}
                     {o.refundedPaise > 0 && !o.chargebackAt ? (
                       <span className="ml-2 text-xs text-warning">
@@ -219,10 +220,10 @@ export default async function TenantDetail({
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2 text-muted">{o.buyerEmail ?? "—"}</td>
-                  <td className="px-4 py-2 text-muted">{o.fulfillmentStatus}</td>
-                  <td className="px-4 py-2 text-right">{formatRupees(o.amountPaise)}</td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-3 text-muted">{o.buyerEmail ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted">{o.fulfillmentStatus}</td>
+                  <td className="px-4 py-3 text-right">{formatRupees(o.amountPaise)}</td>
+                  <td className="px-4 py-3 text-right">
                     {o.chargebackAt ? (
                       <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
                         CHARGEBACK
@@ -239,7 +240,7 @@ export default async function TenantDetail({
               ))}
             </tbody>
           </table>
-        </div>
+        </GlassCard>
       ) : (
         <p className="mt-2 text-sm text-muted">No orders.</p>
       )}

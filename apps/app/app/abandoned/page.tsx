@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { GlassCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { listAbandonedCheckouts } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -21,25 +20,22 @@ export default async function AbandonedPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        InvoxAI · recovery
-      </p>
-      <h1 className="mt-1 text-3xl font-bold">Abandoned checkouts</h1>
-      <p className="mt-2 text-muted">
-        Buyers who started paying but didn’t finish (older than 30 minutes). Reach
-        out with the contact they entered to recover the sale.
-      </p>
+      <PageHeader
+        eyebrow="InvoxAI · recovery"
+        title="Abandoned checkouts"
+        description="Buyers who started paying but didn’t finish (older than 30 minutes). Reach out with the contact they entered to recover the sale."
+      />
 
-      <div className="mt-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-muted">
+      <GlassCard className="text-sm text-muted">
         💡 Automatic email / WhatsApp recovery nudges turn on once you connect an
         email provider. For now, follow up manually below.
-      </div>
+      </GlassCard>
 
       {carts.length === 0 ? (
-        <p className="mt-8 text-muted">
+        <GlassCard className="mt-6 text-muted">
           No abandoned checkouts. When someone starts but doesn’t complete a
           payment, they’ll show up here.
-        </p>
+        </GlassCard>
       ) : (
         <div className="mt-8 space-y-3">
           {carts.map((c) => {
@@ -80,7 +76,7 @@ export default async function AbandonedPage() {
                         href={`mailto:${c.buyerEmail}?subject=${encodeURIComponent(
                           "Complete your order",
                         )}`}
-                        className="block font-medium text-cyan underline"
+                        className="block font-medium text-brand-strong underline"
                       >
                         {c.buyerEmail}
                       </a>
@@ -105,11 +101,11 @@ export default async function AbandonedPage() {
         </div>
       )}
 
-      <p className="mt-8 text-sm text-muted">
-        <Link href="/orders" className="text-cyan underline">
+      <div className="mt-8">
+        <Button href="/orders" variant="secondary" size="sm">
           ← Back to orders
-        </Link>
-      </p>
+        </Button>
+      </div>
     </div>
   );
 }
