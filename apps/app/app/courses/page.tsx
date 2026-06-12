@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { listCourses, getSellerGateway } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -17,7 +17,7 @@ function buyerBase(username: string): string {
 const STATUS_BADGE: Record<string, string> = {
   PUBLISHED: "bg-green-50 text-green-700",
   DRAFT: "bg-amber-50 text-amber-700",
-  ARCHIVED: "bg-neutral-100 text-neutral-500",
+  ARCHIVED: "bg-white/10 text-muted",
 };
 
 export default async function CoursesPage() {
@@ -29,10 +29,10 @@ export default async function CoursesPage() {
   const base = buyerBase(tenant.username);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl px-6 py-12">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
             InvoxAI · courses
           </p>
           <h1 className="mt-1 text-3xl font-bold">Courses</h1>
@@ -40,7 +40,7 @@ export default async function CoursesPage() {
         {gateway ? (
           <Link
             href="/courses/new"
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
           >
             New course
           </Link>
@@ -49,21 +49,21 @@ export default async function CoursesPage() {
 
       {!gateway ? (
         <div className="mt-8">
-          <Card title="Connect a gateway first">
-            <p className="text-sm text-neutral-500">
+          <GlassCard title="Connect a gateway first">
+            <p className="text-sm text-muted">
               Buyers pay you directly through your own Razorpay account. Connect it
               before creating courses.
             </p>
             <Link
               href="/gateway"
-              className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+              className="mt-3 inline-block text-sm font-medium text-cyan underline"
             >
               Connect gateway →
             </Link>
-          </Card>
+          </GlassCard>
         </div>
       ) : courses.length === 0 ? (
-        <p className="mt-8 text-neutral-500">
+        <p className="mt-8 text-muted">
           No courses yet. Create your first one.
         </p>
       ) : (
@@ -71,14 +71,14 @@ export default async function CoursesPage() {
           {courses.map((c) => {
             const url = `${base}/c/${c.slug}`;
             return (
-              <div key={c.id} className="rounded-xl border border-neutral-200 bg-white p-4">
+              <div key={c.id} className="rounded-xl border border-white/10 bg-surface p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-neutral-900">{c.title}</span>
+                      <span className="font-medium text-white">{c.title}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          STATUS_BADGE[c.status] ?? "bg-neutral-100 text-neutral-500"
+                          STATUS_BADGE[c.status] ?? "bg-white/10 text-muted"
                         }`}
                       >
                         {c.status.charAt(0) + c.status.slice(1).toLowerCase()}
@@ -89,14 +89,14 @@ export default async function CoursesPage() {
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-1 block truncate text-sm text-blue-600 underline"
+                        className="mt-1 block truncate text-sm text-cyan underline"
                       >
                         {url}
                       </a>
                     ) : (
-                      <span className="mt-1 block truncate text-sm text-neutral-400">/c/{c.slug}</span>
+                      <span className="mt-1 block truncate text-sm text-muted">/c/{c.slug}</span>
                     )}
-                    <span className="mt-1 block text-xs text-neutral-400">
+                    <span className="mt-1 block text-xs text-muted">
                       {c._count.lessons} lesson{c._count.lessons === 1 ? "" : "s"} ·{" "}
                       {c._count.enrolments} enrolled
                     </span>
@@ -105,31 +105,31 @@ export default async function CoursesPage() {
                     <div className="font-semibold">{formatRupees(c.pricePaise)}</div>
                     <div className="mt-1 flex items-center gap-3 text-sm">
                       {c.status === "PUBLISHED" ? <CopyLinkButton url={url} /> : null}
-                      <Link href={`/courses/${c.id}`} className="text-blue-600 underline">
+                      <Link href={`/courses/${c.id}`} className="text-cyan underline">
                         Edit
                       </Link>
                       {c.status === "PUBLISHED" ? (
                         <form action={setCourseStatusAction.bind(null, c.id, "DRAFT")}>
-                          <button className="text-neutral-500 underline hover:text-neutral-900">
+                          <button className="text-muted underline hover:text-white">
                             Unpublish
                           </button>
                         </form>
                       ) : c.status === "DRAFT" ? (
                         <form action={setCourseStatusAction.bind(null, c.id, "PUBLISHED")}>
-                          <button className="text-neutral-500 underline hover:text-neutral-900">
+                          <button className="text-muted underline hover:text-white">
                             Publish
                           </button>
                         </form>
                       ) : (
                         <form action={setCourseStatusAction.bind(null, c.id, "DRAFT")}>
-                          <button className="text-neutral-500 underline hover:text-neutral-900">
+                          <button className="text-muted underline hover:text-white">
                             Restore
                           </button>
                         </form>
                       )}
                       {c.status !== "ARCHIVED" ? (
                         <form action={setCourseStatusAction.bind(null, c.id, "ARCHIVED")}>
-                          <button className="text-neutral-400 underline hover:text-red-700">
+                          <button className="text-muted underline hover:text-red-700">
                             Archive
                           </button>
                         </form>
@@ -142,6 +142,6 @@ export default async function CoursesPage() {
           })}
         </div>
       )}
-    </main>
+    </div>
   );
 }

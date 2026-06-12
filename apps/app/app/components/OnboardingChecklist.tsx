@@ -37,16 +37,16 @@ export function OnboardingChecklist({ status }: { status: OnboardingStatus }) {
   if (doneCount === steps.length) return null;
 
   return (
-    <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50/50 p-5">
+    <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-neutral-900">Finish setting up</h2>
-        <span className="text-sm font-medium text-blue-700">
+        <h2 className="font-semibold text-white">Finish setting up</h2>
+        <span className="text-sm font-medium text-cyan">
           {doneCount}/{steps.length} done
         </span>
       </div>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-blue-100">
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full bg-blue-600"
+          className="h-full bg-brand"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
         />
       </div>
@@ -55,21 +55,21 @@ export function OnboardingChecklist({ status }: { status: OnboardingStatus }) {
           <li key={s.label} className="flex items-start gap-3 text-sm">
             <span
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${
-                s.done ? "bg-green-600 text-white" : "border border-neutral-300 text-transparent"
+                s.done ? "bg-success text-white" : "border border-white/10 text-transparent"
               }`}
             >
               ✓
             </span>
             <div className="min-w-0 flex-1">
-              <span className={s.done ? "text-neutral-400 line-through" : "font-medium text-neutral-900"}>
+              <span className={s.done ? "text-muted line-through" : "font-medium text-white"}>
                 {s.label}
               </span>
               {!s.done ? (
-                <span className="text-neutral-500"> — {s.hint}</span>
+                <span className="text-muted"> — {s.hint}</span>
               ) : null}
             </div>
             {!s.done ? (
-              <Link href={s.href} className="shrink-0 text-sm font-medium text-blue-600 underline">
+              <Link href={s.href} className="shrink-0 text-sm font-medium text-cyan underline">
                 Do it →
               </Link>
             ) : null}

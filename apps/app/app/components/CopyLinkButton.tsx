@@ -21,7 +21,7 @@ export function CopyLinkButton({ url }: { url: string }) {
     <button
       type="button"
       onClick={copy}
-      className="text-neutral-500 underline hover:text-neutral-900"
+      className="text-muted underline hover:text-white"
     >
       {copied ? "Copied!" : "Copy link"}
     </button>

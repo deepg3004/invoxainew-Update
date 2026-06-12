@@ -78,13 +78,13 @@ export function BillingPlans({
     <div className="mt-4">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-      <div className="inline-flex rounded-lg border border-neutral-200 bg-white p-1 text-sm">
+      <div className="inline-flex rounded-lg border border-white/10 bg-surface p-1 text-sm">
         {(["MONTHLY", "YEARLY"] as const).map((c) => (
           <button
             key={c}
             onClick={() => setCycle(c)}
             className={`rounded-md px-3 py-1.5 font-medium ${
-              cycle === c ? "bg-neutral-900 text-white" : "text-neutral-500"
+              cycle === c ? "bg-brand text-white" : "text-muted"
             }`}
           >
             {c === "MONTHLY" ? "Monthly" : "Yearly"}
@@ -105,19 +105,19 @@ export function BillingPlans({
           return (
             <div
               key={p.id}
-              className="flex flex-col rounded-xl border border-neutral-200 bg-white p-5 shadow-sm"
+              className="flex flex-col rounded-xl border border-white/10 bg-surface p-5 shadow-sm"
             >
-              <h3 className="text-lg font-semibold text-neutral-900">{p.name}</h3>
+              <h3 className="text-lg font-semibold text-white">{p.name}</h3>
               <p className="mt-1 text-2xl font-bold">
                 {priceLabel}
-                <span className="text-sm font-normal text-neutral-400">
+                <span className="text-sm font-normal text-muted">
                   /{cycle === "MONTHLY" ? "mo" : "yr"}
                 </span>
               </p>
               {p.description ? (
-                <p className="mt-2 text-sm text-neutral-500">{p.description}</p>
+                <p className="mt-2 text-sm text-muted">{p.description}</p>
               ) : null}
-              <ul className="mt-4 space-y-1 text-sm text-neutral-600">
+              <ul className="mt-4 space-y-1 text-sm text-muted">
                 <li>{bpsToPercentString(p.commissionBps)}% commission</li>
                 <li>{limit(p.maxProducts)} products</li>
                 <li>{limit(p.maxAiPages)} AI pages</li>
@@ -125,7 +125,7 @@ export function BillingPlans({
               <button
                 onClick={() => subscribe(p)}
                 disabled={pendingId !== null || isCurrent}
-                className="mt-5 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="mt-5 rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 {isCurrent
                   ? "Current plan"

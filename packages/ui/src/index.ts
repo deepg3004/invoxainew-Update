@@ -9,3 +9,5 @@ export { GlassCard } from "./GlassCard";
 export { Badge } from "./Badge";
 export { AuroraBackground } from "./AuroraBackground";
 export { Container, Section } from "./Container";
+export { StatCard } from "./StatCard";
+export { DashboardShell } from "./DashboardShell";

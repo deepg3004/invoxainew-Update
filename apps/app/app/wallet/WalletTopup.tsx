@@ -63,8 +63,8 @@ export function WalletTopup() {
             onClick={() => setAmount(String(r))}
             className={`rounded-lg border px-3 py-1.5 text-sm ${
               amount === String(r)
-                ? "border-neutral-900 bg-neutral-900 text-white"
-                : "border-neutral-300 hover:bg-neutral-50"
+                ? "border-neutral-900 bg-brand text-white"
+                : "border-white/10 hover:bg-white/5"
             }`}
           >
             ₹{r}
@@ -73,18 +73,18 @@ export function WalletTopup() {
       </div>
 
       <div className="mt-3 flex items-center gap-2">
-        <span className="text-neutral-400">₹</span>
+        <span className="text-muted">₹</span>
         <input
           inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="w-28 rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900"
+          className="w-28 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
         />
         <button
           type="button"
           onClick={topup}
           disabled={busy}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {busy ? "Starting…" : "Add money"}
         </button>

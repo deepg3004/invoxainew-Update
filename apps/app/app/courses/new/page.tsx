@@ -7,15 +7,15 @@ export const dynamic = "force-dynamic";
 export default async function NewCoursePage() {
   await requireTenant();
   return (
-    <main className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="text-2xl font-bold">New course</h1>
-      <p className="mt-1 text-neutral-500">
+      <p className="mt-1 text-muted">
         Create the course, then add its lessons. Buyers pay you directly on your
         own gateway and get instant access.
       </p>
       <div className="mt-6">
         <CourseForm action={createCourseAction} submitLabel="Create course" />
       </div>
-    </main>
+    </div>
   );
 }

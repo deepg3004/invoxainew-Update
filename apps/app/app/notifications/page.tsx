@@ -22,17 +22,17 @@ export default async function NotificationsPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
             InvoxAI
           </p>
           <h1 className="mt-1 text-3xl font-bold">Notifications</h1>
         </div>
         {unread > 0 ? (
           <form action={markAllReadAction}>
-            <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
+            <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5">
               Mark all read ({unread})
             </button>
           </form>
@@ -40,9 +40,9 @@ export default async function NotificationsPage() {
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-8 text-neutral-500">No notifications yet.</p>
+        <p className="mt-8 text-muted">No notifications yet.</p>
       ) : (
-        <ul className="mt-6 divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
+        <ul className="mt-6 divide-y divide-white/10 rounded-xl border border-white/10 bg-surface">
           {items.map((n) => {
             const inner = (
               <div className="flex items-start gap-3 p-4">
@@ -54,19 +54,19 @@ export default async function NotificationsPage() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
-                    <span className={`text-sm ${n.readAt ? "text-neutral-700" : "font-semibold text-neutral-900"}`}>
+                    <span className={`text-sm ${n.readAt ? "text-neutral-200" : "font-semibold text-white"}`}>
                       {n.title}
                     </span>
-                    <span className="shrink-0 text-xs text-neutral-400">{timeAgo(n.createdAt)}</span>
+                    <span className="shrink-0 text-xs text-muted">{timeAgo(n.createdAt)}</span>
                   </div>
-                  {n.body ? <p className="mt-0.5 text-sm text-neutral-500">{n.body}</p> : null}
+                  {n.body ? <p className="mt-0.5 text-sm text-muted">{n.body}</p> : null}
                 </div>
               </div>
             );
             return (
               <li key={n.id}>
                 {n.link ? (
-                  <Link href={n.link} className="block hover:bg-neutral-50">
+                  <Link href={n.link} className="block hover:bg-white/5">
                     {inner}
                   </Link>
                 ) : (
@@ -77,6 +77,6 @@ export default async function NotificationsPage() {
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

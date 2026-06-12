@@ -1,4 +1,4 @@
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { listActivePlans, getSubscriptionByTenant } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -23,35 +23,35 @@ export default async function BillingPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+    <div className="mx-auto max-w-3xl px-6 py-12">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · billing
       </p>
       <h1 className="mt-1 text-3xl font-bold">Plan & subscription</h1>
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 text-muted">
         Subscribe to a plan to unlock higher limits and lower commission. You pay
         InvoxAI securely via Razorpay.
       </p>
 
       <div className="mt-8">
-        <Card title="Current plan">
+        <GlassCard title="Current plan">
           {subscription ? (
             <div className="text-sm">
-              <p className="text-lg font-semibold text-neutral-900">
+              <p className="text-lg font-semibold text-white">
                 {subscription.plan.name}
               </p>
-              <p className="mt-1 text-neutral-500">
+              <p className="mt-1 text-muted">
                 Status: <strong>{subscription.status}</strong> ·{" "}
                 {subscription.billingCycle.toLowerCase()} · renews{" "}
                 {formatDate(subscription.currentPeriodEnd)}
               </p>
             </div>
           ) : (
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-muted">
               You’re not subscribed to a plan yet. Pick one below.
             </p>
           )}
-        </Card>
+        </GlassCard>
       </div>
 
       <h2 className="mt-10 text-xl font-bold">Choose a plan</h2>
@@ -70,6 +70,6 @@ export default async function BillingPage() {
         }))}
         currentPlanId={subscription?.planId ?? null}
       />
-    </main>
+    </div>
   );
 }

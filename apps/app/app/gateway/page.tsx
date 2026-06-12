@@ -1,4 +1,4 @@
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { getSellerGateway } from "@invoxai/db";
 import { maskKeyId } from "@invoxai/utils/crypto";
 import { requireTenant } from "../../lib/tenant";
@@ -12,12 +12,12 @@ export default async function GatewayPage() {
   const gateway = await getSellerGateway(tenant.id);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+    <div className="mx-auto max-w-2xl px-6 py-12">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · payments
       </p>
       <h1 className="mt-1 text-3xl font-bold">Payment gateway</h1>
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 text-muted">
         Connect your own Razorpay account. Buyers pay you <strong>directly</strong>
         {" "}— their money settles to your Razorpay account and never passes through
         InvoxAI.
@@ -25,19 +25,19 @@ export default async function GatewayPage() {
 
       {gateway ? (
         <div className="mt-8">
-          <Card title="Connected">
+          <GlassCard title="Connected">
             <div className="flex items-start justify-between gap-4">
               <div className="text-sm">
-                <p className="font-medium text-neutral-900">
+                <p className="font-medium text-white">
                   Razorpay · {maskKeyId(gateway.keyId)}
                 </p>
-                <p className="mt-1 text-neutral-500">
+                <p className="mt-1 text-muted">
                   Mode:{" "}
                   <span
                     className={
                       gateway.mode === "LIVE"
                         ? "font-semibold text-green-700"
-                        : "font-semibold text-amber-600"
+                        : "font-semibold text-warning"
                     }
                   >
                     {gateway.mode}
@@ -50,21 +50,21 @@ export default async function GatewayPage() {
                   }).format(gateway.connectedAt)}
                 </p>
                 {gateway.mode === "TEST" ? (
-                  <p className="mt-2 text-xs text-amber-600">
+                  <p className="mt-2 text-xs text-warning">
                     These are test keys — switch to live keys before taking real
                     buyer payments.
                   </p>
                 ) : null}
               </div>
               <form action={disconnectGateway}>
-                <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
+                <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5">
                   Disconnect
                 </button>
               </form>
             </div>
-          </Card>
+          </GlassCard>
 
-          <p className="mt-6 text-sm text-neutral-500">
+          <p className="mt-6 text-sm text-muted">
             Need to change accounts? Disconnect, then connect the new keys.
           </p>
         </div>
@@ -73,6 +73,6 @@ export default async function GatewayPage() {
           <GatewayForm />
         </div>
       )}
-    </main>
+    </div>
   );
 }

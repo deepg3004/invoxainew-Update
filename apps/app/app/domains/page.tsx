@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { listDomains, planAllowsCustomDomain } from "@invoxai/db";
 import { serverEnv } from "@invoxai/config";
 import { requireTenant } from "../../lib/tenant";
@@ -32,10 +32,10 @@ export default async function DomainsPage({
   const banner = msg ? MSG[msg] : null;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">InvoxAI</p>
+    <div className="mx-auto max-w-2xl px-6 py-12">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">InvoxAI</p>
       <h1 className="mt-1 text-3xl font-bold">Custom domains</h1>
-      <p className="mt-1 text-neutral-500">
+      <p className="mt-1 text-muted">
         Serve your site on your own domain. Your default address
         ({tenant.username}.invoxai.io) keeps working too.
       </p>
@@ -52,34 +52,34 @@ export default async function DomainsPage({
 
       {!allowed ? (
         <div className="mt-6">
-          <Card title="Upgrade to connect a custom domain">
-            <p className="text-sm text-neutral-500">
+          <GlassCard title="Upgrade to connect a custom domain">
+            <p className="text-sm text-muted">
               Custom domains are a premium feature. Upgrade your plan to serve your
               site on your own domain.
             </p>
             <Link
               href="/billing"
-              className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+              className="mt-3 inline-block text-sm font-medium text-cyan underline"
             >
               View plans →
             </Link>
-          </Card>
+          </GlassCard>
         </div>
       ) : (
         <div className="mt-6">
-          <Card title="Add a domain">
+          <GlassCard title="Add a domain">
             <AddDomainForm />
-          </Card>
+          </GlassCard>
         </div>
       )}
 
       {domains.length > 0 ? (
         <div className="mt-6 space-y-4">
           {domains.map((d) => (
-            <div key={d.id} className="rounded-xl border border-neutral-200 bg-white p-4">
+            <div key={d.id} className="rounded-xl border border-white/10 bg-surface p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-neutral-900">{d.domain}</span>
+                  <span className="font-medium text-white">{d.domain}</span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       d.status === "VERIFIED"
@@ -93,27 +93,27 @@ export default async function DomainsPage({
                 <div className="flex items-center gap-3 text-sm">
                   {d.status !== "VERIFIED" ? (
                     <form action={verifyDomainAction.bind(null, d.id)}>
-                      <button className="font-medium text-blue-600 underline">Verify</button>
+                      <button className="font-medium text-cyan underline">Verify</button>
                     </form>
                   ) : null}
                   <form action={deleteDomainAction.bind(null, d.id)}>
-                    <button className="text-neutral-400 underline hover:text-red-700">Remove</button>
+                    <button className="text-muted underline hover:text-red-700">Remove</button>
                   </form>
                 </div>
               </div>
 
               {d.status !== "VERIFIED" ? (
-                <div className="mt-3 space-y-2 rounded-lg bg-neutral-50 p-3 text-xs text-neutral-600">
-                  <p className="font-medium text-neutral-700">Add these DNS records, then click Verify:</p>
+                <div className="mt-3 space-y-2 rounded-lg bg-white/5 p-3 text-xs text-muted">
+                  <p className="font-medium text-neutral-200">Add these DNS records, then click Verify:</p>
                   <div>
                     <span className="font-semibold">1. TXT</span> — host{" "}
-                    <code className="rounded bg-white px-1 py-0.5">_invoxai-challenge.{d.domain}</code>{" "}
-                    value <code className="rounded bg-white px-1 py-0.5">{d.verifyToken}</code>
+                    <code className="rounded bg-surface px-1 py-0.5">_invoxai-challenge.{d.domain}</code>{" "}
+                    value <code className="rounded bg-surface px-1 py-0.5">{d.verifyToken}</code>
                   </div>
                   <div>
                     <span className="font-semibold">2. A</span> — host{" "}
-                    <code className="rounded bg-white px-1 py-0.5">{d.domain}</code> →{" "}
-                    <code className="rounded bg-white px-1 py-0.5">{aTarget}</code>
+                    <code className="rounded bg-surface px-1 py-0.5">{d.domain}</code> →{" "}
+                    <code className="rounded bg-surface px-1 py-0.5">{aTarget}</code>
                   </div>
                 </div>
               ) : null}
@@ -121,8 +121,8 @@ export default async function DomainsPage({
           ))}
         </div>
       ) : (
-        <p className="mt-6 text-sm text-neutral-500">No domains added yet.</p>
+        <p className="mt-6 text-sm text-muted">No domains added yet.</p>
       )}
-    </main>
+    </div>
   );
 }

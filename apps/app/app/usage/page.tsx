@@ -15,20 +15,20 @@ export default async function UsagePage() {
   const summary = await getTenantFeatureUsageSummary(tenant.id);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+    <div className="mx-auto max-w-2xl px-6 py-12">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · usage
       </p>
       <h1 className="mt-1 text-3xl font-bold">Usage & limits</h1>
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 text-muted">
         Your plan{summary.planName ? <> (<strong>{summary.planName}</strong>)</> : null}{" "}
         free allowances for {thisMonth}. Beyond the free amount, features are
         charged from your wallet.
       </p>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+      <div className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-surface">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-neutral-200 text-neutral-500">
+          <thead className="border-b border-white/10 text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Feature</th>
               <th className="px-4 py-3 font-medium">Used this month</th>
@@ -41,13 +41,13 @@ export default async function UsagePage() {
               const unlimited = f.freeLimit === -1;
               return (
                 <tr key={f.featureKey} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-neutral-900">{f.name}</td>
+                  <td className="px-4 py-3 font-medium text-white">{f.name}</td>
                   <td className="px-4 py-3">{f.used}</td>
                   <td className="px-4 py-3">
                     {unlimited ? (
                       <span className="text-green-700">Unlimited</span>
                     ) : f.freeLimit === 0 ? (
-                      <span className="text-neutral-400">None free</span>
+                      <span className="text-muted">None free</span>
                     ) : (
                       <span>
                         {f.remaining} of {f.freeLimit} left
@@ -62,7 +62,7 @@ export default async function UsagePage() {
             })}
             {summary.features.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-neutral-400">
+                <td colSpan={4} className="px-4 py-6 text-center text-muted">
                   No metered features.
                 </td>
               </tr>
@@ -71,17 +71,17 @@ export default async function UsagePage() {
         </table>
       </div>
 
-      <p className="mt-6 text-sm text-neutral-500">
+      <p className="mt-6 text-sm text-muted">
         Need a higher allowance?{" "}
-        <Link href="/billing" className="text-blue-600 underline">
+        <Link href="/billing" className="text-cyan underline">
           Upgrade your plan
         </Link>{" "}
         or{" "}
-        <Link href="/wallet" className="text-blue-600 underline">
+        <Link href="/wallet" className="text-cyan underline">
           top up your wallet
         </Link>
         .
       </p>
-    </main>
+    </div>
   );
 }

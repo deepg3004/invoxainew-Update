@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { listCoupons, getSellerGateway } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -28,10 +28,10 @@ export default async function CouponsPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl px-6 py-12">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
             InvoxAI · store
           </p>
           <h1 className="mt-1 text-3xl font-bold">Coupons</h1>
@@ -39,7 +39,7 @@ export default async function CouponsPage() {
         {gateway ? (
           <Link
             href="/coupons/new"
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white"
           >
             New coupon
           </Link>
@@ -48,21 +48,21 @@ export default async function CouponsPage() {
 
       {!gateway ? (
         <div className="mt-8">
-          <Card title="Connect a gateway first">
-            <p className="text-sm text-neutral-500">
+          <GlassCard title="Connect a gateway first">
+            <p className="text-sm text-muted">
               Coupons discount your store sales, which run on your own Razorpay
               account. Connect it before creating codes.
             </p>
             <Link
               href="/gateway"
-              className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+              className="mt-3 inline-block text-sm font-medium text-cyan underline"
             >
               Connect gateway →
             </Link>
-          </Card>
+          </GlassCard>
         </div>
       ) : coupons.length === 0 ? (
-        <p className="mt-8 text-neutral-500">
+        <p className="mt-8 text-muted">
           No coupons yet. Create a discount code for your store.
         </p>
       ) : (
@@ -74,50 +74,50 @@ export default async function CouponsPage() {
                 ? `${c.redeemedCount} used`
                 : `${c.redeemedCount} / ${c.maxRedemptions} used`;
             return (
-              <div key={c.id} className="rounded-xl border border-neutral-200 bg-white p-4">
+              <div key={c.id} className="rounded-xl border border-white/10 bg-surface p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-neutral-900">{c.code}</span>
+                      <span className="font-mono font-semibold text-white">{c.code}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          c.isActive ? "bg-green-50 text-green-700" : "bg-neutral-100 text-neutral-500"
+                          c.isActive ? "bg-green-50 text-green-700" : "bg-white/10 text-muted"
                         }`}
                       >
                         {c.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
-                    <span className="mt-1 block text-sm text-neutral-700">
+                    <span className="mt-1 block text-sm text-neutral-200">
                       {discountLabel(c.type, c.value)}
                       {c.minSubtotalPaise != null
                         ? ` · min ${formatRupees(c.minSubtotalPaise)}`
                         : ""}
                     </span>
-                    <span className="mt-1 block text-xs text-neutral-400">
+                    <span className="mt-1 block text-xs text-muted">
                       {usage}
                       {win ? ` · ${win}` : ""}
                     </span>
                   </div>
                   <div className="shrink-0 text-right text-sm">
                     <div className="flex items-center gap-3">
-                      <Link href={`/coupons/${c.id}`} className="text-blue-600 underline">
+                      <Link href={`/coupons/${c.id}`} className="text-cyan underline">
                         Edit
                       </Link>
                       {c.isActive ? (
                         <form action={setCouponActiveAction.bind(null, c.id, false)}>
-                          <button className="text-neutral-500 underline hover:text-neutral-900">
+                          <button className="text-muted underline hover:text-white">
                             Deactivate
                           </button>
                         </form>
                       ) : (
                         <form action={setCouponActiveAction.bind(null, c.id, true)}>
-                          <button className="text-neutral-500 underline hover:text-neutral-900">
+                          <button className="text-muted underline hover:text-white">
                             Activate
                           </button>
                         </form>
                       )}
                       <form action={deleteCouponAction.bind(null, c.id)}>
-                        <button className="text-neutral-400 underline hover:text-red-700">
+                        <button className="text-muted underline hover:text-red-700">
                           Delete
                         </button>
                       </form>
@@ -129,6 +129,6 @@ export default async function CouponsPage() {
           })}
         </div>
       )}
-    </main>
+    </div>
   );
 }

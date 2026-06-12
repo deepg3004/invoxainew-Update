@@ -29,23 +29,23 @@ export default async function InvoiceDetail({
   const isTax = Boolean(env.INVOICE_GSTIN);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
+    <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="flex items-center justify-between print:hidden">
-        <Link href="/invoices" className="text-sm text-blue-600 underline">
+        <Link href="/invoices" className="text-sm text-cyan underline">
           ← Invoices
         </Link>
         <PrintButton />
       </div>
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-8">
+      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-8">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold">
               {isTax ? "Tax Invoice" : "Invoice (DRAFT)"}
             </h1>
-            <p className="mt-1 text-sm text-neutral-500">{inv.number}</p>
+            <p className="mt-1 text-sm text-muted">{inv.number}</p>
           </div>
-          <div className="text-right text-sm text-neutral-500">
+          <div className="text-right text-sm text-muted">
             Date: {fmtDate(inv.issuedAt)}
           </div>
         </div>
@@ -58,29 +58,29 @@ export default async function InvoiceDetail({
 
         <div className="mt-6 grid gap-6 sm:grid-cols-2">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-neutral-400">From</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-muted">From</div>
             <div className="mt-1 text-sm">
-              <div className="font-semibold text-neutral-900">{env.INVOICE_LEGAL_NAME}</div>
+              <div className="font-semibold text-white">{env.INVOICE_LEGAL_NAME}</div>
               {env.INVOICE_ADDRESS ? (
-                <div className="whitespace-pre-line text-neutral-500">{env.INVOICE_ADDRESS}</div>
+                <div className="whitespace-pre-line text-muted">{env.INVOICE_ADDRESS}</div>
               ) : null}
               {env.INVOICE_GSTIN ? (
-                <div className="mt-1 text-neutral-500">GSTIN: {env.INVOICE_GSTIN}</div>
+                <div className="mt-1 text-muted">GSTIN: {env.INVOICE_GSTIN}</div>
               ) : null}
             </div>
           </div>
           <div>
-            <div className="text-xs font-medium uppercase tracking-wide text-neutral-400">Billed to</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-muted">Billed to</div>
             <div className="mt-1 text-sm">
-              <div className="font-semibold text-neutral-900">{tenant.name ?? tenant.username}</div>
-              <div className="text-neutral-500">{tenant.username}.invoxai.io</div>
-              <div className="text-neutral-500">{user.email}</div>
+              <div className="font-semibold text-white">{tenant.name ?? tenant.username}</div>
+              <div className="text-muted">{tenant.username}.invoxai.io</div>
+              <div className="text-muted">{user.email}</div>
             </div>
           </div>
         </div>
 
         <table className="mt-8 w-full text-left text-sm">
-          <thead className="border-b border-neutral-200 text-neutral-500">
+          <thead className="border-b border-white/10 text-muted">
             <tr>
               <th className="py-2 font-medium">Description</th>
               <th className="py-2 text-right font-medium">Amount</th>
@@ -96,26 +96,26 @@ export default async function InvoiceDetail({
 
         <div className="mt-4 ml-auto w-full max-w-xs space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-neutral-500">Taxable value</span>
+            <span className="text-muted">Taxable value</span>
             <span>{formatRupees(inv.basePaise)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-neutral-500">
+            <span className="text-muted">
               GST @ {bpsToPercentString(inv.gstRateBps)}%
             </span>
             <span>{formatRupees(inv.taxPaise)}</span>
           </div>
-          <div className="flex justify-between border-t border-neutral-200 pt-1 font-semibold">
+          <div className="flex justify-between border-t border-white/10 pt-1 font-semibold">
             <span>Total</span>
             <span>{formatRupees(inv.totalPaise)}</span>
           </div>
         </div>
 
-        <p className="mt-8 text-xs text-neutral-400">
+        <p className="mt-8 text-xs text-muted">
           Amount is inclusive of GST. Computer-generated invoice.
           {isTax ? "" : " Configure INVOICE_GSTIN to issue valid tax invoices."}
         </p>
       </div>
-    </main>
+    </div>
   );
 }

@@ -26,9 +26,9 @@ export default async function EditCouponPage({
   const action = updateCouponAction.bind(null, coupon.id);
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="text-2xl font-bold">Edit coupon</h1>
-      <p className="mt-1 font-mono text-neutral-500">{coupon.code}</p>
+      <p className="mt-1 font-mono text-muted">{coupon.code}</p>
       <div className="mt-6">
         <CouponForm
           action={action}
@@ -44,6 +44,6 @@ export default async function EditCouponPage({
           }}
         />
       </div>
-    </main>
+    </div>
   );
 }

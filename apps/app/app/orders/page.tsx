@@ -1,4 +1,4 @@
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { listTenantOrders, getTenantSalesSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -12,8 +12,8 @@ const STATUSES = ["NEW", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as c
 function tabCls(active: boolean): string {
   return `rounded-full px-3 py-1 text-xs font-medium ${
     active
-      ? "bg-neutral-900 text-white"
-      : "border border-neutral-300 text-neutral-600 hover:border-neutral-900"
+      ? "bg-brand text-white"
+      : "border border-white/10 text-muted hover:border-neutral-900"
   }`;
 }
 
@@ -43,35 +43,35 @@ export default async function OrdersPage({
   ]);
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+    <div className="mx-auto max-w-4xl px-6 py-12">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · orders
       </p>
       <h1 className="mt-1 text-3xl font-bold">Orders</h1>
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 text-muted">
         Every paid order, with fulfillment status your buyers can see.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <Card title="Orders">
+        <GlassCard title="Orders">
           <p className="text-2xl font-bold">{summary.orderCount}</p>
-        </Card>
-        <Card title="Gross sales">
+        </GlassCard>
+        <GlassCard title="Gross sales">
           <p className="text-2xl font-bold">{formatRupees(summary.grossPaise)}</p>
-          <p className="mt-1 text-xs text-neutral-400">Settled to your gateway</p>
-        </Card>
-        <Card title="InvoxAI commission">
+          <p className="mt-1 text-xs text-muted">Settled to your gateway</p>
+        </GlassCard>
+        <GlassCard title="InvoxAI commission">
           <p className="text-2xl font-bold">
             {formatRupees(summary.commissionPaidPaise)}
           </p>
           {summary.commissionDuePaise > 0 ? (
-            <p className="mt-1 text-xs text-amber-600">
+            <p className="mt-1 text-xs text-warning">
               {formatRupees(summary.commissionDuePaise)} due (settles on top-up)
             </p>
           ) : (
-            <p className="mt-1 text-xs text-neutral-400">From your wallet</p>
+            <p className="mt-1 text-xs text-muted">From your wallet</p>
           )}
-        </Card>
+        </GlassCard>
       </div>
 
       <div className="mt-10 flex items-center justify-between">
@@ -79,7 +79,7 @@ export default async function OrdersPage({
         {orders.length > 0 ? (
           <a
             href="/orders/export"
-            className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:bg-neutral-50"
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/5"
           >
             Export CSV
           </a>
@@ -98,29 +98,29 @@ export default async function OrdersPage({
       </div>
 
       {orders.length === 0 ? (
-        <p className="mt-4 text-neutral-500">
+        <p className="mt-4 text-muted">
           {activeStatus ? `No ${activeStatus.toLowerCase()} orders.` : "No orders yet."}
         </p>
       ) : (
         <div className="mt-4 space-y-3">
           {orders.map((o) => (
-            <div key={o.id} className="rounded-xl border border-neutral-200 bg-white p-4">
+            <div key={o.id} className="rounded-xl border border-white/10 bg-surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-medium text-neutral-900">
+                  <div className="font-medium text-white">
                     {o.itemTitle ?? o.paymentPage?.title ?? "Order"}
                     {o.quantity > 1 ? (
-                      <span className="ml-1 text-sm font-normal text-neutral-400">
+                      <span className="ml-1 text-sm font-normal text-muted">
                         ×{o.quantity}
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-0.5 text-sm text-neutral-500">
+                  <div className="mt-0.5 text-sm text-muted">
                     {formatRupees(o.amountPaise)} · {formatDate(o.paidAt)}
                     {o.buyerEmail ? ` · ${o.buyerEmail}` : ""}
                   </div>
                   {o.orderItems.length > 0 ? (
-                    <ul className="mt-1 text-xs text-neutral-400">
+                    <ul className="mt-1 text-xs text-muted">
                       {o.orderItems.map((li, idx) => (
                         <li key={idx}>
                           {li.titleSnapshot} ×{li.quantity} · {formatRupees(li.unitPricePaise)}
@@ -149,7 +149,7 @@ export default async function OrdersPage({
                   <select
                     name="status"
                     defaultValue={o.fulfillmentStatus}
-                    className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+                    className="rounded-lg border border-white/10 px-2 py-1.5 text-sm"
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>
@@ -161,9 +161,9 @@ export default async function OrdersPage({
                     name="note"
                     defaultValue={o.trackingNote ?? ""}
                     placeholder="Tracking / note"
-                    className="w-44 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-neutral-900"
+                    className="w-44 rounded-lg border border-white/10 px-2 py-1.5 text-sm outline-none focus:border-brand"
                   />
-                  <button className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white">
+                  <button className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white">
                     Save
                   </button>
                 </form>
@@ -177,6 +177,6 @@ export default async function OrdersPage({
           ))}
         </div>
       )}
-    </main>
+    </div>
   );
 }

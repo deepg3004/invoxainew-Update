@@ -21,9 +21,9 @@ export default async function EditLessonPage({
   const action = updateLessonAction.bind(null, course.id, lesson.id);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-2xl font-bold">Edit lesson</h1>
-      <p className="mt-1 text-neutral-500">{course.title}</p>
+      <p className="mt-1 text-muted">{course.title}</p>
       <div className="mt-6">
         <LessonForm
           action={action}
@@ -37,6 +37,6 @@ export default async function EditLessonPage({
           }}
         />
       </div>
-    </main>
+    </div>
   );
 }

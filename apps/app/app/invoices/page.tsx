@@ -23,20 +23,20 @@ export default async function InvoicesPage() {
   const invoices = await listInvoices(tenant.id);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+    <div className="mx-auto max-w-3xl px-6 py-12">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · invoices
       </p>
       <div className="flex items-center justify-between">
         <h1 className="mt-1 text-3xl font-bold">Tax invoices</h1>
         <a
           href="/invoices/export"
-          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:bg-neutral-50"
+          className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/5"
         >
           Export CSV
         </a>
       </div>
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 text-muted">
         Invoices for what you’ve paid InvoxAI (subscriptions). AI-page and
         commission invoices will appear here as they roll out.
       </p>
@@ -48,11 +48,11 @@ export default async function InvoicesPage() {
       ) : null}
 
       {invoices.length === 0 ? (
-        <p className="mt-8 text-neutral-500">No invoices yet.</p>
+        <p className="mt-8 text-muted">No invoices yet.</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+        <div className="mt-6 overflow-x-auto rounded-xl border border-white/10 bg-surface">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-neutral-200 text-neutral-500">
+            <thead className="border-b border-white/10 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Invoice</th>
                 <th className="px-4 py-3 font-medium">Date</th>
@@ -64,12 +64,12 @@ export default async function InvoicesPage() {
               {invoices.map((inv) => (
                 <tr key={inv.id} className="border-b border-neutral-100 last:border-0">
                   <td className="px-4 py-3">
-                    <Link href={`/invoices/${inv.id}`} className="font-medium text-blue-600 underline">
+                    <Link href={`/invoices/${inv.id}`} className="font-medium text-cyan underline">
                       {inv.number}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-neutral-500">{fmtDate(inv.issuedAt)}</td>
-                  <td className="px-4 py-3 text-neutral-600">{inv.descriptionLine}</td>
+                  <td className="px-4 py-3 text-muted">{fmtDate(inv.issuedAt)}</td>
+                  <td className="px-4 py-3 text-muted">{inv.descriptionLine}</td>
                   <td className="px-4 py-3 text-right">{formatRupees(inv.totalPaise)}</td>
                 </tr>
               ))}
@@ -77,6 +77,6 @@ export default async function InvoicesPage() {
           </table>
         </div>
       )}
-    </main>
+    </div>
   );
 }

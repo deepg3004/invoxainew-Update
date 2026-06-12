@@ -15,7 +15,7 @@ export interface PaymentPageValues {
 type Action = (prev: PageFormState, form: FormData) => Promise<PageFormState>;
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
 
 export function PaymentPageForm({
   action,
@@ -38,27 +38,27 @@ export function PaymentPageForm({
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Link</span>
+        <span className="text-sm font-medium text-neutral-200">Link</span>
         <div className="mt-1 flex items-center gap-1 text-sm">
-          <span className="text-neutral-400">/pay/</span>
+          <span className="text-muted">/pay/</span>
           <input
             name="slug"
             defaultValue={initial?.slug ?? ""}
             readOnly={isEdit}
             required={!isEdit}
             placeholder="tshirt"
-            className={`flex-1 rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 ${
-              isEdit ? "bg-neutral-100 text-neutral-500" : ""
+            className={`flex-1 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand ${
+              isEdit ? "bg-white/10 text-muted" : ""
             }`}
           />
         </div>
-        <span className="mt-1 block text-xs text-neutral-400">
+        <span className="mt-1 block text-xs text-muted">
           {isEdit ? "The link can't be changed." : "Lowercase letters, digits, hyphens."}
         </span>
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Title</span>
+        <span className="text-sm font-medium text-neutral-200">Title</span>
         <input
           name="title"
           defaultValue={initial?.title ?? ""}
@@ -69,7 +69,7 @@ export function PaymentPageForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Description</span>
+        <span className="text-sm font-medium text-neutral-200">Description</span>
         <textarea
           name="description"
           defaultValue={initial?.description ?? ""}
@@ -79,7 +79,7 @@ export function PaymentPageForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Amount (₹)</span>
+        <span className="text-sm font-medium text-neutral-200">Amount (₹)</span>
         <input
           name="amount"
           inputMode="decimal"
@@ -94,11 +94,11 @@ export function PaymentPageForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {pending ? "Saving…" : submitLabel}
         </button>
-        <Link href="/pay-pages" className="text-sm text-neutral-500 underline">
+        <Link href="/pay-pages" className="text-sm text-muted underline">
           Cancel
         </Link>
       </div>

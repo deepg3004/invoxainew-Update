@@ -19,9 +19,9 @@ export default async function EditPaymentPage({
   const action = updatePaymentPageAction.bind(null, page.id);
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="text-2xl font-bold">Edit payment page</h1>
-      <p className="mt-1 text-neutral-500">{page.title}</p>
+      <p className="mt-1 text-muted">{page.title}</p>
       <div className="mt-6">
         <PaymentPageForm
           action={action}
@@ -34,6 +34,6 @@ export default async function EditPaymentPage({
           }}
         />
       </div>
-    </main>
+    </div>
   );
 }

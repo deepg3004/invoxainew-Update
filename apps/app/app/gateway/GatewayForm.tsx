@@ -4,14 +4,14 @@ import { useActionState } from "react";
 import { connectGateway } from "./actions";
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono text-sm outline-none focus:border-neutral-900";
+  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 font-mono text-sm outline-none focus:border-brand";
 
 export function GatewayForm() {
   const [state, formAction, pending] = useActionState(connectGateway, {});
 
   return (
     <form action={formAction} className="space-y-4">
-      <div className="rounded-lg bg-neutral-50 p-4 text-sm text-neutral-600">
+      <div className="rounded-lg bg-white/5 p-4 text-sm text-muted">
         Find these in your Razorpay Dashboard → <strong>Settings → API Keys</strong>.
         Use <code>rzp_test_…</code> keys to trial, or <code>rzp_live_…</code> for
         real payments. We verify the keys with Razorpay and store your secret
@@ -30,7 +30,7 @@ export function GatewayForm() {
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Key ID</span>
+        <span className="text-sm font-medium text-neutral-200">Key ID</span>
         <input
           name="keyId"
           required
@@ -41,7 +41,7 @@ export function GatewayForm() {
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Key Secret</span>
+        <span className="text-sm font-medium text-neutral-200">Key Secret</span>
         <input
           name="keySecret"
           required
@@ -55,7 +55,7 @@ export function GatewayForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {pending ? "Verifying…" : "Connect Razorpay"}
       </button>

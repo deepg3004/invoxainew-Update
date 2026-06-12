@@ -16,9 +16,9 @@ export default async function NewAiPage() {
   const priceLabel = nextIsFree ? "Free" : formatRupees(price);
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-xl px-6 py-12">
       <h1 className="text-2xl font-bold">Generate an AI page</h1>
-      <p className="mt-1 text-neutral-500">
+      <p className="mt-1 text-muted">
         AI writes the copy from your brief and publishes it on your site.{" "}
         {unlimited
           ? "Unlimited on your plan."
@@ -29,13 +29,13 @@ export default async function NewAiPage() {
       <div className="mt-6">
         <AiPageForm priceLabel={priceLabel} />
       </div>
-      <p className="mt-6 text-sm text-neutral-500">
+      <p className="mt-6 text-sm text-muted">
         Prefer to start from a ready-made design?{" "}
-        <Link href="/ai-pages/templates" className="font-medium text-blue-600 underline">
+        <Link href="/ai-pages/templates" className="font-medium text-cyan underline">
           Browse templates →
         </Link>{" "}
         (free, no AI credits)
       </p>
-    </main>
+    </div>
   );
 }

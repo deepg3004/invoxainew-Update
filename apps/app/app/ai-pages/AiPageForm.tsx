@@ -5,7 +5,7 @@ import Link from "next/link";
 import { generateAiPageAction } from "./actions";
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
 
 export function AiPageForm({ priceLabel }: { priceLabel: string }) {
   const [state, formAction, pending] = useActionState(generateAiPageAction, {});
@@ -17,28 +17,28 @@ export function AiPageForm({ priceLabel }: { priceLabel: string }) {
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Page address</span>
+        <span className="text-sm font-medium text-neutral-200">Page address</span>
         <div className="mt-1 flex items-center gap-1 text-sm">
-          <span className="text-neutral-400">yoursite.invoxai.io/</span>
+          <span className="text-muted">yoursite.invoxai.io/</span>
           <input
             name="slug"
             required
             placeholder="home"
-            className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900"
+            className="flex-1 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
           />
         </div>
-        <span className="mt-1 block text-xs text-neutral-400">
+        <span className="mt-1 block text-xs text-muted">
           Lowercase letters, digits, hyphens.
         </span>
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Business name</span>
+        <span className="text-sm font-medium text-neutral-200">Business name</span>
         <input name="businessName" required placeholder="Acme Coffee Co." className={inputCls} />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Brief</span>
+        <span className="text-sm font-medium text-neutral-200">Brief</span>
         <textarea
           name="brief"
           required
@@ -52,16 +52,16 @@ export function AiPageForm({ priceLabel }: { priceLabel: string }) {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {pending ? "Generating…" : `Generate & publish — ${priceLabel}`}
         </button>
-        <Link href="/ai-pages" className="text-sm text-neutral-500 underline">
+        <Link href="/ai-pages" className="text-sm text-muted underline">
           Cancel
         </Link>
       </div>
       {pending ? (
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-muted">
           Writing your page with AI — this can take several seconds. You’re only
           charged if it succeeds.
         </p>

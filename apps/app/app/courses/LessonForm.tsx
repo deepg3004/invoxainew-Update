@@ -14,7 +14,7 @@ export interface LessonValues {
 type Action = (prev: LessonFormState, form: FormData) => Promise<LessonFormState>;
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
 
 export function LessonForm({
   action,
@@ -38,7 +38,7 @@ export function LessonForm({
 
       <div className="grid grid-cols-[1fr_6rem] gap-3">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Lesson title</span>
+          <span className="text-sm font-medium text-neutral-200">Lesson title</span>
           <input
             name="title"
             defaultValue={initial?.title ?? ""}
@@ -48,7 +48,7 @@ export function LessonForm({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Order</span>
+          <span className="text-sm font-medium text-neutral-200">Order</span>
           <input
             name="sortOrder"
             inputMode="numeric"
@@ -59,7 +59,7 @@ export function LessonForm({
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Content</span>
+        <span className="text-sm font-medium text-neutral-200">Content</span>
         <textarea
           name="content"
           defaultValue={initial?.content ?? ""}
@@ -76,7 +76,7 @@ export function LessonForm({
           defaultChecked={initial?.isPreview ?? false}
           className="h-4 w-4"
         />
-        <span className="text-sm text-neutral-700">
+        <span className="text-sm text-neutral-200">
           Free preview (visible before buying)
         </span>
       </label>
@@ -85,12 +85,12 @@ export function LessonForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {pending ? "Saving…" : submitLabel}
         </button>
         {isEdit ? (
-          <Link href={`/courses/${courseId}`} className="text-sm text-neutral-500 underline">
+          <Link href={`/courses/${courseId}`} className="text-sm text-muted underline">
             Cancel
           </Link>
         ) : null}

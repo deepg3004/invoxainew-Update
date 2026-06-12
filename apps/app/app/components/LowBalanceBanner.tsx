@@ -20,7 +20,7 @@ export function LowBalanceBanner({
   if (!low && !owes) return null;
 
   return (
-    <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+    <div className="mb-6 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
       {owes ? (
         <>
           You have <strong>{formatRupees(dueCommissionPaise)}</strong> in unpaid

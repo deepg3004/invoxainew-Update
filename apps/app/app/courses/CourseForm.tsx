@@ -17,7 +17,7 @@ export interface CourseValues {
 type Action = (prev: CourseFormState, form: FormData) => Promise<CourseFormState>;
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
 
 export function CourseForm({
   action,
@@ -41,27 +41,27 @@ export function CourseForm({
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Link</span>
+        <span className="text-sm font-medium text-neutral-200">Link</span>
         <div className="mt-1 flex items-center gap-1 text-sm">
-          <span className="text-neutral-400">/c/</span>
+          <span className="text-muted">/c/</span>
           <input
             name="slug"
             defaultValue={initial?.slug ?? ""}
             readOnly={isEdit}
             required={!isEdit}
             placeholder="react-basics"
-            className={`flex-1 rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900 ${
-              isEdit ? "bg-neutral-100 text-neutral-500" : ""
+            className={`flex-1 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand ${
+              isEdit ? "bg-white/10 text-muted" : ""
             }`}
           />
         </div>
-        <span className="mt-1 block text-xs text-neutral-400">
+        <span className="mt-1 block text-xs text-muted">
           {isEdit ? "The link can't be changed." : "Lowercase letters, digits, hyphens."}
         </span>
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Title</span>
+        <span className="text-sm font-medium text-neutral-200">Title</span>
         <input
           name="title"
           defaultValue={initial?.title ?? ""}
@@ -72,7 +72,7 @@ export function CourseForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Description</span>
+        <span className="text-sm font-medium text-neutral-200">Description</span>
         <textarea
           name="description"
           defaultValue={initial?.description ?? ""}
@@ -83,7 +83,7 @@ export function CourseForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Price (₹)</span>
+          <span className="text-sm font-medium text-neutral-200">Price (₹)</span>
           <input
             name="price"
             inputMode="decimal"
@@ -94,7 +94,7 @@ export function CourseForm({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-700">Cover image URL</span>
+          <span className="text-sm font-medium text-neutral-200">Cover image URL</span>
           <input
             name="imageUrl"
             defaultValue={initial?.imageUrl ?? ""}
@@ -105,20 +105,20 @@ export function CourseForm({
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Display order</span>
+        <span className="text-sm font-medium text-neutral-200">Display order</span>
         <input
           name="sortOrder"
           inputMode="numeric"
           defaultValue={initial?.sortOrder ?? 0}
           className={inputCls}
         />
-        <span className="mt-1 block text-xs text-neutral-400">Lower shows first.</span>
+        <span className="mt-1 block text-xs text-muted">Lower shows first.</span>
       </label>
 
       {!isEdit ? (
         <label className="flex items-center gap-2">
           <input type="checkbox" name="publish" className="h-4 w-4" />
-          <span className="text-sm text-neutral-700">Publish now</span>
+          <span className="text-sm text-neutral-200">Publish now</span>
         </label>
       ) : null}
 
@@ -126,11 +126,11 @@ export function CourseForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {pending ? "Saving…" : submitLabel}
         </button>
-        <Link href="/courses" className="text-sm text-neutral-500 underline">
+        <Link href="/courses" className="text-sm text-muted underline">
           {isEdit ? "Back to courses" : "Cancel"}
         </Link>
       </div>

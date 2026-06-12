@@ -9,19 +9,19 @@ export default async function TemplatesPage() {
   await requireTenant();
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl px-6 py-12">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
             AI builder
           </p>
           <h1 className="mt-1 text-3xl font-bold">Start from a template</h1>
-          <p className="mt-1 text-neutral-500">
+          <p className="mt-1 text-muted">
             Pick a ready-made page, give it an address, then edit it. Free — no AI
             credits used.
           </p>
         </div>
-        <Link href="/ai-pages/new" className="text-sm text-blue-600 underline">
+        <Link href="/ai-pages/new" className="text-sm text-cyan underline">
           Generate with AI instead →
         </Link>
       </div>
@@ -41,6 +41,6 @@ export default async function TemplatesPage() {
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }

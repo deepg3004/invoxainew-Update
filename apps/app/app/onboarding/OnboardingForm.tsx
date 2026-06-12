@@ -17,7 +17,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
     <button
       type="submit"
       disabled={pending || disabled}
-      className="w-full rounded-lg bg-neutral-900 px-3 py-2 font-medium text-white disabled:opacity-50"
+      className="w-full rounded-lg bg-brand px-3 py-2 font-medium text-white disabled:opacity-50"
     >
       {pending ? "Creating your site…" : "Create my site"}
     </button>
@@ -64,13 +64,13 @@ export function OnboardingForm() {
         <input
           name="name"
           placeholder="Deep's Store"
-          className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900"
+          className="mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
         />
       </div>
 
       <div>
         <label className="text-sm font-medium">Choose your username</label>
-        <div className="mt-1 flex items-center rounded-lg border border-neutral-300 focus-within:border-neutral-900">
+        <div className="mt-1 flex items-center rounded-lg border border-white/10 focus-within:border-neutral-900">
           <input
             name="username"
             required
@@ -80,7 +80,7 @@ export function OnboardingForm() {
             placeholder="deep"
             className="w-full rounded-l-lg px-3 py-2 outline-none"
           />
-          <span className="px-3 text-sm text-neutral-400">.{ROOT}</span>
+          <span className="px-3 text-sm text-muted">.{ROOT}</span>
         </div>
         {status ? (
           <p

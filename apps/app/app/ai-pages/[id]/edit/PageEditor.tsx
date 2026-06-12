@@ -11,7 +11,7 @@ import {
 import { saveAiPageAction } from "../../actions";
 
 const inputCls =
-  "w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900";
+  "w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand";
 
 type AddType = Block["type"];
 
@@ -95,21 +95,21 @@ export function PageEditor({
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
             AI builder
           </p>
           <h1 className="mt-1 text-2xl font-bold">Edit page</h1>
         </div>
-        <a href={liveUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 underline">
+        <a href={liveUrl} target="_blank" rel="noreferrer" className="text-sm text-cyan underline">
           View live ↗
         </a>
       </div>
 
       <label className="mt-6 block">
-        <span className="text-sm font-medium text-neutral-700">Page title</span>
+        <span className="text-sm font-medium text-neutral-200">Page title</span>
         <input
           value={title}
           onChange={(e) => {
@@ -118,14 +118,14 @@ export function PageEditor({
           }}
           className={`mt-1 ${inputCls}`}
         />
-        <span className="mt-1 block text-xs text-neutral-400">
+        <span className="mt-1 block text-xs text-muted">
           Lives at /{slug} on your site. Shown as the browser tab title.
         </span>
       </label>
 
       {/* Theme */}
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-4">
-        <span className="text-sm font-medium text-neutral-700">Theme</span>
+      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-4">
+        <span className="text-sm font-medium text-neutral-200">Theme</span>
         <div className="mt-2 flex flex-wrap gap-2">
           {presetIds.map((id) => {
             const p = THEME_PRESETS[id];
@@ -139,7 +139,7 @@ export function PageEditor({
                   setTheme({ preset: id, accent: p.accent });
                 }}
                 className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-                  selected ? "border-neutral-900" : "border-neutral-300"
+                  selected ? "border-neutral-900" : "border-white/10"
                 }`}
               >
                 <span
@@ -151,7 +151,7 @@ export function PageEditor({
             );
           })}
         </div>
-        <label className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
+        <label className="mt-3 flex items-center gap-2 text-sm text-muted">
           Accent
           <input
             type="color"
@@ -160,27 +160,27 @@ export function PageEditor({
               setStatus("idle");
               setTheme((t) => ({ ...t, accent: e.target.value }));
             }}
-            className="h-7 w-10 cursor-pointer rounded border border-neutral-300"
+            className="h-7 w-10 cursor-pointer rounded border border-white/10"
           />
-          <span className="font-mono text-xs text-neutral-400">{theme.accent}</span>
+          <span className="font-mono text-xs text-muted">{theme.accent}</span>
         </label>
       </div>
 
       <div className="mt-6 space-y-3">
         {blocks.map((b, i) => (
-          <div key={i} className="rounded-xl border border-neutral-200 bg-white p-3">
+          <div key={i} className="rounded-xl border border-white/10 bg-surface p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                 {b.type}
               </span>
               <div className="flex items-center gap-2 text-xs">
-                <button onClick={() => move(i, -1)} disabled={i === 0} className="text-neutral-500 disabled:opacity-30" aria-label="Move up">
+                <button onClick={() => move(i, -1)} disabled={i === 0} className="text-muted disabled:opacity-30" aria-label="Move up">
                   ↑
                 </button>
-                <button onClick={() => move(i, 1)} disabled={i === blocks.length - 1} className="text-neutral-500 disabled:opacity-30" aria-label="Move down">
+                <button onClick={() => move(i, 1)} disabled={i === blocks.length - 1} className="text-muted disabled:opacity-30" aria-label="Move down">
                   ↓
                 </button>
-                <button onClick={() => remove(i)} className="text-neutral-400 hover:text-red-700" aria-label="Delete">
+                <button onClick={() => remove(i)} className="text-muted hover:text-red-700" aria-label="Delete">
                   Delete
                 </button>
               </div>
@@ -192,7 +192,7 @@ export function PageEditor({
                 <select
                   value={b.level}
                   onChange={(e) => update(i, { level: Number(e.target.value) as 1 | 2 | 3 })}
-                  className="rounded-lg border border-neutral-300 px-2 py-2 text-sm"
+                  className="rounded-lg border border-white/10 px-2 py-2 text-sm"
                 >
                   <option value={1}>H1</option>
                   <option value={2}>H2</option>
@@ -227,19 +227,19 @@ export function PageEditor({
                   placeholder="Paste a YouTube or Vimeo link"
                   className={inputCls}
                 />
-                <span className="mt-1 block text-xs text-neutral-400">
+                <span className="mt-1 block text-xs text-muted">
                   Only YouTube and Vimeo links work; others are dropped on save.
                 </span>
               </div>
             ) : null}
 
             {b.type === "divider" ? (
-              <div className="border-t border-dashed border-neutral-300" />
+              <div className="border-t border-dashed border-white/10" />
             ) : null}
           </div>
         ))}
         {blocks.length === 0 ? (
-          <p className="text-sm text-neutral-500">No blocks yet — add one below.</p>
+          <p className="text-sm text-muted">No blocks yet — add one below.</p>
         ) : null}
       </div>
 
@@ -248,7 +248,7 @@ export function PageEditor({
           <button
             key={t}
             onClick={() => add(t)}
-            className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:border-neutral-900"
+            className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-neutral-200 hover:border-neutral-900"
           >
             + {t}
           </button>
@@ -261,14 +261,14 @@ export function PageEditor({
         <button
           onClick={save}
           disabled={status === "saving"}
-          className="rounded-lg bg-neutral-900 px-5 py-2.5 font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-brand px-5 py-2.5 font-medium text-white disabled:opacity-50"
         >
           {status === "saving" ? "Saving…" : status === "saved" ? "Saved ✓" : "Save changes"}
         </button>
-        <Link href="/ai-pages" className="text-sm text-neutral-500 underline">
+        <Link href="/ai-pages" className="text-sm text-muted underline">
           Back to pages
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

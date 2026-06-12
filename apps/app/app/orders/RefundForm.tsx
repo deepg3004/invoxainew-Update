@@ -29,12 +29,12 @@ export function RefundForm({
       }}
       className="flex flex-wrap items-center gap-2"
     >
-      <span className="text-xs text-neutral-400">Refund ₹</span>
+      <span className="text-xs text-muted">Refund ₹</span>
       <input
         name="amount"
         inputMode="decimal"
         defaultValue={paiseToRupeeString(remainingPaise)}
-        className="w-24 rounded-lg border border-neutral-300 px-2 py-1 text-sm outline-none focus:border-neutral-900"
+        className="w-24 rounded-lg border border-white/10 px-2 py-1 text-sm outline-none focus:border-brand"
       />
       <button
         disabled={pending}

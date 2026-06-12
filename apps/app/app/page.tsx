@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card } from "@invoxai/ui";
+import { Badge, Button, GlassCard, StatCard } from "@invoxai/ui";
 import {
   getTenantByOwnerId,
   getWalletStatus,
@@ -22,6 +22,13 @@ function publicSiteUrl(username: string): string {
     : `https://${username}.invoxai.io`;
 }
 
+const QUICK_LINKS = [
+  { href: "/gateway", title: "Connect your gateway", body: "Let buyers pay you directly via Razorpay or UPI." },
+  { href: "/ai-pages", title: "Generate an AI page", body: "Publish a landing page from a short brief." },
+  { href: "/products", title: "Add a product", body: "Build a store catalog buyers can purchase." },
+  { href: "/wallet", title: "Top up wallet", body: "Prepaid balance for commission & AI pages." },
+];
+
 export default async function Dashboard() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -38,38 +45,27 @@ export default async function Dashboard() {
   ]);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <div className="flex items-start justify-between">
+    <div className="mx-auto max-w-5xl">
+      {/* Header */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
-            InvoxAI · dashboard
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
+            Dashboard
           </p>
-          <h1 className="mt-1 text-3xl font-bold">
+          <h1 className="mt-1 font-display text-3xl font-bold">
             {tenant.name ?? "Your site"}
           </h1>
-          <p className="mt-1 text-neutral-500">Signed in as {user.email}</p>
+          <p className="mt-1 text-sm text-muted">Signed in as {user.email}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/notifications"
-            className="relative rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50"
-          >
-            Notifications
-            {unread > 0 ? (
-              <span className="ml-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">
-                {unread}
-              </span>
-            ) : null}
-          </Link>
-          <form action="/auth/signout" method="post">
-            <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
-              Sign out
-            </button>
-          </form>
-        </div>
+        <a href={siteUrl} target="_blank" rel="noreferrer">
+          <Badge tone="success">
+            <span className="h-1.5 w-1.5 rounded-full bg-success" />
+            {tenant.username}.invoxai.io
+          </Badge>
+        </a>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-6 space-y-3">
         <LowBalanceBanner
           balancePaise={wallet.balancePaise}
           dueCommissionPaise={wallet.dueCommissionPaise}
@@ -77,192 +73,69 @@ export default async function Dashboard() {
         <OnboardingChecklist status={onboarding} />
       </div>
 
+      {/* KPIs */}
       {sales.orderCount > 0 ? (
         <Link href="/orders" className="mt-6 block">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-neutral-200 bg-white p-3">
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Orders</div>
-              <div className="mt-1 text-xl font-bold">{sales.orderCount}</div>
-            </div>
-            <div className="rounded-xl border border-neutral-200 bg-white p-3">
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Sales</div>
-              <div className="mt-1 text-xl font-bold">{formatRupees(sales.grossPaise)}</div>
-            </div>
-            <div className="rounded-xl border border-neutral-200 bg-white p-3">
-              <div className="text-xs uppercase tracking-wide text-neutral-400">
-                Commission due
-              </div>
-              <div
-                className={`mt-1 text-xl font-bold ${
-                  sales.commissionDuePaise > 0 ? "text-amber-600" : "text-neutral-900"
-                }`}
-              >
-                {formatRupees(sales.commissionDuePaise)}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StatCard label="Orders" value={sales.orderCount} />
+            <StatCard label="Sales" value={formatRupees(sales.grossPaise)} />
+            <StatCard
+              label="Commission due"
+              value={formatRupees(sales.commissionDuePaise)}
+              accent={sales.commissionDuePaise > 0 ? "warning" : undefined}
+            />
           </div>
         </Link>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card title="Your address is live">
+      {/* Site + billing */}
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <GlassCard title="Your site is live">
           <a
             href={siteUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-lg font-medium text-blue-600 underline"
+            className="text-lg font-medium text-cyan underline"
           >
             {tenant.username}.invoxai.io
           </a>
-          <p className="mt-2 text-sm text-neutral-500">
-            This resolves to your public buyer-facing site (host-based tenant
-            resolution). Building it out comes in later steps.
+          <p className="mt-2 text-sm text-muted">
+            This resolves to your public buyer-facing site. Add products, courses
+            and pages from the sidebar.
           </p>
-        </Card>
-        <Card title="Plan & billing">
-          <p className="text-sm text-neutral-500">
+        </GlassCard>
+        <GlassCard title="Plan & billing">
+          <p className="text-sm text-muted">
             Choose a subscription to raise your limits and lower commission.
           </p>
-          <Link
-            href="/billing"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
+          <Button href="/billing" variant="secondary" size="sm" className="mt-4">
             Manage billing →
-          </Link>
-        </Card>
-        <Card title="Wallet">
-          <p className="text-sm text-neutral-500">
-            Prepaid balance for InvoxAI fees (commission, AI pages, add-ons).
-          </p>
-          <Link
-            href="/wallet"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Open wallet →
-          </Link>
-        </Card>
-        <Card title="Payment gateway">
-          <p className="text-sm text-neutral-500">
-            Connect your own Razorpay so buyers pay you directly.
-          </p>
-          <Link
-            href="/gateway"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Connect gateway →
-          </Link>
-        </Card>
-        <Card title="Payment pages">
-          <p className="text-sm text-neutral-500">
-            Create shareable links buyers can pay you through.
-          </p>
-          <Link
-            href="/pay-pages"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Manage pages →
-          </Link>
-        </Card>
-        <Card title="Products">
-          <p className="text-sm text-neutral-500">
-            Build a store catalog buyers can browse and purchase.
-          </p>
-          <Link
-            href="/products"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Manage products →
-          </Link>
-        </Card>
-        <Card title="Coupons">
-          <p className="text-sm text-neutral-500">
-            Create discount codes buyers apply at checkout.
-          </p>
-          <Link
-            href="/coupons"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Manage coupons →
-          </Link>
-        </Card>
-        <Card title="Courses">
-          <p className="text-sm text-neutral-500">
-            Sell online courses; buyers get instant access after paying.
-          </p>
-          <Link
-            href="/courses"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Manage courses →
-          </Link>
-        </Card>
-        <Card title="Custom domains">
-          <p className="text-sm text-neutral-500">
-            Serve your site on your own domain instead of the subdomain.
-          </p>
-          <Link
-            href="/domains"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Connect a domain →
-          </Link>
-        </Card>
-        <Card title="AI landing pages">
-          <p className="text-sm text-neutral-500">
-            Let AI write and publish a landing page from a short brief.
-          </p>
-          <Link
-            href="/ai-pages"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Generate a page →
-          </Link>
-        </Card>
-        <Card title="Orders">
-          <p className="text-sm text-neutral-500">
-            Track your sales and update fulfillment status for buyers.
-          </p>
-          <Link
-            href="/orders"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            View orders →
-          </Link>
-        </Card>
-        <Card title="Tax invoices">
-          <p className="text-sm text-neutral-500">
-            Download GST invoices for what you pay InvoxAI.
-          </p>
-          <Link
-            href="/invoices"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            View invoices →
-          </Link>
-        </Card>
-        <Card title="Usage & limits">
-          <p className="text-sm text-neutral-500">
-            See your plan’s free allowances and what you’ve used this month.
-          </p>
-          <Link
-            href="/usage"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            View usage →
-          </Link>
-        </Card>
-        <Card title="Ads tracking">
-          <p className="text-sm text-neutral-500">
-            Add Meta Pixel / GA4 so your pages fire ad events.
-          </p>
-          <Link
-            href="/tracking"
-            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
-          >
-            Set up tracking →
-          </Link>
-        </Card>
+          </Button>
+        </GlassCard>
       </div>
-    </main>
+
+      {/* Quick start */}
+      <h2 className="mt-10 font-display text-lg font-semibold">Quick start</h2>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {QUICK_LINKS.map((q) => (
+          <Link key={q.href} href={q.href}>
+            <GlassCard className="h-full transition hover:border-brand/30">
+              <h3 className="font-display text-base font-semibold">{q.title}</h3>
+              <p className="mt-2 text-sm text-muted">{q.body}</p>
+            </GlassCard>
+          </Link>
+        ))}
+      </div>
+
+      {unread > 0 ? (
+        <p className="mt-8 text-sm text-muted">
+          You have{" "}
+          <Link href="/notifications" className="text-cyan underline">
+            {unread} unread notification{unread === 1 ? "" : "s"}
+          </Link>
+          .
+        </p>
+      ) : null}
+    </div>
   );
 }
