@@ -7,6 +7,7 @@ import {
   getOnboardingStatus,
   countUnreadNotifications,
   getTenantSalesSummary,
+  countAbandonedCheckouts,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { getSessionUser } from "../lib/auth";
@@ -37,11 +38,12 @@ export default async function Dashboard() {
   if (!tenant) redirect("/onboarding");
 
   const siteUrl = publicSiteUrl(tenant.username);
-  const [wallet, onboarding, unread, sales] = await Promise.all([
+  const [wallet, onboarding, unread, sales, abandoned] = await Promise.all([
     getWalletStatus(tenant.id),
     getOnboardingStatus(tenant.id),
     countUnreadNotifications(tenant.id),
     getTenantSalesSummary(tenant.id),
+    countAbandonedCheckouts(tenant.id),
   ]);
 
   return (
@@ -84,6 +86,16 @@ export default async function Dashboard() {
               value={formatRupees(sales.commissionDuePaise)}
               accent={sales.commissionDuePaise > 0 ? "warning" : undefined}
             />
+          </div>
+        </Link>
+      ) : null}
+
+      {/* Abandoned checkouts nudge */}
+      {abandoned > 0 ? (
+        <Link href="/abandoned" className="mt-3 block">
+          <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+            {abandoned} abandoned checkout{abandoned === 1 ? "" : "s"} — buyers who
+            started but didn’t finish paying. Follow up to recover the sale →
           </div>
         </Link>
       ) : null}

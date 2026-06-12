@@ -287,6 +287,42 @@ export function listTenantOrders(
   });
 }
 
+/**
+ * Started-but-unpaid checkouts (status CREATED) older than `olderThanMinutes`
+ * (default 30) — i.e. abandoned carts/checkouts, excluding ones a buyer may
+ * still be paying. The buyer's email/phone were captured at checkout, so the
+ * seller can follow up manually (auto email/WhatsApp nudges come once an email
+ * provider is configured). CREATED orders have no side effects — stock and
+ * coupon redemptions only move on PAID — so this is purely informational.
+ * Tenant-scoped; FAILED (hard decline) is intentionally excluded.
+ */
+export function listAbandonedCheckouts(
+  tenantId: string,
+  opts: { olderThanMinutes?: number; take?: number } = {},
+) {
+  const cutoff = new Date(Date.now() - (opts.olderThanMinutes ?? 30) * 60_000);
+  return prisma.buyerPayment.findMany({
+    where: { tenantId, status: "CREATED", createdAt: { lt: cutoff } },
+    orderBy: { createdAt: "desc" },
+    take: opts.take ?? 100,
+    include: {
+      paymentPage: { select: { title: true, slug: true } },
+      orderItems: { select: { titleSnapshot: true, quantity: true } },
+    },
+  });
+}
+
+/** Count of abandoned checkouts (for the dashboard badge). Same window/filter. */
+export function countAbandonedCheckouts(
+  tenantId: string,
+  olderThanMinutes = 30,
+) {
+  const cutoff = new Date(Date.now() - olderThanMinutes * 60_000);
+  return prisma.buyerPayment.count({
+    where: { tenantId, status: "CREATED", createdAt: { lt: cutoff } },
+  });
+}
+
 export interface SalesSummary {
   orderCount: number;
   grossPaise: number;

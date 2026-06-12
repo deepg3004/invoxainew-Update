@@ -67,6 +67,8 @@ export {
   markBuyerPaymentPaid,
   settleDueCommissions,
   listTenantOrders,
+  listAbandonedCheckouts,
+  countAbandonedCheckouts,
   listSoldOutProductsForOrder,
   getTenantSalesSummary,
   updateOrderFulfillment,

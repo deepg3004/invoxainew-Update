@@ -26,6 +26,7 @@ const NAV: NavGroup[] = [
       { href: "/courses", label: "Courses", icon: "M12 4 3 9l9 5 9-5-9-5ZM5 11v5l7 4 7-4v-5" },
       { href: "/pay-pages", label: "Pay pages", icon: "M3 7h18v10H3zM3 11h18" },
       { href: "/orders", label: "Orders", icon: "M3 3h2l2 13h11l2-9H7M9 21h.01M18 21h.01" },
+      { href: "/abandoned", label: "Abandoned", icon: "M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" },
     ],
   },
   {
