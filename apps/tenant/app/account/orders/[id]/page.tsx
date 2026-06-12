@@ -61,6 +61,18 @@ export default async function OrderReceipt({
   pushLink(order.product?.title, order.product?.accessUrl);
   for (const li of order.orderItems) pushLink(li.product?.title ?? li.titleSnapshot, li.product?.accessUrl);
 
+  // Fulfillment timeline (physical/service orders). Digital/community orders are
+  // delivered via the "Your access" card, so they skip the shipping steps.
+  const FULFILL_STEPS = [
+    ["NEW", "Order placed"],
+    ["PROCESSING", "Processing"],
+    ["SHIPPED", "Shipped"],
+    ["DELIVERED", "Delivered"],
+  ] as const;
+  const fulfillIdx = FULFILL_STEPS.findIndex(([k]) => k === order.fulfillmentStatus);
+  const cancelled = order.fulfillmentStatus === "CANCELLED";
+  const showTimeline = !cancelled && accessLinks.length === 0;
+
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <div className="flex items-center justify-between print:hidden">
@@ -69,6 +81,48 @@ export default async function OrderReceipt({
         </Link>
         <PrintButton />
       </div>
+
+      {cancelled ? (
+        <div className="mt-6 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-medium text-danger">
+          This order was cancelled.
+        </div>
+      ) : null}
+
+      {showTimeline ? (
+        <div className="mt-6 rounded-xl border border-white/10 bg-surface p-5 print:hidden">
+          <h2 className="text-sm font-semibold text-white">Order status</h2>
+          <ol className="mt-4">
+            {FULFILL_STEPS.map(([key, label], i) => {
+              const done = i <= fulfillIdx;
+              const current = i === fulfillIdx;
+              const isLast = i === FULFILL_STEPS.length - 1;
+              return (
+                <li key={key} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <span
+                      className={`flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] ${
+                        done ? "bg-success text-white" : "border border-white/15 text-transparent"
+                      } ${current ? "ring-2 ring-success/40" : ""}`}
+                    >
+                      ✓
+                    </span>
+                    {!isLast ? (
+                      <span className={`h-7 w-px ${i < fulfillIdx ? "bg-success" : "bg-white/10"}`} />
+                    ) : null}
+                  </div>
+                  <span
+                    className={`pt-0.5 text-sm ${done ? "text-white" : "text-muted"} ${
+                      current ? "font-medium" : ""
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      ) : null}
 
       <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
         <header className="border-b border-white/10 pb-4">
