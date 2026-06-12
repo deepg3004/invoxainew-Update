@@ -61,6 +61,15 @@ export async function startCourseCheckout(
     if (existing) return { ok: false, error: "You already have access to this course." };
   }
 
+  // Access is granted by an Enrolment attributed by profileId (signed in) OR
+  // email. A guest who pays with no email could never be matched to their
+  // enrolment (profileId + email both null) — money taken, access impossible.
+  // So require an email when not signed in.
+  const buyerEmail = (buyer.email ?? user?.email ?? "").trim() || null;
+  if (!user && !buyerEmail) {
+    return { ok: false, error: "Enter your email so you can access the course after paying." };
+  }
+
   const creds = await getGatewayCredentials(tenant.id);
   if (!creds) {
     return { ok: false, error: "The seller hasn’t finished setting up payments yet." };
@@ -96,7 +105,7 @@ export async function startCourseCheckout(
     couponCode: couponSnapshot,
     discountPaise,
     buyerProfileId: user?.id ?? null,
-    buyerEmail: buyer.email ?? user?.email ?? null,
+    buyerEmail,
     buyerContact: buyer.contact ?? null,
   });
 

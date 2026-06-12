@@ -69,9 +69,11 @@ function str(v: unknown, max = 4000): string {
 function safeUrl(v: unknown): string {
   const s = str(v, 2000).trim();
   if (!s) return "";
-  if (s.startsWith("/")) return s; // site-relative
+  // Site-relative ("/path") only — NOT protocol-relative ("//evil.com"), which
+  // the browser resolves to an off-site absolute URL.
+  if (s.startsWith("/") && !s.startsWith("//")) return s;
   if (/^https?:\/\//i.test(s)) return s;
-  return ""; // blocks javascript:, data:, etc.
+  return ""; // blocks javascript:, data:, protocol-relative, etc.
 }
 
 function asLevel(v: unknown): 1 | 2 | 3 {

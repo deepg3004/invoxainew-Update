@@ -107,6 +107,9 @@ export default async function AiLandingPage({
   const page = await getPublishedAiPage(tenant.id, slug);
   if (!page) notFound();
   const content = normalizeToBlocks(page.content);
+  // Corrupt/empty content would otherwise render a blank "Untitled" page; keep
+  // the old behavior of 404ing instead of publishing an empty page.
+  if (content.blocks.length === 0) notFound();
   const tracking = await getTenantTracking(tenant.id);
   const t: Tokens = { ...THEME_PRESETS[content.theme.preset], accent: content.theme.accent };
 
