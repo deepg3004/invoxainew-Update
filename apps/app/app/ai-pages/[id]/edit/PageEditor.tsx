@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Block } from "@invoxai/utils/blocks";
+import {
+  type Block,
+  type Theme,
+  type ThemePreset,
+  THEME_PRESETS,
+} from "@invoxai/utils/blocks";
 import { saveAiPageAction } from "../../actions";
 
 const inputCls =
@@ -31,17 +36,22 @@ export function PageEditor({
   liveUrl,
   initialTitle,
   initialBlocks,
+  initialTheme,
 }: {
   pageId: string;
   slug: string;
   liveUrl: string;
   initialTitle: string;
   initialBlocks: Block[];
+  initialTheme: Theme;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
+  const [theme, setTheme] = useState<Theme>(initialTheme);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const presetIds = Object.keys(THEME_PRESETS) as ThemePreset[];
 
   function update(i: number, patch: Partial<Block>) {
     setStatus("idle");
@@ -70,7 +80,7 @@ export function PageEditor({
     setStatus("saving");
     setError(null);
     try {
-      const res = await saveAiPageAction(pageId, title, blocks);
+      const res = await saveAiPageAction(pageId, title, blocks, theme);
       if (res.ok) setStatus("saved");
       else {
         setError(res.error);
@@ -110,6 +120,49 @@ export function PageEditor({
           Lives at /{slug} on your site. Shown as the browser tab title.
         </span>
       </label>
+
+      {/* Theme */}
+      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-4">
+        <span className="text-sm font-medium text-neutral-700">Theme</span>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {presetIds.map((id) => {
+            const p = THEME_PRESETS[id];
+            const selected = theme.preset === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => {
+                  setStatus("idle");
+                  setTheme({ preset: id, accent: p.accent });
+                }}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
+                  selected ? "border-neutral-900" : "border-neutral-300"
+                }`}
+              >
+                <span
+                  className="h-4 w-4 rounded-full border border-black/10"
+                  style={{ background: p.bg }}
+                />
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
+          Accent
+          <input
+            type="color"
+            value={/^#[0-9a-fA-F]{6}$/.test(theme.accent) ? theme.accent : "#7c3aed"}
+            onChange={(e) => {
+              setStatus("idle");
+              setTheme((t) => ({ ...t, accent: e.target.value }));
+            }}
+            className="h-7 w-10 cursor-pointer rounded border border-neutral-300"
+          />
+          <span className="font-mono text-xs text-neutral-400">{theme.accent}</span>
+        </label>
+      </div>
 
       <div className="mt-6 space-y-3">
         {blocks.map((b, i) => (

@@ -20,9 +20,42 @@ export type Block =
   | { type: "button"; label: string; href: string }
   | { type: "divider" };
 
-export interface BuilderContent {
-  title: string;
-  blocks: Block[];
+// ── Theme (AI builder slice 2) ───────────────────────────────────────────────
+
+export type ThemePreset = "light" | "midnight" | "aurora" | "sand";
+
+export interface Theme {
+  preset: ThemePreset;
+  /** Accent colour (buttons + hero rule), hex; defaults to the preset's accent. */
+  accent: string;
+}
+
+/** Concrete CSS tokens per preset. `bg` may be a colour or a CSS gradient. */
+export const THEME_PRESETS: Record<
+  ThemePreset,
+  { label: string; bg: string; text: string; muted: string; accent: string; border: string }
+> = {
+  light: { label: "Clean light", bg: "#ffffff", text: "#171717", muted: "#525252", accent: "#7C3AED", border: "#e5e5e5" },
+  midnight: { label: "Midnight", bg: "#050816", text: "#F8FAFC", muted: "#94A3B8", accent: "#06B6D4", border: "#1E293B" },
+  aurora: { label: "Aurora", bg: "linear-gradient(135deg,#1E1B4B,#312E81 45%,#0F172A)", text: "#F8FAFC", muted: "#C4B5FD", accent: "#A855F7", border: "#312E81" },
+  sand: { label: "Warm sand", bg: "#F4F1EA", text: "#292524", muted: "#78716C", accent: "#C2682E", border: "#E7E2D6" },
+};
+
+const PRESET_IDS = Object.keys(THEME_PRESETS) as ThemePreset[];
+const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+/** Validate a stored theme, falling back to safe defaults. The accent must be a
+ *  hex colour (no arbitrary CSS — it's interpolated into inline styles). */
+export function normalizeTheme(content: unknown): Theme {
+  const t = (content && typeof content === "object" ? (content as Record<string, unknown>).theme : null) as
+    | Record<string, unknown>
+    | null
+    | undefined;
+  const preset: ThemePreset =
+    t && PRESET_IDS.includes(t.preset as ThemePreset) ? (t.preset as ThemePreset) : "light";
+  const rawAccent = typeof t?.accent === "string" ? t.accent.trim() : "";
+  const accent = HEX_RE.test(rawAccent) ? rawAccent : THEME_PRESETS[preset].accent;
+  return { preset, accent };
 }
 
 const MAX_BLOCKS = 100;
@@ -94,10 +127,17 @@ function fromLegacy(c: Record<string, unknown>): Block[] {
   return blocks;
 }
 
+export interface BuilderContent {
+  title: string;
+  blocks: Block[];
+  theme: Theme;
+}
+
 /**
  * Normalize any stored AI-page `content` into a validated BuilderContent. Accepts
- * the new {title, blocks} shape or the legacy {title,tagline,sections,ctaLabel}
- * shape; always returns a safe, render-ready object.
+ * the new {title, blocks, theme} shape or the legacy {title,tagline,sections,
+ * ctaLabel} shape; always returns a safe, render-ready object (legacy pages get
+ * the default light theme).
  */
 export function normalizeToBlocks(content: unknown): BuilderContent {
   const c = (content && typeof content === "object" ? content : {}) as Record<string, unknown>;
@@ -109,5 +149,5 @@ export function normalizeToBlocks(content: unknown): BuilderContent {
   } else {
     blocks = fromLegacy(c);
   }
-  return { title, blocks: blocks.slice(0, MAX_BLOCKS) };
+  return { title, blocks: blocks.slice(0, MAX_BLOCKS), theme: normalizeTheme(content) };
 }

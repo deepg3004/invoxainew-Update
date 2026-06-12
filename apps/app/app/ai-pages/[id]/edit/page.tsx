@@ -32,6 +32,7 @@ export default async function EditAiPage({
       liveUrl={liveUrl}
       initialTitle={content.title}
       initialBlocks={content.blocks}
+      initialTheme={content.theme}
     />
   );
 }

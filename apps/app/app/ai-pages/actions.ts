@@ -12,7 +12,7 @@ import {
   deleteAiPage,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
-import { normalizeToBlocks, type Block } from "@invoxai/utils/blocks";
+import { normalizeToBlocks, type Block, type Theme } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../lib/tenant";
 import { aiConfigured, generateLandingPage } from "../../lib/ai";
 
@@ -107,9 +107,10 @@ export async function saveAiPageAction(
   id: string,
   title: string,
   blocks: Block[],
+  theme: Theme,
 ): Promise<SaveResult> {
   const { tenant } = await requireTenant();
-  const safe = normalizeToBlocks({ title, blocks });
+  const safe = normalizeToBlocks({ title, blocks, theme });
   if (safe.blocks.length === 0) {
     return { ok: false, error: "Add at least one block before saving." };
   }

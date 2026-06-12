@@ -2,45 +2,47 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublishedAiPage, getTenantTracking } from "@invoxai/db";
-import { normalizeToBlocks, type Block } from "@invoxai/utils/blocks";
+import { normalizeToBlocks, THEME_PRESETS, type Block, type Theme } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 
 export const dynamic = "force-dynamic";
 
-// Render one block as structured markup. SECURITY: blocks are validated +
-// sanitized by normalizeToBlocks (server-side), and we never inject raw HTML —
-// text is rendered as text, links/images only with sanitized http(s)/relative
-// URLs — so a generated or edited page can't run scripts on the seller's site.
-function BlockView({ block }: { block: Block }) {
+type Tokens = (typeof THEME_PRESETS)[Theme["preset"]] & { accent: string };
+
+// Render one block as structured markup, styled by the page theme tokens.
+// SECURITY: blocks are validated + sanitized by normalizeToBlocks (server-side),
+// theme colours are validated to hex/preset tokens, and we never inject raw HTML
+// — so a generated or edited page can't run scripts on the seller's site.
+function BlockView({ block, t }: { block: Block; t: Tokens }) {
   switch (block.type) {
     case "heading": {
       const cls =
         block.level === 1
-          ? "text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl"
+          ? "text-4xl font-bold tracking-tight sm:text-5xl"
           : block.level === 2
-            ? "mt-10 text-2xl font-semibold text-neutral-900"
-            : "mt-6 text-lg font-semibold text-neutral-800";
-      if (block.level === 1) return <h1 className={cls}>{block.text}</h1>;
-      if (block.level === 2) return <h2 className={cls}>{block.text}</h2>;
-      return <h3 className={cls}>{block.text}</h3>;
+            ? "mt-10 text-2xl font-semibold"
+            : "mt-6 text-lg font-semibold";
+      if (block.level === 1) return <h1 className={cls} style={{ color: t.text }}>{block.text}</h1>;
+      if (block.level === 2) return <h2 className={cls} style={{ color: t.text }}>{block.text}</h2>;
+      return <h3 className={cls} style={{ color: t.text }}>{block.text}</h3>;
     }
     case "text":
-      return <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-600">{block.text}</p>;
+      return <p className="mt-3 whitespace-pre-line leading-relaxed" style={{ color: t.muted }}>{block.text}</p>;
     case "image":
       // eslint-disable-next-line @next/next/no-img-element
-      return <img src={block.url} alt={block.alt} className="mt-6 w-full rounded-xl border border-neutral-200 object-cover" />;
+      return <img src={block.url} alt={block.alt} className="mt-6 w-full rounded-xl object-cover" style={{ border: `1px solid ${t.border}` }} />;
     case "button":
       return (
         <div className="mt-6">
-          <a href={block.href} className="inline-block rounded-lg bg-neutral-900 px-6 py-3 font-medium text-white">
+          <a href={block.href} className="inline-block rounded-lg px-6 py-3 font-medium text-white" style={{ background: t.accent }}>
             {block.label}
           </a>
         </div>
       );
     case "divider":
-      return <hr className="mt-10 border-neutral-200" />;
+      return <hr className="mt-10" style={{ borderColor: t.border }} />;
   }
 }
 
@@ -59,22 +61,25 @@ export default async function AiLandingPage({
   if (!page) notFound();
   const content = normalizeToBlocks(page.content);
   const tracking = await getTenantTracking(tenant.id);
+  const t: Tokens = { ...THEME_PRESETS[content.theme.preset], accent: content.theme.accent };
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-20">
-      <TrackingScripts ids={tracking ?? {}} />
-      <article>
-        {content.blocks.map((b, i) => (
-          <BlockView key={i} block={b} />
-        ))}
-      </article>
+    <div style={{ background: t.bg, minHeight: "100vh" }}>
+      <main className="mx-auto max-w-3xl px-6 py-20">
+        <TrackingScripts ids={tracking ?? {}} />
+        <article>
+          {content.blocks.map((b, i) => (
+            <BlockView key={i} block={b} t={t} />
+          ))}
+        </article>
 
-      <footer className="mt-20 border-t border-neutral-200 pt-6 text-center text-sm text-neutral-400">
-        {tenant.name ?? tenant.username} ·{" "}
-        <Link href="/account" className="underline">
-          Your orders
-        </Link>
-      </footer>
-    </main>
+        <footer className="mt-20 pt-6 text-center text-sm" style={{ borderTop: `1px solid ${t.border}`, color: t.muted }}>
+          {tenant.name ?? tenant.username} ·{" "}
+          <Link href="/account" className="underline">
+            Your orders
+          </Link>
+        </footer>
+      </main>
+    </div>
   );
 }
