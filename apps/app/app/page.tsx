@@ -166,6 +166,17 @@ export default async function Dashboard() {
             Manage courses →
           </Link>
         </Card>
+        <Card title="Custom domains">
+          <p className="text-sm text-neutral-500">
+            Serve your site on your own domain instead of the subdomain.
+          </p>
+          <Link
+            href="/domains"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Connect a domain →
+          </Link>
+        </Card>
         <Card title="AI landing pages">
           <p className="text-sm text-neutral-500">
             Let AI write and publish a landing page from a short brief.

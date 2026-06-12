@@ -1,9 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import {
-  getTenantByUsername,
   getPublishedProductById,
   createCartOrder,
   applyCoupon,
@@ -13,6 +11,7 @@ import { getGatewayCredentials } from "../../lib/gateway";
 import { createOrderWithKeys } from "../../lib/razorpay";
 import { getSessionUser } from "../../lib/auth";
 import { couponErrorMessage } from "../../lib/coupon-message";
+import { resolveTenantByHost } from "../../lib/resolve";
 
 export type StartCartResult =
   | { ok: false; error: string }
@@ -48,9 +47,7 @@ export async function previewCartCoupon(
   if (!trimmed) return { ok: false, error: "Enter a code." };
 
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
-  if (!username) return { ok: false, error: "This store is unavailable." };
-  const tenant = await getTenantByUsername(username);
+  const tenant = await resolveTenantByHost(host);
   if (!tenant) return { ok: false, error: "This store is unavailable." };
 
   const priced = await priceCart(lines, tenant.id);
@@ -147,9 +144,7 @@ export async function startCartCheckout(
   couponCode?: string,
 ): Promise<StartCartResult> {
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
-  if (!username) return { ok: false, error: "This store is unavailable." };
-  const tenant = await getTenantByUsername(username);
+  const tenant = await resolveTenantByHost(host);
   if (!tenant) return { ok: false, error: "This store is unavailable." };
 
   if (await isTenantSuspended(tenant.id)) {

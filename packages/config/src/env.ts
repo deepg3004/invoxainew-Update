@@ -57,6 +57,10 @@ const serverSchema = z.object({
   // Optional webhook (e.g. Slack) the monitor cron posts alerts to.
   ALERT_WEBHOOK_URL: z.string().optional().default(""),
 
+  // Custom domains (Phase 15): the A-record target sellers point their domain at
+  // (this VPS's public IP). Shown in the DNS setup instructions. SERVER ONLY.
+  CUSTOM_DOMAIN_A_TARGET: z.string().optional().default("93.127.195.147"),
+
   // Symmetric key for encrypting seller gateway secrets at rest (C6).
   // base64 of 32 random bytes (`openssl rand -base64 32`). SERVER ONLY. Rotating
   // it invalidates existing ciphertexts (needs a re-encrypt migration). Optional

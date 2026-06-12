@@ -1,12 +1,11 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import {
-  getTenantByUsername,
   getActivePaymentPage,
   getSellerGateway,
   getTenantTracking,
 } from "@invoxai/db";
+import { resolveTenantByHost } from "../../../lib/resolve";
 import { formatRupees } from "@invoxai/utils/money";
 import { PayBox } from "./PayBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
@@ -20,10 +19,7 @@ export default async function PayPage({
   params: Promise<{ slug: string }>;
 }) {
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
-  if (!username) notFound();
-
-  const tenant = await getTenantByUsername(username);
+  const tenant = await resolveTenantByHost(host);
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 

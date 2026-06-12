@@ -96,6 +96,17 @@ export {
   markAllNotificationsRead,
 } from "./notifications";
 export {
+  normalizeDomain,
+  addDomain,
+  listDomains,
+  getDomainById,
+  deleteDomain,
+  markDomainVerified,
+  getTenantByCustomDomain,
+  type AddDomainResult,
+  type VerifyDomainResult,
+} from "./domains";
+export {
   createProduct,
   listProducts,
   getProductById,

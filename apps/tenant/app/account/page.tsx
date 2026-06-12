@@ -2,16 +2,15 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@invoxai/ui";
-import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import { formatRupees } from "@invoxai/utils/money";
 import {
-  getTenantByUsername,
   upsertProfile,
   ensureBuyerAccount,
   listBuyerOrders,
   listEnrolledCourses,
 } from "@invoxai/db";
 import { getSessionUser } from "../../lib/auth";
+import { resolveTenantByHost } from "../../lib/resolve";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +25,7 @@ function formatDate(d: Date | null): string {
 
 export default async function BuyerCorner() {
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
-  if (!username) notFound();
-  const tenant = await getTenantByUsername(username);
+  const tenant = await resolveTenantByHost(host);
   if (!tenant) notFound();
 
   const user = await getSessionUser();

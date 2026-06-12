@@ -80,6 +80,8 @@ model Tenant {
   enrolments   Enrolment[]
   // Notifications (Final Plan §28): the seller's in-app notifications.
   notifications Notification[]
+  // Custom domains (Final Plan §38): the seller's connected domains.
+  domains       TenantDomain[]
 }
 
 /// Per-tenant ads/analytics tracking IDs (Final Plan §21). Injected on the
@@ -808,6 +810,38 @@ model Refund {
 
   @@index([tenantId, createdAt])
   @@map("refunds")
+}
+
+enum DomainStatus {
+  PENDING
+  VERIFIED
+}
+
+/// A custom domain a seller connects to their tenant site (Custom domains, Phase
+/// 15). The seller adds the domain (PENDING) + a TXT challenge token; once they
+/// add the `_invoxai-challenge` TXT record and we confirm it, the domain becomes
+/// VERIFIED and starts serving (Caddy on-demand TLS issues a cert via the
+/// tls-allow ask endpoint, which only allows VERIFIED domains).
+///
+/// ISOLATION (critical): a host resolves to a tenant ONLY via a VERIFIED row, and
+/// a partial unique index (see the migration) allows at most ONE VERIFIED row per
+/// domain — so two tenants can never both serve the same host. The TXT token
+/// proves the seller controls the DNS before we ever serve their tenant on it.
+/// `@@unique([tenantId, domain])` stops a tenant adding the same domain twice.
+/// RLS: deny-anon lockdown.
+model TenantDomain {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  domain      String // lowercased host, e.g. "shop.example.com"
+  status      DomainStatus @default(PENDING)
+  verifyToken String       @map("verify_token")
+  verifiedAt  DateTime?    @map("verified_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@unique([tenantId, domain])
+  @@index([domain])
+  @@map("tenant_domains")
 }
 
 /// A seller-facing in-app notification (Notifications engine, slice 1). Created

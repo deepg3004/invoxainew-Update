@@ -1,14 +1,13 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import {
-  getTenantByUsername,
   getPublishedCourse,
   getEnrolment,
   listLessons,
 } from "@invoxai/db";
 import { getSessionUser } from "../../../../lib/auth";
+import { resolveTenantByHost } from "../../../../lib/resolve";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +17,7 @@ export default async function LearnPage({
   params: Promise<{ slug: string }>;
 }) {
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
-  if (!username) notFound();
-  const tenant = await getTenantByUsername(username);
+  const tenant = await resolveTenantByHost(host);
   if (!tenant) notFound();
 
   const user = await getSessionUser();

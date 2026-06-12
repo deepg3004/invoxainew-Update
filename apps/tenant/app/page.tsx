@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
 import { Card } from "@invoxai/ui";
-import { tenantUsernameFromHost } from "@invoxai/utils/host";
-import { getTenantByUsername, getTenantTracking } from "@invoxai/db";
+import { getTenantTracking } from "@invoxai/db";
+import { resolveTenantByHost } from "../lib/resolve";
 import { StoreUnavailable } from "./StoreUnavailable";
 import { TrackingScripts } from "./TrackingScripts";
 import { CartLink } from "./CartLink";
@@ -13,11 +12,11 @@ export const dynamic = "force-dynamic";
 
 export default async function TenantHome() {
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
+  const tenant = await resolveTenantByHost(host);
 
-  // Apex / www / reserved host (e.g. plain localhost:3003 in dev): show a hint
-  // rather than a 404, since this is the platform host, not a tenant.
-  if (!username) {
+  // Apex / www / reserved host (e.g. plain localhost:3003 in dev), or an unknown
+  // custom domain: show a hint rather than a 404 — this is the platform host.
+  if (!tenant) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-16">
         <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
@@ -39,8 +38,6 @@ export default async function TenantHome() {
     );
   }
 
-  const tenant = await getTenantByUsername(username);
-  if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
   const tracking = await getTenantTracking(tenant.id);
 

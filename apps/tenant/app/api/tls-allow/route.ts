@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { tenantUsernameFromHost } from "@invoxai/utils/host";
-import { getTenantByUsername } from "@invoxai/db";
+import { getTenantByUsername, getTenantByCustomDomain } from "@invoxai/db";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +22,13 @@ export async function GET(request: NextRequest) {
   if (username) {
     const tenant = await getTenantByUsername(username);
     if (tenant) return new NextResponse("ok", { status: 200 });
+    return new NextResponse("not allowed", { status: 404 });
   }
+
+  // Not one of our subdomains — allow a cert only for a VERIFIED custom domain,
+  // so Caddy won't issue certs for arbitrary hosts pointed at this IP.
+  const tenant = await getTenantByCustomDomain(domain);
+  if (tenant) return new NextResponse("ok", { status: 200 });
 
   return new NextResponse("not allowed", { status: 404 });
 }

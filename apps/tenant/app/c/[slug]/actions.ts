@@ -1,9 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import {
-  getTenantByUsername,
   getPublishedCourseById,
   createBuyerPayment,
   applyCoupon,
@@ -14,6 +12,7 @@ import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { couponErrorMessage } from "../../../lib/coupon-message";
+import { resolveTenantByHost } from "../../../lib/resolve";
 
 export type StartCourseResult =
   | { ok: false; error: string }
@@ -39,9 +38,7 @@ export async function startCourseCheckout(
   couponCode?: string,
 ): Promise<StartCourseResult> {
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
-  if (!username) return { ok: false, error: "This store is unavailable." };
-  const tenant = await getTenantByUsername(username);
+  const tenant = await resolveTenantByHost(host);
   if (!tenant) return { ok: false, error: "This store is unavailable." };
 
   const course = await getPublishedCourseById(courseId);

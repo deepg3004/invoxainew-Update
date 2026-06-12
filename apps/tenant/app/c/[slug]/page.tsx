@@ -1,14 +1,13 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import {
-  getTenantByUsername,
   getPublishedCourse,
   getSellerGateway,
   getTenantTracking,
   getEnrolment,
 } from "@invoxai/db";
+import { resolveTenantByHost } from "../../../lib/resolve";
 import { formatRupees } from "@invoxai/utils/money";
 import { CourseBuyBox } from "./CourseBuyBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
@@ -24,10 +23,7 @@ export default async function CoursePage({
   params: Promise<{ slug: string }>;
 }) {
   const host = (await headers()).get("host");
-  const username = tenantUsernameFromHost(host);
-  if (!username) notFound();
-
-  const tenant = await getTenantByUsername(username);
+  const tenant = await resolveTenantByHost(host);
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
