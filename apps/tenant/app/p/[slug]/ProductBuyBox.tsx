@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
+import { PaymentSuccess } from "@invoxai/ui";
 import { startProductCheckout, previewProductCoupon } from "./actions";
 import { firePurchase } from "../../TrackingScripts";
 import { AddToCartButton } from "../../AddToCartButton";
@@ -115,12 +116,12 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
 
   if (status === "paid") {
     return (
-      <div className="mt-5 rounded-md bg-green-50 px-3 py-3 text-center text-sm font-medium text-green-700">
-        ✓ Payment successful. Thank you!
-        <a href="/account" className="mt-1 block text-xs font-normal text-green-800 underline">
-          View it in your orders
-        </a>
-      </div>
+      <PaymentSuccess
+        title="Payment successful"
+        subtitle="Thank you! Your order is confirmed."
+        ctaHref="/account"
+        ctaLabel="View it in your orders"
+      />
     );
   }
 

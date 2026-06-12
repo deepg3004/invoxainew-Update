@@ -57,10 +57,16 @@ export const invoxPreset = {
           "0%": { opacity: "0", transform: "translateY(12px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        pop: {
+          "0%": { opacity: "0", transform: "scale(0)" },
+          "60%": { transform: "scale(1.15)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         float: "float 9s ease-in-out infinite",
         "fade-up": "fade-up 0.6s ease-out both",
+        pop: "pop 0.5s cubic-bezier(0.2,0.8,0.2,1) both",
       },
     },
   },

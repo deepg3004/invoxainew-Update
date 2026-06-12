@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
+import { PaymentSuccess } from "@invoxai/ui";
 import { startCourseCheckout, previewCourseCoupon } from "./actions";
 import { firePurchase } from "../../TrackingScripts";
 
@@ -97,15 +98,12 @@ export function CourseBuyBox({
 
   if (status === "paid") {
     return (
-      <div className="mt-5 rounded-md bg-green-50 px-3 py-3 text-center text-sm font-medium text-green-700">
-        ✓ Payment successful — you’re enrolled!
-        <a
-          href={`/account/learn/${course.slug}`}
-          className="mt-1 block text-xs font-normal text-green-800 underline"
-        >
-          Start learning →
-        </a>
-      </div>
+      <PaymentSuccess
+        title="You’re enrolled!"
+        subtitle="Payment successful — your course is ready."
+        ctaHref={`/account/learn/${course.slug}`}
+        ctaLabel="Start learning →"
+      />
     );
   }
 
