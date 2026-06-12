@@ -15,6 +15,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { normalizeToBlocks, type Block, type Theme } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../lib/tenant";
 import { aiConfigured, generateLandingPage } from "../../lib/ai";
+import { getTemplate } from "../../lib/templates";
 
 export type AiPageFormState = { error?: string };
 export type SaveResult = { ok: true } | { ok: false; error: string };
@@ -123,6 +124,41 @@ export async function saveAiPageAction(
   if (res.count === 0) return { ok: false, error: "Page not found." };
   revalidatePath("/ai-pages");
   return { ok: true };
+}
+
+/**
+ * Create a page from a starter template — no AI call, so no AI-page fee (it's a
+ * free quick-start the seller then edits). The template content is still
+ * re-validated + sanitized through normalizeToBlocks before storage.
+ */
+export async function createFromTemplateAction(
+  templateId: string,
+  _prev: AiPageFormState,
+  form: FormData,
+): Promise<AiPageFormState> {
+  const { tenant } = await requireTenant();
+
+  const template = getTemplate(templateId);
+  if (!template) return { error: "That template is no longer available." };
+
+  const slug = String(form.get("slug") ?? "").trim().toLowerCase();
+  if (!SLUG_RE.test(slug) || RESERVED.has(slug)) {
+    return { error: "Address must be 1–50 chars (letters, digits, hyphens) and not reserved." };
+  }
+
+  const safe = normalizeToBlocks(template.content);
+  const created = await createAiPage({
+    tenantId: tenant.id,
+    slug,
+    title: safe.title,
+    brief: `Started from the "${template.name}" template`,
+    content: JSON.parse(JSON.stringify(safe)),
+    chargeRef: null,
+  });
+  if (!created.ok) return { error: `The address "/${slug}" is already in use.` };
+
+  revalidatePath("/ai-pages");
+  redirect(`/ai-pages/${created.id}/edit`);
 }
 
 export async function deleteAiPageAction(id: string) {

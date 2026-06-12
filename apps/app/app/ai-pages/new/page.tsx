@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getFeatureQuota } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../../lib/tenant";
@@ -28,6 +29,13 @@ export default async function NewAiPage() {
       <div className="mt-6">
         <AiPageForm priceLabel={priceLabel} />
       </div>
+      <p className="mt-6 text-sm text-neutral-500">
+        Prefer to start from a ready-made design?{" "}
+        <Link href="/ai-pages/templates" className="font-medium text-blue-600 underline">
+          Browse templates →
+        </Link>{" "}
+        (free, no AI credits)
+      </p>
     </main>
   );
 }

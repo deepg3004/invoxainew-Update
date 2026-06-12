@@ -46,12 +46,20 @@ export default async function AiPagesPage() {
             )}
           </p>
         </div>
-        <Link
-          href="/ai-pages/new"
-          className="shrink-0 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
-        >
-          Generate page
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/ai-pages/templates"
+            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-900"
+          >
+            Templates
+          </Link>
+          <Link
+            href="/ai-pages/new"
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+          >
+            Generate page
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6">
