@@ -25,6 +25,7 @@ interface ParsedProduct {
   imageUrl: string | null;
   kind: ProductKind;
   stockQty: number | null;
+  sortOrder: number;
 }
 
 function parseProductFields(
@@ -58,10 +59,29 @@ function parseProductFields(
     stockQty = n;
   }
 
+  // Display order: lower shows first on the storefront. Blank = 0.
+  const orderRaw = String(form.get("sortOrder") ?? "").trim();
+  let sortOrder = 0;
+  if (orderRaw) {
+    const n = Number(orderRaw);
+    if (!Number.isInteger(n)) {
+      return { ok: false, message: "Display order must be a whole number." };
+    }
+    sortOrder = n;
+  }
+
   const description = String(form.get("description") ?? "").trim() || null;
   return {
     ok: true,
-    value: { title, description, pricePaise: price.paise, imageUrl: imageRaw || null, kind, stockQty },
+    value: {
+      title,
+      description,
+      pricePaise: price.paise,
+      imageUrl: imageRaw || null,
+      kind,
+      stockQty,
+      sortOrder,
+    },
   };
 }
 

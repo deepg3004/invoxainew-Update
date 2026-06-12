@@ -27,6 +27,7 @@ export async function createProduct(input: {
   imageUrl?: string | null;
   kind: ProductKind;
   stockQty?: number | null;
+  sortOrder?: number;
   status?: ProductStatus;
 }): Promise<CreateProductResult> {
   try {
@@ -40,6 +41,7 @@ export async function createProduct(input: {
         imageUrl: input.imageUrl ?? null,
         kind: input.kind,
         stockQty: input.stockQty ?? null,
+        sortOrder: input.sortOrder ?? 0,
         status: input.status ?? "DRAFT",
       },
       select: { id: true },
@@ -97,6 +99,7 @@ export function updateProduct(
     imageUrl?: string | null;
     kind: ProductKind;
     stockQty?: number | null;
+    sortOrder?: number;
   },
 ) {
   // Scope the update to the owner via updateMany (where includes tenantId).
@@ -109,6 +112,7 @@ export function updateProduct(
       imageUrl: data.imageUrl ?? null,
       kind: data.kind,
       stockQty: data.stockQty ?? null,
+      sortOrder: data.sortOrder ?? 0,
     },
   });
 }

@@ -34,6 +34,7 @@ export default async function EditProductPage({
             imageUrl: product.imageUrl,
             kind: product.kind,
             stockQty: product.stockQty,
+            sortOrder: product.sortOrder,
           }}
         />
       </div>

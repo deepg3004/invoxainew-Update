@@ -14,6 +14,7 @@ export interface ProductValues {
   imageUrl: string | null;
   kind: ProductKind;
   stockQty: number | null;
+  sortOrder: number;
 }
 
 type Action = (prev: ProductFormState, form: FormData) => Promise<ProductFormState>;
@@ -123,19 +124,29 @@ export function ProductForm({
         <span className="mt-1 block text-xs text-neutral-400">Optional.</span>
       </label>
 
-      <label className="block">
-        <span className="text-sm font-medium text-neutral-700">Stock</span>
-        <input
-          name="stockQty"
-          inputMode="numeric"
-          defaultValue={initial?.stockQty ?? ""}
-          placeholder="Leave blank for unlimited"
-          className={inputCls}
-        />
-        <span className="mt-1 block text-xs text-neutral-400">
-          Whole number of units, or blank for unlimited.
-        </span>
-      </label>
+      <div className="grid grid-cols-2 gap-4">
+        <label className="block">
+          <span className="text-sm font-medium text-neutral-700">Stock</span>
+          <input
+            name="stockQty"
+            inputMode="numeric"
+            defaultValue={initial?.stockQty ?? ""}
+            placeholder="Blank = unlimited"
+            className={inputCls}
+          />
+          <span className="mt-1 block text-xs text-neutral-400">Units, or blank.</span>
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-neutral-700">Display order</span>
+          <input
+            name="sortOrder"
+            inputMode="numeric"
+            defaultValue={initial?.sortOrder ?? 0}
+            className={inputCls}
+          />
+          <span className="mt-1 block text-xs text-neutral-400">Lower shows first.</span>
+        </label>
+      </div>
 
       {!isEdit ? (
         <label className="flex items-center gap-2">
