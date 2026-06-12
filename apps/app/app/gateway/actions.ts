@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { encryptSecret } from "@invoxai/utils/crypto";
-import { connectSellerGateway, disconnectSellerGateway } from "@invoxai/db";
+import { connectSellerGateway, disconnectSellerGateway, logActivity } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 import { validateRazorpayCredentials } from "../../lib/razorpay";
 
@@ -56,6 +56,7 @@ export async function connectGateway(
     mode,
   });
 
+  await logActivity(tenant.id, "gateway.connected", `Razorpay (${mode})`).catch(() => {});
   revalidatePath("/gateway");
   return { ok: true };
 }
@@ -63,5 +64,6 @@ export async function connectGateway(
 export async function disconnectGateway(): Promise<void> {
   const { tenant } = await requireTenant();
   await disconnectSellerGateway(tenant.id);
+  await logActivity(tenant.id, "gateway.disconnected").catch(() => {});
   revalidatePath("/gateway");
 }

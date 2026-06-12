@@ -6,8 +6,9 @@ import {
   setOrderFulfillmentStatus,
   getRefundableOrder,
   recordRefund,
+  logActivity,
 } from "@invoxai/db";
-import { rupeeStringToPaise } from "@invoxai/utils/money";
+import { rupeeStringToPaise, formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { getGatewayCredentials } from "../../lib/gateway";
 import { refundPayment } from "../../lib/razorpay";
@@ -101,6 +102,7 @@ export async function refundOrderAction(
     return { error: "Refund issued, but recording it failed — contact support with the order id." };
   }
 
+  await logActivity(tenant.id, "order.refunded", formatRupees(amt.paise)).catch(() => {});
   revalidatePath("/orders");
   return {
     ok: `Refunded. Commission reversed: ${(result.commissionReversedPaise / 100).toFixed(2)} INR.`,

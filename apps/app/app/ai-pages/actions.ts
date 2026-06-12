@@ -13,6 +13,7 @@ import {
   getAiPageVersion,
   setAiPagePublished,
   deleteAiPage,
+  logActivity,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { normalizeToBlocks, type Block, type Theme } from "@invoxai/utils/blocks";
@@ -96,6 +97,7 @@ export async function generateAiPageAction(
     await setAiPageChargeRef(created.id, charge.referenceId);
   }
 
+  await logActivity(tenant.id, "page.generated", `/${slug}`).catch(() => {});
   revalidatePath("/ai-pages");
   // Drop the seller straight into the block editor to refine the generated page.
   redirect(`/ai-pages/${created.id}/edit`);
@@ -188,6 +190,7 @@ export async function createFromTemplateAction(
 export async function setAiPagePublishedAction(id: string, isPublished: boolean) {
   const { tenant } = await requireTenant();
   await setAiPagePublished(tenant.id, id, isPublished);
+  await logActivity(tenant.id, isPublished ? "page.published" : "page.unpublished").catch(() => {});
   revalidatePath("/ai-pages");
 }
 

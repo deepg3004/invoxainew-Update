@@ -7,6 +7,7 @@ import {
   updateProduct,
   setProductStatus,
   getSellerGateway,
+  logActivity,
   type ProductKind,
   type ProductStatus,
 } from "@invoxai/db";
@@ -143,5 +144,8 @@ export async function updateProductAction(
 export async function setProductStatusAction(id: string, status: ProductStatus) {
   const { tenant } = await requireTenant();
   await setProductStatus(tenant.id, id, status);
+  const verb =
+    status === "PUBLISHED" ? "published" : status === "ARCHIVED" ? "archived" : "unpublished";
+  await logActivity(tenant.id, `product.${verb}`).catch(() => {});
   revalidatePath("/products");
 }

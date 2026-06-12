@@ -579,6 +579,20 @@ model PageView {
   @@map("page_views")
 }
 
+/// Seller-facing activity log — important account events (gateway connected, page
+/// published, refund issued, domain verified…). Append-only, written best-effort
+/// after the action. deny-anon RLS; the seller reads only their own (tenant-scoped).
+model ActivityLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  action    String // stable code, e.g. "gateway.connected"
+  detail    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("activity_logs")
+}
+
 /// A seller's platform subscription (C4). Exactly one per tenant (`tenantId`
 /// unique). This is the seller paying InvoxAI's OWN fees via InvoxAI's platform
 /// gateway — NOT buyer money (hard rule). `currentPeriodEnd` is extended on each

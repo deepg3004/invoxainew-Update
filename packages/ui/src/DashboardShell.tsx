@@ -29,6 +29,7 @@ import {
   LineChart,
   Target,
   Gauge,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "./cn";
@@ -75,6 +76,7 @@ export const SELLER_NAV: NavGroup[] = [
       { href: "/analytics", label: "Analytics", icon: LineChart },
       { href: "/tracking", label: "Tracking", icon: Target },
       { href: "/usage", label: "Usage", icon: Gauge },
+      { href: "/activity", label: "Activity", icon: History },
     ],
   },
 ];

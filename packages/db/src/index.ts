@@ -249,3 +249,4 @@ export {
   type AnalyticsDay,
   type TrafficResult,
 } from "./analytics";
+export { logActivity, listActivityLog } from "./activity";

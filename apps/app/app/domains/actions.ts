@@ -9,6 +9,7 @@ import {
   deleteDomain,
   markDomainVerified,
   planAllowsCustomDomain,
+  logActivity,
 } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 
@@ -62,6 +63,7 @@ export async function verifyDomainAction(id: string) {
   const res = await markDomainVerified(tenant.id, id);
   revalidatePath("/domains");
   if (!res.ok && res.reason === "conflict") redirect("/domains?msg=conflict");
+  await logActivity(tenant.id, "domain.verified", domain.domain).catch(() => {});
   redirect("/domains?msg=verified");
 }
 
