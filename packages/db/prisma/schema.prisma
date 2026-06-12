@@ -546,6 +546,19 @@ model PricingSetting {
   @@map("pricing_settings")
 }
 
+/// Global platform settings as string key/value — admin-managed config that used
+/// to live in env (invoice legal name / GSTIN / address / GST rate) plus branding
+/// (logo + favicon URLs). PLATFORM-GLOBAL, admin-only (after requireAdmin), same
+/// deny-anon RLS lockdown as PricingSetting. NOT for secrets (keys/passwords) —
+/// those stay in env, encrypted; this is plaintext, non-secret config only.
+model PlatformSetting {
+  key       String   @id // stable code key, e.g. "invoice_gstin"
+  value     String // free-text value (URL, GSTIN, address, bps as string…)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}
+
 /// A seller's platform subscription (C4). Exactly one per tenant (`tenantId`
 /// unique). This is the seller paying InvoxAI's OWN fees via InvoxAI's platform
 /// gateway — NOT buyer money (hard rule). `currentPeriodEnd` is extended on each

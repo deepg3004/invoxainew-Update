@@ -94,6 +94,14 @@ export {
   getInvoice,
 } from "./invoice";
 export {
+  PLATFORM_SETTING_KEYS,
+  getPlatformSettings,
+  getBranding,
+  upsertPlatformSettings,
+  type PlatformSettingKey,
+  type PlatformSettings,
+} from "./settings";
+export {
   getTenantTracking,
   upsertTenantTracking,
 } from "./tracking";

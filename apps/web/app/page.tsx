@@ -6,8 +6,10 @@ import {
   GlassCard,
   Section,
 } from "@invoxai/ui";
+import { getBranding } from "@invoxai/db";
 
-// Marketing landing — static. The live health probe still lives at /health.
+// Marketing landing. Branding (logo) is admin-managed; ISR keeps it cache-fast.
+export const revalidate = 600;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.invoxai.io";
 
 const FEATURES: { title: string; body: string; icon: React.ReactNode }[] = [
@@ -43,7 +45,8 @@ const FEATURES: { title: string; body: string; icon: React.ReactNode }[] = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const { logoUrl } = await getBranding().catch(() => ({ logoUrl: undefined }));
   return (
     <>
       <AuroraBackground />
@@ -51,9 +54,14 @@ export default function Home() {
       {/* Nav */}
       <header className="sticky top-0 z-20 border-b border-zinc-200 bg-ink/80 backdrop-blur-xl">
         <Container className="flex h-16 items-center justify-between">
-          <span className="font-display text-lg font-bold tracking-tight">
-            Invox<span className="text-gradient">AI</span>
-          </span>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="InvoxAI" className="h-8 w-auto" />
+          ) : (
+            <span className="font-display text-lg font-bold tracking-tight">
+              Invox<span className="text-gradient">AI</span>
+            </span>
+          )}
           <nav className="hidden items-center gap-8 text-sm text-muted sm:flex">
             <a className="transition hover:text-zinc-900" href="#how">
               How it works

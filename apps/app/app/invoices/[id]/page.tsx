@@ -1,10 +1,10 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import { notFound } from "next/navigation";
-import { serverEnv } from "@invoxai/config";
 import { getInvoice } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
 import { Button, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../../lib/tenant";
+import { getInvoiceConfig } from "../../../lib/invoice-config";
 import { PrintButton } from "./PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -22,8 +22,8 @@ export default async function InvoiceDetail({
   const { id } = await params;
   const inv = await getInvoice(tenant.id, id);
   if (!inv) notFound();
-  const env = serverEnv();
-  const isTax = Boolean(env.INVOICE_GSTIN);
+  const cfg = await getInvoiceConfig();
+  const isTax = Boolean(cfg.gstin);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -44,8 +44,12 @@ export default async function InvoiceDetail({
       </div>
 
       <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-8">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
+            {cfg.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={cfg.logoUrl} alt={cfg.legalName} className="mb-3 h-9 w-auto" />
+            ) : null}
             <h1 className="text-xl font-bold">
               {isTax ? "Tax Invoice" : "Invoice (DRAFT)"}
             </h1>
@@ -58,7 +62,7 @@ export default async function InvoiceDetail({
 
         {!isTax ? (
           <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            Not a valid tax invoice — InvoxAI’s GSTIN is not yet configured.
+            Not a valid tax invoice — a GSTIN is not yet configured.
           </p>
         ) : null}
 
@@ -66,12 +70,12 @@ export default async function InvoiceDetail({
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-muted">From</div>
             <div className="mt-1 text-sm">
-              <div className="font-semibold text-zinc-900">{env.INVOICE_LEGAL_NAME}</div>
-              {env.INVOICE_ADDRESS ? (
-                <div className="whitespace-pre-line text-muted">{env.INVOICE_ADDRESS}</div>
+              <div className="font-semibold text-zinc-900">{cfg.legalName}</div>
+              {cfg.address ? (
+                <div className="whitespace-pre-line text-muted">{cfg.address}</div>
               ) : null}
-              {env.INVOICE_GSTIN ? (
-                <div className="mt-1 text-muted">GSTIN: {env.INVOICE_GSTIN}</div>
+              {cfg.gstin ? (
+                <div className="mt-1 text-muted">GSTIN: {cfg.gstin}</div>
               ) : null}
             </div>
           </div>
@@ -121,7 +125,7 @@ export default async function InvoiceDetail({
 
         <p className="mt-8 text-xs text-muted">
           Amount is inclusive of GST. Computer-generated invoice.
-          {isTax ? "" : " Configure INVOICE_GSTIN to issue valid tax invoices."}
+          {isTax ? "" : " Set a GSTIN in admin settings to issue valid tax invoices."}
         </p>
       </div>
     </div>

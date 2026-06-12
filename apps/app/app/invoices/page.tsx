@@ -1,10 +1,10 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
-import { serverEnv } from "@invoxai/config";
 import { issuePlatformInvoices, listInvoices } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../lib/tenant";
+import { getInvoiceConfig } from "../../lib/invoice-config";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +14,11 @@ function fmtDate(d: Date): string {
 
 export default async function InvoicesPage() {
   const { tenant } = await requireTenant();
-  const env = serverEnv();
+  const cfg = await getInvoiceConfig();
 
   // Lazily issue any missing platform invoices (subscriptions + wallet recharges),
-  // then list.
-  await issuePlatformInvoices(tenant.id, env.INVOICE_GST_RATE_BPS);
+  // then list. Uses the admin-managed GST rate (env fallback).
+  await issuePlatformInvoices(tenant.id, cfg.gstRateBps);
   const invoices = await listInvoices(tenant.id);
 
   return (
@@ -33,7 +33,7 @@ export default async function InvoicesPage() {
           </Button>
         }
       />
-      {!env.INVOICE_GSTIN ? (
+      {!cfg.gstin ? (
         <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
           These are provisional — InvoxAI’s GSTIN isn’t configured yet, so they
           show as DRAFT (not valid tax invoices).
