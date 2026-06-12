@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +17,32 @@ import { CartLink } from "../../CartLink";
 import { getSessionUser } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return {};
+  const { slug } = await params;
+  const course = await getPublishedCourse(tenant.id, slug);
+  if (!course) return {};
+  const description = course.description?.slice(0, 200) ?? undefined;
+  const images = course.imageUrl ? [course.imageUrl] : undefined;
+  return {
+    title: course.title,
+    description,
+    openGraph: { title: course.title, description, images, type: "website" },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title: course.title,
+      description,
+      images,
+    },
+  };
+}
 
 export default async function CoursePage({
   params,

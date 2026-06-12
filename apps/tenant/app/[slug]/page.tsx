@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -8,6 +9,39 @@ import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return {};
+  const { slug } = await params;
+  const page = await getPublishedAiPage(tenant.id, slug);
+  if (!page) return {};
+  const content = normalizeToBlocks(page.content);
+  const textBlock = content.blocks.find(
+    (b): b is Extract<Block, { type: "text" }> => b.type === "text",
+  );
+  const imageBlock = content.blocks.find(
+    (b): b is Extract<Block, { type: "image" }> => b.type === "image",
+  );
+  const description = textBlock?.text.slice(0, 200);
+  const images = imageBlock ? [imageBlock.url] : undefined;
+  return {
+    title: content.title,
+    description,
+    openGraph: { title: content.title, description, images, type: "website" },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title: content.title,
+      description,
+      images,
+    },
+  };
+}
 
 type Tokens = (typeof THEME_PRESETS)[Theme["preset"]] & { accent: string };
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
@@ -12,6 +13,25 @@ import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return {};
+  const { slug } = await params;
+  const page = await getActivePaymentPage(tenant.id, slug);
+  if (!page) return {};
+  const description = page.description?.slice(0, 200) ?? undefined;
+  return {
+    title: page.title,
+    description,
+    openGraph: { title: page.title, description, type: "website" },
+  };
+}
 
 export default async function PayPage({
   params,

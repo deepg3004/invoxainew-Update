@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -14,6 +15,32 @@ import { TrackingScripts } from "../../TrackingScripts";
 import { CartLink } from "../../CartLink";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return {};
+  const { slug } = await params;
+  const product = await getPublishedProduct(tenant.id, slug);
+  if (!product) return {};
+  const description = product.description?.slice(0, 200) ?? undefined;
+  const images = product.imageUrl ? [product.imageUrl] : undefined;
+  return {
+    title: product.title,
+    description,
+    openGraph: { title: product.title, description, images, type: "website" },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title: product.title,
+      description,
+      images,
+    },
+  };
+}
 
 export default async function ProductPage({
   params,
