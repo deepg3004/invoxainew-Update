@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  getPublishedCourse,
+  getPublishedCourseMeta,
   getEnrolment,
   listLessons,
 } from "@invoxai/db";
@@ -24,7 +24,7 @@ export default async function LearnPage({
   if (!user) redirect("/account/login");
 
   const { slug } = await params;
-  const course = await getPublishedCourse(tenant.id, slug);
+  const course = await getPublishedCourseMeta(tenant.id, slug);
   if (!course) notFound();
 
   // ACCESS CONTROL: only an enrolled buyer (by profile or purchase email) may see

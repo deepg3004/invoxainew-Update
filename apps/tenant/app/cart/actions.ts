@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import {
-  getPublishedProductById,
+  listPublishedProductsByIds,
   createCartOrder,
   applyCoupon,
   isTenantSuspended,
@@ -92,12 +92,17 @@ async function priceCart(
     merged.set(line.productId, (merged.get(line.productId) ?? 0) + qty);
   }
 
+  // One batched, tenant-scoped lookup instead of an await-per-line N+1.
+  const products = await listPublishedProductsByIds(tenantId, [...merged.keys()]);
+  const byId = new Map(products.map((p) => [p.id, p]));
+
   const items: PricedCart["items"] = [];
   let amountPaise = 0;
   for (const [productId, qty] of merged) {
     if (qty > 99) return { ok: false, error: "Quantity too high for an item." };
-    const product = await getPublishedProductById(productId);
-    if (!product || product.tenantId !== tenantId) {
+    const product = byId.get(productId);
+    if (!product) {
+      // Not found / wrong tenant / unpublished — the query already scoped both.
       return { ok: false, error: "An item in your cart is no longer available." };
     }
     if (product.stockQty !== null && product.stockQty < qty) {

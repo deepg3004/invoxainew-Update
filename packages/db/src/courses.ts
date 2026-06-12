@@ -189,6 +189,16 @@ export function getPublishedCourseById(id: string) {
   return prisma.course.findFirst({ where: { id, status: "PUBLISHED" } });
 }
 
+/** A PUBLISHED course's meta WITHOUT lessons — for the learn page, which loads
+ *  full lesson content separately via listLessons after the enrolment check.
+ *  Using getPublishedCourse there would fetch (and preview-strip) the lessons a
+ *  second time for nothing. */
+export function getPublishedCourseMeta(tenantId: string, slug: string) {
+  return prisma.course.findFirst({
+    where: { tenantId, slug, status: "PUBLISHED" },
+  });
+}
+
 // ── Enrolments (access grants; reads only — writes live in payments.ts) ────────
 
 /**

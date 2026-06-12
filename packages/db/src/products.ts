@@ -89,6 +89,15 @@ export function getPublishedProductById(id: string) {
   return prisma.product.findFirst({ where: { id, status: "PUBLISHED" } });
 }
 
+/** PUBLISHED products by id for one tenant — a single batched lookup for cart
+ *  pricing, replacing an N+1 of getPublishedProductById per line. Tenant-scoped
+ *  in the query, so a cart can never pull in another seller's product. */
+export function listPublishedProductsByIds(tenantId: string, ids: string[]) {
+  return prisma.product.findMany({
+    where: { tenantId, id: { in: ids }, status: "PUBLISHED" },
+  });
+}
+
 export function updateProduct(
   tenantId: string,
   id: string,
