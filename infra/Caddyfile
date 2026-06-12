@@ -4,7 +4,12 @@
 #   admin.invoxai.io       -> :3002 (admin)
 #   <anything else>        -> :3003 (tenant public sites), on-demand TLS
 # Caddy obtains/renews Let's Encrypt certs automatically.
-
+#
+# Each reverse_proxy retries the dial for up to 10s (lb_try_duration), so the
+# 1-2s gap during a `systemctl restart invox-*` deploy queues requests briefly
+# instead of returning 502s (fixes the prefetch failures seen during deploys).
+# Apply: copy to /etc/caddy/Caddyfile, `caddy validate --config /etc/caddy/Caddyfile`,
+# then `systemctl reload caddy` (graceful, no downtime).
 {
 	email iamdeep.mk@gmail.com
 
@@ -18,17 +23,26 @@
 
 invoxai.io, www.invoxai.io {
 	encode gzip zstd
-	reverse_proxy 127.0.0.1:3000
+	reverse_proxy 127.0.0.1:3000 {
+		lb_try_duration 10s
+		lb_try_interval 250ms
+	}
 }
 
 app.invoxai.io {
 	encode gzip zstd
-	reverse_proxy 127.0.0.1:3001
+	reverse_proxy 127.0.0.1:3001 {
+		lb_try_duration 10s
+		lb_try_interval 250ms
+	}
 }
 
 admin.invoxai.io {
 	encode gzip zstd
-	reverse_proxy 127.0.0.1:3002
+	reverse_proxy 127.0.0.1:3002 {
+		lb_try_duration 10s
+		lb_try_interval 250ms
+	}
 }
 
 # Catch-all for tenant subdomains (*.invoxai.io) and future custom domains.
@@ -38,5 +52,8 @@ https:// {
 		on_demand
 	}
 	encode gzip zstd
-	reverse_proxy 127.0.0.1:3003
+	reverse_proxy 127.0.0.1:3003 {
+		lb_try_duration 10s
+		lb_try_interval 250ms
+	}
 }
