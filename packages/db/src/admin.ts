@@ -101,22 +101,29 @@ export interface RevenueReport {
  * InvoxAI's own revenue (never buyer money): commission debited from seller
  * wallets, AI-page fees, and subscription payments. Wallet top-ups + current
  * balances are shown separately as the prepaid-money picture (a liability).
+ *
+ * `sinceDays` windows the earned/charged figures to that many days (by charge
+ * date / paid date); omit for all-time. Wallet liability is always the CURRENT
+ * held balance (a snapshot, not windowable).
  */
-export async function getRevenueReport(): Promise<RevenueReport> {
+export async function getRevenueReport(sinceDays?: number): Promise<RevenueReport> {
+  const since = sinceDays ? new Date(Date.now() - sinceDays * 86_400_000) : null;
+  const createdW = since ? { createdAt: { gte: since } } : {};
+  const paidW = since ? { paidAt: { gte: since } } : {};
   const [comm, aiFees, subRev, topups, liability] = await Promise.all([
-    prisma.commissionCharge.groupBy({ by: ["status"], _sum: { amountPaise: true } }),
+    prisma.commissionCharge.groupBy({ by: ["status"], where: createdW, _sum: { amountPaise: true } }),
     prisma.walletTransaction.aggregate({
-      where: { referenceType: "ai_page", direction: "DEBIT" },
+      where: { referenceType: "ai_page", direction: "DEBIT", ...createdW },
       _sum: { amountPaise: true },
       _count: { _all: true },
     }),
     prisma.platformOrder.aggregate({
-      where: { purpose: "SUBSCRIPTION", status: "PAID" },
+      where: { purpose: "SUBSCRIPTION", status: "PAID", ...paidW },
       _sum: { amountPaise: true },
       _count: { _all: true },
     }),
     prisma.platformOrder.aggregate({
-      where: { purpose: "WALLET_TOPUP", status: "PAID" },
+      where: { purpose: "WALLET_TOPUP", status: "PAID", ...paidW },
       _sum: { amountPaise: true },
     }),
     prisma.wallet.aggregate({ _sum: { balancePaise: true } }),

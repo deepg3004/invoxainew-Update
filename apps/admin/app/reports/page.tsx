@@ -18,24 +18,58 @@ function fmtDateTime(d: Date): string {
   return formatDateTimeShortIST(d);
 }
 
-export default async function ReportsPage() {
+const RANGES = [
+  { key: "7", label: "7d", days: 7 },
+  { key: "30", label: "30d", days: 30 },
+  { key: "90", label: "90d", days: 90 },
+  { key: "all", label: "All time", days: undefined },
+] as const;
+
+function rangeCls(active: boolean): string {
+  return `rounded-full px-3 py-1 text-xs font-medium ${
+    active ? "bg-brand text-white" : "border border-zinc-200 text-muted hover:bg-zinc-50"
+  }`;
+}
+
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
+  const { range: rawRange } = await searchParams;
+  const range = RANGES.find((r) => r.key === rawRange) ?? RANGES[3]; // default All time
+
   const [rev, attention, events] = await Promise.all([
-    getRevenueReport(),
+    getRevenueReport(range.days),
     getWalletAttention(),
     listRecentPaymentEvents(),
   ]);
 
   return (
     <AdminShell email={gate.user.email}>
-      <PageHeader eyebrow="InvoxAI · admin" title="Reports" />
+      <PageHeader
+        eyebrow="InvoxAI · admin"
+        title="Reports"
+        actions={
+          <div className="flex items-center gap-2">
+            {RANGES.map((r) => (
+              <a key={r.key} href={`/reports?range=${r.key}`} className={rangeCls(r.key === range.key)}>
+                {r.label}
+              </a>
+            ))}
+          </div>
+        }
+      />
 
-      <h2 className="mt-8 text-lg font-semibold text-zinc-900">InvoxAI revenue</h2>
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">
+        InvoxAI revenue {range.days ? `· last ${range.days} days` : "· all time"}
+      </h2>
       <p className="mt-1 text-sm text-muted">
         InvoxAI’s own income only — buyer payments settle to sellers and are never
-        counted here.
+        counted here. Wallet liability below is the current held balance (not windowed).
       </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
