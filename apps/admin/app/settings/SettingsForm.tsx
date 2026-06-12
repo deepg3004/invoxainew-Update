@@ -12,6 +12,14 @@ export type SettingsInitial = {
   invoice_gstin: string;
   invoice_address: string;
   invoice_gst_rate_percent: string;
+  invoice_email: string;
+  invoice_phone: string;
+  invoice_pan: string;
+  invoice_hsn: string;
+  invoice_number_prefix: string;
+  invoice_gst_mode: string;
+  invoice_footer_note: string;
+  invoice_support_email: string;
   brand_logo_url: string;
   brand_favicon_url: string;
   // Env fallbacks shown as placeholders so admin sees what's currently in effect.
@@ -55,8 +63,35 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
           <Field label="GST rate (%)" hint="0–28. Default 18.">
             <input name="invoice_gst_rate_percent" defaultValue={initial.invoice_gst_rate_percent} placeholder={initial.ph_gst_percent} inputMode="decimal" className={inputCls} />
           </Field>
-          <Field label="Registered address" hint="Shown in the invoice 'From' block.">
+          <Field label="PAN" hint="10-character PAN, e.g. ABCDE1234F. Optional.">
+            <input name="invoice_pan" defaultValue={initial.invoice_pan} placeholder="ABCDE1234F" className={`${inputCls} font-mono uppercase`} />
+          </Field>
+          <Field label="Registered address" hint="Shown in the invoice 'Bill from' block.">
             <textarea name="invoice_address" defaultValue={initial.invoice_address} rows={3} className={inputCls} />
+          </Field>
+          <Field label="Billing email" hint="Shown in 'Bill from'.">
+            <input name="invoice_email" defaultValue={initial.invoice_email} placeholder="billing@yourco.com" className={inputCls} />
+          </Field>
+          <Field label="Phone" hint="Shown in 'Bill from'.">
+            <input name="invoice_phone" defaultValue={initial.invoice_phone} placeholder="+91-…" className={inputCls} />
+          </Field>
+          <Field label="HSN / SAC code" hint="On the line item, e.g. 998319 (online platform services).">
+            <input name="invoice_hsn" defaultValue={initial.invoice_hsn} placeholder="998319" className={`${inputCls} font-mono`} />
+          </Field>
+          <Field label="GST type" hint="IGST = interstate. CGST+SGST = same-state (splits the tax into two halves).">
+            <select name="invoice_gst_mode" defaultValue={initial.invoice_gst_mode} className={inputCls}>
+              <option value="IGST">IGST (interstate)</option>
+              <option value="CGST_SGST">CGST + SGST (intrastate)</option>
+            </select>
+          </Field>
+          <Field label="Invoice number prefix" hint="Letters/digits only, e.g. INV → INV-2026-27-0001.">
+            <input name="invoice_number_prefix" defaultValue={initial.invoice_number_prefix} placeholder="INV" className={`${inputCls} font-mono`} />
+          </Field>
+          <Field label="Support email" hint="Shown in the invoice footer note.">
+            <input name="invoice_support_email" defaultValue={initial.invoice_support_email} placeholder="support@yourco.com" className={inputCls} />
+          </Field>
+          <Field label="Footer note" hint="Shown at the bottom of every invoice.">
+            <textarea name="invoice_footer_note" defaultValue={initial.invoice_footer_note} rows={2} placeholder="This is a computer generated receipt and does not require a signature." className={inputCls} />
           </Field>
         </div>
       </section>

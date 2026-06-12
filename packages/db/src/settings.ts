@@ -15,6 +15,14 @@ export const PLATFORM_SETTING_KEYS = [
   "invoice_gstin",
   "invoice_address",
   "invoice_gst_rate_bps",
+  "invoice_email",
+  "invoice_phone",
+  "invoice_pan",
+  "invoice_hsn",
+  "invoice_number_prefix",
+  "invoice_gst_mode", // "IGST" | "CGST_SGST"
+  "invoice_footer_note",
+  "invoice_support_email",
   "brand_logo_url",
   "brand_favicon_url",
 ] as const;

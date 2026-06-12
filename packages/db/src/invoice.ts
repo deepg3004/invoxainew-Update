@@ -32,12 +32,15 @@ interface Issuable {
   totalPaise: number;
 }
 
-/** Allocate the next FY number and insert one invoice, atomically. Idempotent. */
+/** Allocate the next FY number and insert one invoice, atomically. Idempotent.
+ *  `prefix` is admin-configurable; the per-FY counter is keyed by FY only, so
+ *  changing the prefix never resets numbering and `number` stays unique. */
 async function issueOne(
   tenantId: string,
   item: Issuable,
   gstRateBps: number,
   issuedAt: Date,
+  prefix: string,
 ): Promise<void> {
   const fy = financialYear(issuedAt);
   const { basePaise, taxPaise } = splitInclusive(item.totalPaise, gstRateBps);
@@ -49,7 +52,7 @@ async function issueOne(
         update: { lastNumber: { increment: 1 } },
         select: { lastNumber: true },
       });
-      const number = `INV-${fy}-${String(counter.lastNumber).padStart(4, "0")}`;
+      const number = `${prefix}-${fy}-${String(counter.lastNumber).padStart(4, "0")}`;
       await tx.invoice.create({
         data: {
           number,
@@ -91,7 +94,9 @@ async function issueOne(
 export async function issuePlatformInvoices(
   tenantId: string,
   gstRateBps: number,
+  numberPrefix = "INV",
 ): Promise<number> {
+  const prefix = (numberPrefix || "INV").replace(/[^A-Za-z0-9]/g, "") || "INV";
   const orders = await prisma.platformOrder.findMany({
     where: { tenantId, purpose: { in: ["SUBSCRIPTION", "WALLET_TOPUP"] }, status: "PAID" },
     orderBy: { paidAt: "asc" },
@@ -122,6 +127,7 @@ export async function issuePlatformInvoices(
       },
       gstRateBps,
       o.paidAt ?? o.createdAt,
+      prefix,
     );
     issued += 1;
   }

@@ -17,8 +17,8 @@ export default async function InvoicesPage() {
   const cfg = await getInvoiceConfig();
 
   // Lazily issue any missing platform invoices (subscriptions + wallet recharges),
-  // then list. Uses the admin-managed GST rate (env fallback).
-  await issuePlatformInvoices(tenant.id, cfg.gstRateBps);
+  // then list. Uses the admin-managed GST rate + number prefix (env fallback).
+  await issuePlatformInvoices(tenant.id, cfg.gstRateBps, cfg.numberPrefix);
   const invoices = await listInvoices(tenant.id);
 
   return (
