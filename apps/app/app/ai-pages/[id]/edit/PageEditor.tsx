@@ -25,6 +25,8 @@ function newBlock(type: AddType): Block {
       return { type: "image", url: "", alt: "" };
     case "button":
       return { type: "button", label: "Button", href: "" };
+    case "video":
+      return { type: "video", url: "" };
     case "divider":
       return { type: "divider" };
   }
@@ -217,6 +219,20 @@ export function PageEditor({
               </div>
             ) : null}
 
+            {b.type === "video" ? (
+              <div>
+                <input
+                  value={b.url}
+                  onChange={(e) => update(i, { url: e.target.value })}
+                  placeholder="Paste a YouTube or Vimeo link"
+                  className={inputCls}
+                />
+                <span className="mt-1 block text-xs text-neutral-400">
+                  Only YouTube and Vimeo links work; others are dropped on save.
+                </span>
+              </div>
+            ) : null}
+
             {b.type === "divider" ? (
               <div className="border-t border-dashed border-neutral-300" />
             ) : null}
@@ -228,7 +244,7 @@ export function PageEditor({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {(["heading", "text", "image", "button", "divider"] as AddType[]).map((t) => (
+        {(["heading", "text", "image", "button", "video", "divider"] as AddType[]).map((t) => (
           <button
             key={t}
             onClick={() => add(t)}

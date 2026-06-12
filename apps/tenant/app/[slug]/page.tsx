@@ -41,6 +41,19 @@ function BlockView({ block, t }: { block: Block; t: Tokens }) {
           </a>
         </div>
       );
+    case "video":
+      // src is restricted to youtube/vimeo embed URLs by normalizeToBlocks.
+      return (
+        <div className="mt-6 aspect-video w-full overflow-hidden rounded-xl" style={{ border: `1px solid ${t.border}` }}>
+          <iframe
+            src={block.url}
+            className="h-full w-full"
+            title="Embedded video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      );
     case "divider":
       return <hr className="mt-10" style={{ borderColor: t.border }} />;
   }

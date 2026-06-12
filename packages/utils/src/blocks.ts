@@ -18,6 +18,7 @@ export type Block =
   | { type: "text"; text: string }
   | { type: "image"; url: string; alt: string }
   | { type: "button"; label: string; href: string }
+  | { type: "video"; url: string } // url is ALWAYS a sanitized embed URL
   | { type: "divider" };
 
 // ── Theme (AI builder slice 2) ───────────────────────────────────────────────
@@ -77,6 +78,23 @@ function asLevel(v: unknown): 1 | 2 | 3 {
   return v === 1 || v === 2 || v === 3 ? v : 2;
 }
 
+/**
+ * Convert any YouTube/Vimeo URL into a canonical, embed-safe iframe URL — or ""
+ * if it isn't a recognized provider. SECURITY: the renderer puts this straight
+ * into an <iframe src>, so we ONLY ever emit youtube.com/embed or
+ * player.vimeo.com URLs built from an extracted id; arbitrary input can't reach
+ * the iframe. Idempotent — an already-embed URL re-parses to itself.
+ */
+export function toEmbedUrl(input: unknown): string {
+  const s = str(input, 500).trim();
+  if (!s) return "";
+  const yt = s.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{6,15})/i);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  const vimeo = s.match(/vimeo\.com\/(?:video\/)?(\d{6,12})/i);
+  if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`;
+  return "";
+}
+
 /** Validate one untrusted object into a Block, or null to drop it. */
 function toBlock(raw: unknown): Block | null {
   if (!raw || typeof raw !== "object") return null;
@@ -98,6 +116,10 @@ function toBlock(raw: unknown): Block | null {
       const label = str(b.label, 120).trim();
       const href = safeUrl(b.href);
       return label && href ? { type: "button", label, href } : null;
+    }
+    case "video": {
+      const url = toEmbedUrl(b.url);
+      return url ? { type: "video", url } : null;
     }
     case "divider":
       return { type: "divider" };
