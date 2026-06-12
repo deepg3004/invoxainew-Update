@@ -3,6 +3,7 @@ import { getBioLink, getBioLinkClickStats } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 import { saveBioLinkAction } from "./actions";
 import { uploadTenantImageAction } from "../upload-actions";
+import { BioLinksEditor } from "./BioLinksEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -114,17 +115,7 @@ export default async function BioEditorPage() {
           ))}
         </div>
 
-        <div>
-          <label className="text-sm font-medium">Links</label>
-          <p className="text-xs text-muted">One per line, as <code>Label | https://link</code></p>
-          <textarea
-            name="linksText"
-            rows={5}
-            defaultValue={bio?.linksText ?? ""}
-            placeholder={"My store | https://…\nFree guide | https://…"}
-            className={`${inputCls} font-mono`}
-          />
-        </div>
+        <BioLinksEditor name="linksText" defaultValue={bio?.linksText ?? ""} />
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="published" defaultChecked={bio?.published ?? false} /> Published (page is live)
