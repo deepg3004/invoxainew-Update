@@ -41,6 +41,7 @@ export default async function EditCoursePage({
             description: course.description,
             pricePaise: course.pricePaise,
             imageUrl: course.imageUrl,
+            sortOrder: course.sortOrder,
           }}
         />
       </section>

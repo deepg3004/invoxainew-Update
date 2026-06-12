@@ -26,6 +26,7 @@ interface ParsedCourse {
   description: string | null;
   pricePaise: number;
   imageUrl: string | null;
+  sortOrder: number;
 }
 
 function parseCourseFields(
@@ -43,10 +44,26 @@ function parseCourseFields(
     return { ok: false, message: "Image URL must start with http:// or https://" };
   }
 
+  const orderRaw = String(form.get("sortOrder") ?? "").trim();
+  let sortOrder = 0;
+  if (orderRaw) {
+    const n = Number(orderRaw);
+    if (!Number.isInteger(n)) {
+      return { ok: false, message: "Display order must be a whole number." };
+    }
+    sortOrder = n;
+  }
+
   const description = String(form.get("description") ?? "").trim() || null;
   return {
     ok: true,
-    value: { title, description, pricePaise: price.paise, imageUrl: imageRaw || null },
+    value: {
+      title,
+      description,
+      pricePaise: price.paise,
+      imageUrl: imageRaw || null,
+      sortOrder,
+    },
   };
 }
 

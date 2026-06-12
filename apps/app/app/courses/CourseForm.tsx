@@ -11,6 +11,7 @@ export interface CourseValues {
   description: string | null;
   pricePaise: number;
   imageUrl: string | null;
+  sortOrder: number;
 }
 
 type Action = (prev: CourseFormState, form: FormData) => Promise<CourseFormState>;
@@ -102,6 +103,17 @@ export function CourseForm({
           />
         </label>
       </div>
+
+      <label className="block">
+        <span className="text-sm font-medium text-neutral-700">Display order</span>
+        <input
+          name="sortOrder"
+          inputMode="numeric"
+          defaultValue={initial?.sortOrder ?? 0}
+          className={inputCls}
+        />
+        <span className="mt-1 block text-xs text-neutral-400">Lower shows first.</span>
+      </label>
 
       {!isEdit ? (
         <label className="flex items-center gap-2">

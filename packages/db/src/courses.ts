@@ -29,6 +29,7 @@ export async function createCourse(input: {
   description?: string | null;
   pricePaise: number;
   imageUrl?: string | null;
+  sortOrder?: number;
   status?: CourseStatus;
 }): Promise<CreateCourseResult> {
   try {
@@ -40,6 +41,7 @@ export async function createCourse(input: {
         description: input.description ?? null,
         pricePaise: input.pricePaise,
         imageUrl: input.imageUrl ?? null,
+        sortOrder: input.sortOrder ?? 0,
         status: input.status ?? "DRAFT",
       },
       select: { id: true },
@@ -75,6 +77,7 @@ export function updateCourse(
     description?: string | null;
     pricePaise: number;
     imageUrl?: string | null;
+    sortOrder?: number;
   },
 ) {
   return prisma.course.updateMany({
@@ -84,6 +87,7 @@ export function updateCourse(
       description: data.description ?? null,
       pricePaise: data.pricePaise,
       imageUrl: data.imageUrl ?? null,
+      sortOrder: data.sortOrder ?? 0,
     },
   });
 }
