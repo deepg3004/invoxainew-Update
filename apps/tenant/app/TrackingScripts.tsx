@@ -46,6 +46,28 @@ export function fireViewContent(name: string, valuePaise?: number, currency = "I
   });
 }
 
+/** Fire an AddToCart event. */
+export function fireAddToCart(name: string, valuePaise?: number, currency = "INR") {
+  const w = pixels();
+  if (!w) return;
+  const value = valuePaise != null ? valuePaise / 100 : undefined;
+  w.fbq?.("track", "AddToCart", { content_name: name, value, currency });
+  w.gtag?.("event", "add_to_cart", {
+    value,
+    currency,
+    items: [{ item_name: name }],
+  });
+}
+
+/** Fire an InitiateCheckout event (buyer started paying). */
+export function fireInitiateCheckout(valuePaise: number, currency = "INR") {
+  const w = pixels();
+  if (!w) return;
+  const value = valuePaise / 100;
+  w.fbq?.("track", "InitiateCheckout", { value, currency });
+  w.gtag?.("event", "begin_checkout", { value, currency });
+}
+
 /**
  * Injects the seller's ads/analytics pixels on a public page (Final Plan §21).
  * Meta Pixel + GA4/Google-Ads (gtag) + GTM, each only when configured. Fires

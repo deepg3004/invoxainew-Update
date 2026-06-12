@@ -5,7 +5,7 @@ import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
 import { startProductCheckout, previewProductCoupon } from "./actions";
-import { firePurchase } from "../../TrackingScripts";
+import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { AddToCartButton } from "../../AddToCartButton";
 
 declare global {
@@ -84,6 +84,7 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
         return;
       }
 
+      fireInitiateCheckout(result.amountPaise);
       const rzp = new window.Razorpay({
         key: result.keyId,
         order_id: result.orderId,

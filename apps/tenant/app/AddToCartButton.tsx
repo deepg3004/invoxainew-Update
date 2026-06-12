@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { addToCart, type CartItem } from "../lib/cart";
+import { fireAddToCart } from "./TrackingScripts";
 
 /**
  * Add a product to the client-side cart (Store slice 3). Display data only —
@@ -20,6 +21,7 @@ export function AddToCartButton({
     e.preventDefault();
     e.stopPropagation();
     addToCart(product);
+    fireAddToCart(product.title, product.pricePaise);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1500);
   }

@@ -6,7 +6,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
 import { useCart, setQty, removeFromCart, clearCart } from "../../lib/cart";
 import { startCartCheckout, previewCartCoupon } from "./actions";
-import { firePurchase } from "../TrackingScripts";
+import { firePurchase, fireInitiateCheckout } from "../TrackingScripts";
 
 declare global {
   interface Window {
@@ -76,6 +76,7 @@ export function CartView() {
         return;
       }
 
+      fireInitiateCheckout(result.amountPaise);
       const rzp = new window.Razorpay({
         key: result.keyId,
         order_id: result.orderId,

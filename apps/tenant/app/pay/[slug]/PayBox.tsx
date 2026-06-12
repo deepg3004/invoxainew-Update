@@ -4,7 +4,7 @@ import { useState } from "react";
 import Script from "next/script";
 import { PaymentSuccess } from "@invoxai/ui";
 import { startBuyerCheckout } from "./actions";
-import { firePurchase } from "../../TrackingScripts";
+import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 
 declare global {
   interface Window {
@@ -36,6 +36,7 @@ export function PayBox({ paymentPageId }: { paymentPageId: string }) {
         return;
       }
 
+      fireInitiateCheckout(result.amountPaise);
       const rzp = new window.Razorpay({
         key: result.keyId,
         order_id: result.orderId,
