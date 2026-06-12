@@ -221,3 +221,9 @@ export {
   upsertBioLink,
   type BioLinkInput,
 } from "./biolink";
+
+export {
+  getAnalytics,
+  type AnalyticsResult,
+  type AnalyticsDay,
+} from "./analytics";
