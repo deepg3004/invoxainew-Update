@@ -4,6 +4,7 @@ import { listAiPages, getWalletByTenant, getFeatureQuota } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { deleteAiPageAction, setAiPagePublishedAction } from "./actions";
+import { CopyLinkButton } from "../components/CopyLinkButton";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,7 @@ export default async function AiPagesPage() {
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-sm">
+                    {p.isPublished ? <CopyLinkButton url={url} /> : null}
                     <Link href={`/ai-pages/${p.id}/edit`} className="text-blue-600 underline">
                       Edit
                     </Link>

@@ -4,6 +4,7 @@ import { listCourses, getSellerGateway } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setCourseStatusAction } from "./actions";
+import { CopyLinkButton } from "../components/CopyLinkButton";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +104,7 @@ export default async function CoursesPage() {
                   <div className="shrink-0 text-right">
                     <div className="font-semibold">{formatRupees(c.pricePaise)}</div>
                     <div className="mt-1 flex items-center gap-3 text-sm">
+                      {c.status === "PUBLISHED" ? <CopyLinkButton url={url} /> : null}
                       <Link href={`/courses/${c.id}`} className="text-blue-600 underline">
                         Edit
                       </Link>
