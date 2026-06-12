@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 function fmtDate(d: Date | null | undefined): string {
   if (!d) return "—";
-  return new Intl.DateTimeFormat("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
     day: "numeric",
     month: "short",
     year: "numeric",

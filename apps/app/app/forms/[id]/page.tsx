@@ -17,7 +17,7 @@ function publicBase(username: string): string {
 }
 
 function formatDate(d: Date): string {
-  return new Intl.DateTimeFormat("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
     day: "numeric",
     month: "short",
     hour: "2-digit",

@@ -29,10 +29,17 @@ export async function getAnalytics(
   tenantId: string,
   days = 30,
 ): Promise<AnalyticsResult> {
-  const start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
-  const cutoff = new Date(start);
-  cutoff.setUTCDate(start.getUTCDate() - (days - 1));
+  // Bucket by IST calendar days (en-CA → YYYY-MM-DD). IST is a fixed +05:30
+  // offset (no DST), so stepping back 24h at a time stays aligned to IST
+  // midnights. cutoff is the start of the earliest IST day, expressed in UTC.
+  const istKey = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d);
+  const now = new Date();
+  const dayKeys: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    dayKeys.push(istKey(new Date(now.getTime() - i * 86_400_000)));
+  }
+  const cutoff = new Date(`${dayKeys[0]}T00:00:00+05:30`);
 
   const [payments, leadCount] = await Promise.all([
     prisma.buyerPayment.findMany({
@@ -50,13 +57,7 @@ export async function getAnalytics(
     prisma.leadSubmission.count({ where: { tenantId, createdAt: { gte: cutoff } } }),
   ]);
 
-  // Empty day buckets for a continuous series.
-  const dayKeys: string[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(start);
-    d.setUTCDate(start.getUTCDate() - i);
-    dayKeys.push(d.toISOString().slice(0, 10));
-  }
+  // Continuous IST day buckets (dayKeys built above).
   const byDay = new Map(dayKeys.map((k) => [k, { revenuePaise: 0, orders: 0 }]));
 
   const paid = payments.filter((p) => p.status === "PAID");
@@ -65,7 +66,7 @@ export async function getAnalytics(
   const itemMap = new Map<string, { revenuePaise: number; count: number }>();
   const sourceMap = new Map<string, { revenuePaise: number; count: number }>();
   for (const p of paid) {
-    const key = (p.paidAt ?? p.createdAt).toISOString().slice(0, 10);
+    const key = istKey(p.paidAt ?? p.createdAt);
     const bucket = byDay.get(key);
     if (bucket) {
       bucket.revenuePaise += p.amountPaise;

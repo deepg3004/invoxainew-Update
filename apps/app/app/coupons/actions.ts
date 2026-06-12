@@ -31,7 +31,9 @@ interface ParsedCoupon {
 function parseDate(raw: string): { ok: true; value: Date | null } | { ok: false } {
   const s = raw.trim();
   if (!s) return { ok: true, value: null };
-  const d = new Date(s);
+  // The datetime-local field carries IST wall-clock ("YYYY-MM-DDTHH:mm"); pin it
+  // to the IST offset so it stores the correct instant regardless of server TZ.
+  const d = new Date(`${s}:00+05:30`);
   if (Number.isNaN(d.getTime())) return { ok: false };
   return { ok: true, value: d };
 }

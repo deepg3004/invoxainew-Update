@@ -43,7 +43,7 @@ export default async function GatewayPage() {
                     {gateway.mode}
                   </span>{" "}
                   · connected{" "}
-                  {new Intl.DateTimeFormat("en-IN", {
+                  {new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
                     day: "numeric",
                     month: "short",
                     year: "numeric",

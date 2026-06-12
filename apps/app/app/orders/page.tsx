@@ -19,7 +19,7 @@ function tabCls(active: boolean): string {
 
 function formatDate(d: Date | null): string {
   if (!d) return "—";
-  return new Intl.DateTimeFormat("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
     day: "numeric",
     month: "short",
     year: "numeric",

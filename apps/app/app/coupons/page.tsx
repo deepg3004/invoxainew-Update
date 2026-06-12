@@ -13,7 +13,7 @@ function discountLabel(type: string, value: number): string {
 
 function windowLabel(startsAt: Date | null, expiresAt: Date | null): string | null {
   const fmt = (d: Date) =>
-    d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" });
   if (startsAt && expiresAt) return `${fmt(startsAt)} – ${fmt(expiresAt)}`;
   if (expiresAt) return `Until ${fmt(expiresAt)}`;
   if (startsAt) return `From ${fmt(startsAt)}`;

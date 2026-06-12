@@ -6,11 +6,23 @@ import { updateCouponAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 
-// A stored Date → the "YYYY-MM-DDTHH:mm" value a datetime-local input expects.
-// We format UTC components so it round-trips through `new Date()` on submit
-// (the VPS runs in UTC, so local == UTC — see actions.parseDate).
+// A stored Date → the "YYYY-MM-DDTHH:mm" value a datetime-local input expects,
+// in IST wall-clock so the seller sets coupon windows in IST (actions.parseDate
+// re-pins the same offset on submit).
 function toLocalInput(d: Date | null): string | null {
-  return d ? d.toISOString().slice(0, 16) : null;
+  if (!d) return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const g = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  const hh = g("hour") === "24" ? "00" : g("hour"); // some ICU emit 24 at midnight
+  return `${g("year")}-${g("month")}-${g("day")}T${hh}:${g("minute")}`;
 }
 
 export default async function EditCouponPage({

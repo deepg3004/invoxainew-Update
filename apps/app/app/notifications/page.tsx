@@ -6,7 +6,7 @@ import { markAllReadAction } from "./actions";
 export const dynamic = "force-dynamic";
 
 function timeAgo(d: Date): string {
-  return new Intl.DateTimeFormat("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
     day: "numeric",
     month: "short",
     hour: "numeric",

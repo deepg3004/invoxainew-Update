@@ -5,7 +5,7 @@ import { requireTenant } from "../../lib/tenant";
 
 export const dynamic = "force-dynamic";
 
-const thisMonth = new Intl.DateTimeFormat("en-IN", {
+const thisMonth = new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
   month: "long",
   year: "numeric",
 }).format(new Date());

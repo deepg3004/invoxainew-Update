@@ -13,7 +13,7 @@ import { NotAuthorized } from "../components/NotAuthorized";
 export const dynamic = "force-dynamic";
 
 function fmtDateTime(d: Date): string {
-  return new Intl.DateTimeFormat("en-IN", {
+  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
     day: "numeric",
     month: "short",
     hour: "2-digit",
