@@ -64,7 +64,7 @@ export default async function ProductPage({
     <main className="mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <div className="flex items-center justify-between">
-        <Link href="/store" className="text-sm text-blue-600 underline">
+        <Link href="/store" className="text-sm text-cyan underline">
           ← {tenant.name ?? tenant.username} store
         </Link>
         <CartLink />
@@ -75,18 +75,18 @@ export default async function ProductPage({
         <img
           src={product.imageUrl}
           alt={product.title}
-          className="mt-4 aspect-square w-full rounded-xl border border-neutral-200 object-cover"
+          className="mt-4 aspect-square w-full rounded-xl border border-white/10 object-cover"
         />
       ) : null}
 
       <h1 className="mt-4 text-2xl font-bold">{product.title}</h1>
       {product.description ? (
-        <p className="mt-2 whitespace-pre-line text-neutral-500">{product.description}</p>
+        <p className="mt-2 whitespace-pre-line text-muted">{product.description}</p>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-6">
+      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
         <div className="text-3xl font-bold">{formatRupees(product.pricePaise)}</div>
-        <p className="mt-1 text-xs text-neutral-400">
+        <p className="mt-1 text-xs text-muted">
           {product.kind.charAt(0) + product.kind.slice(1).toLowerCase()} · paid securely
           to {tenant.name ?? tenant.username} via Razorpay.
         </p>

@@ -118,14 +118,14 @@ export function CourseBuyBox({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email (for access + receipt)"
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
         <input
           inputMode="tel"
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           placeholder="Phone (optional)"
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
       </div>
 
@@ -134,13 +134,13 @@ export function CourseBuyBox({
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           placeholder="Promo code"
-          className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm uppercase outline-none focus:border-neutral-900"
+          className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-sm uppercase outline-none focus:border-brand"
         />
         <button
           type="button"
           onClick={applyPromo}
           disabled={applying || code.trim() === ""}
-          className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-900 disabled:opacity-50"
+          className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-neutral-200 hover:border-brand/40 disabled:opacity-50"
         >
           {applying ? "…" : "Apply"}
         </button>
@@ -158,11 +158,11 @@ export function CourseBuyBox({
       <button
         onClick={buy}
         disabled={status === "starting"}
-        className="mt-3 w-full rounded-lg bg-neutral-900 px-4 py-2.5 font-medium text-white disabled:opacity-50"
+        className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
       >
         {status === "starting" ? "Starting…" : `Enrol · ${formatRupees(total)}`}
       </button>
-      <p className="mt-2 text-center text-xs text-neutral-400">
+      <p className="mt-2 text-center text-xs text-muted">
         Paid securely via Razorpay. Sign in with this email to access your course.
       </p>
     </div>

@@ -54,17 +54,17 @@ export default async function PayPage({
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <TrackingScripts ids={tracking ?? {}} />
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">
         {tenant.name ?? tenant.username}
       </p>
       <h1 className="mt-1 text-2xl font-bold">{page.title}</h1>
       {page.description ? (
-        <p className="mt-2 text-neutral-500">{page.description}</p>
+        <p className="mt-2 text-muted">{page.description}</p>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-6">
+      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
         <div className="text-3xl font-bold">{formatRupees(page.amountPaise)}</div>
-        <p className="mt-1 text-xs text-neutral-400">
+        <p className="mt-1 text-xs text-muted">
           Paid securely to {tenant.name ?? tenant.username} via Razorpay.
         </p>
 

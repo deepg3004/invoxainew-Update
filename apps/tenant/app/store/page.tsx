@@ -52,21 +52,21 @@ export default async function StorePage({
       <TrackingScripts ids={tracking ?? {}} />
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
             {tenant.username}.invoxai.io
           </p>
           <h1 className="mt-1 text-3xl font-bold">{tenant.name ?? tenant.username}</h1>
         </div>
         <div className="flex gap-4">
           <CartLink />
-          <Link href="/account" className="text-sm text-blue-600 underline">
+          <Link href="/account" className="text-sm text-cyan underline">
             Your orders
           </Link>
         </div>
       </div>
 
       {products.length === 0 ? (
-        <p className="mt-8 text-neutral-500">No products yet. Check back soon.</p>
+        <p className="mt-8 text-muted">No products yet. Check back soon.</p>
       ) : (
         <>
           {/* Search (GET form → /store?q=…) */}
@@ -75,15 +75,15 @@ export default async function StorePage({
               name="q"
               defaultValue={q}
               placeholder="Search products"
-              className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+              className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
             />
-            <button className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white">
+            <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
               Search
             </button>
             {q ? (
               <Link
                 href="/store"
-                className="flex items-center px-2 text-sm text-neutral-500 underline"
+                className="flex items-center px-2 text-sm text-muted underline"
               >
                 Clear
               </Link>
@@ -91,16 +91,16 @@ export default async function StorePage({
           </form>
 
           {filtered.length === 0 ? (
-            <p className="mt-8 text-neutral-500">
+            <p className="mt-8 text-muted">
               No products match “{q}”.{" "}
-              <Link href="/store" className="text-blue-600 underline">
+              <Link href="/store" className="text-cyan underline">
                 Show all
               </Link>
             </p>
           ) : (
             <>
               {q ? (
-                <p className="mt-4 text-sm text-neutral-400">
+                <p className="mt-4 text-sm text-muted">
                   {filtered.length} result{filtered.length === 1 ? "" : "s"} for “{q}”
                 </p>
               ) : null}

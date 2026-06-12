@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { formatRupees } from "@invoxai/utils/money";
 import {
   upsertProfile,
@@ -57,14 +57,14 @@ export default async function BuyerCorner() {
     <main className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
             {tenant.name ?? tenant.username}
           </p>
           <h1 className="mt-1 text-3xl font-bold">Your orders</h1>
-          <p className="mt-1 text-sm text-neutral-500">Signed in as {user.email}</p>
+          <p className="mt-1 text-sm text-muted">Signed in as {user.email}</p>
         </div>
         <form action="/account/auth/signout" method="post">
-          <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
+          <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5">
             Sign out
           </button>
         </form>
@@ -72,7 +72,7 @@ export default async function BuyerCorner() {
 
       {courses.length > 0 ? (
         <div className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Your courses
           </h2>
           <div className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -80,20 +80,20 @@ export default async function BuyerCorner() {
               <Link
                 key={c.id}
                 href={`/account/learn/${c.slug}`}
-                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-neutral-900"
+                className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface p-3 transition hover:border-brand/40"
               >
                 {c.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={c.imageUrl}
                     alt={c.title}
-                    className="h-12 w-12 rounded-lg border border-neutral-100 object-cover"
+                    className="h-12 w-12 rounded-lg border border-white/10 object-cover"
                   />
                 ) : (
-                  <div className="h-12 w-12 rounded-lg bg-neutral-50" />
+                  <div className="h-12 w-12 rounded-lg bg-white/5" />
                 )}
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.title}</span>
-                <span className="text-xs text-blue-600">Open →</span>
+                <span className="text-xs text-cyan">Open →</span>
               </Link>
             ))}
           </div>
@@ -102,15 +102,15 @@ export default async function BuyerCorner() {
 
       <div className="mt-8">
         {orders.length === 0 ? (
-          <Card title="No orders yet">
-            <p className="text-sm text-neutral-500">
+          <GlassCard title="No orders yet">
+            <p className="text-sm text-muted">
               Payments you make on this store will appear here.
             </p>
-          </Card>
+          </GlassCard>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-surface">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-neutral-200 text-neutral-500">
+              <thead className="border-b border-white/10 text-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Item</th>
                   <th className="px-4 py-3 font-medium">Date</th>
@@ -120,12 +120,12 @@ export default async function BuyerCorner() {
               </thead>
               <tbody>
                 {orders.map((o) => (
-                  <tr key={o.id} className="border-b border-neutral-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-neutral-900">
+                  <tr key={o.id} className="border-b border-white/10 last:border-0">
+                    <td className="px-4 py-3 font-medium text-white">
                       {o.itemTitle ?? o.paymentPage?.title ?? "Order"}
                       {o.quantity > 1 ? ` ×${o.quantity}` : ""}
                       {o.orderItems.length > 0 ? (
-                        <ul className="mt-1 text-xs font-normal text-neutral-400">
+                        <ul className="mt-1 text-xs font-normal text-muted">
                           {o.orderItems.map((li, idx) => (
                             <li key={idx}>
                               {li.titleSnapshot} ×{li.quantity}
@@ -135,19 +135,19 @@ export default async function BuyerCorner() {
                       ) : null}
                       <Link
                         href={`/account/orders/${o.id}`}
-                        className="mt-1 block text-xs font-normal text-blue-600 underline"
+                        className="mt-1 block text-xs font-normal text-cyan underline"
                       >
                         View receipt →
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">{formatDate(o.paidAt)}</td>
+                    <td className="px-4 py-3 text-muted">{formatDate(o.paidAt)}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700">
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-neutral-200">
                         {o.fulfillmentStatus.charAt(0) +
                           o.fulfillmentStatus.slice(1).toLowerCase()}
                       </span>
                       {o.trackingNote ? (
-                        <div className="mt-1 text-xs text-neutral-400">
+                        <div className="mt-1 text-xs text-muted">
                           <LinkifiedText text={o.trackingNote} />
                         </div>
                       ) : null}
@@ -174,7 +174,7 @@ export default async function BuyerCorner() {
       </div>
 
       <p className="mt-6 text-sm">
-        <Link href="/" className="text-blue-600 underline">
+        <Link href="/" className="text-cyan underline">
           ← Back to {tenant.name ?? tenant.username}
         </Link>
       </p>

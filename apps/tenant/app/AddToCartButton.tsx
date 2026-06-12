@@ -32,7 +32,7 @@ export function AddToCartButton({
       disabled={soldOut}
       className={
         className ??
-        "w-full rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:border-neutral-900 disabled:opacity-50"
+        "w-full rounded-lg border border-white/10 px-4 py-2 text-sm font-medium hover:border-brand/40 disabled:opacity-50"
       }
     >
       {soldOut ? "Sold out" : added ? "✓ Added" : "Add to cart"}

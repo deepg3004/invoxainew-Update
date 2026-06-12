@@ -1,6 +1,8 @@
 import type { Config } from "tailwindcss";
+import { invoxPreset } from "../../packages/ui/tailwind-preset";
 
 const config: Config = {
+  presets: [invoxPreset as unknown as Config],
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",

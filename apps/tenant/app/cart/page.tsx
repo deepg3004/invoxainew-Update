@@ -20,7 +20,7 @@ export default async function CartPage() {
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
-      <Link href="/store" className="text-sm text-blue-600 underline">
+      <Link href="/store" className="text-sm text-cyan underline">
         ← {tenant.name ?? tenant.username} store
       </Link>
       <h1 className="mt-4 text-2xl font-bold">Your cart</h1>

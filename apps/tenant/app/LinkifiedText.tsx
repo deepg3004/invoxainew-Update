@@ -16,7 +16,7 @@ export function LinkifiedText({ text }: { text: string }) {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 underline"
+            className="text-cyan underline"
           >
             {part}
           </a>

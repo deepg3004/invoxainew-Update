@@ -119,9 +119,9 @@ export function CartView() {
 
   if (items.length === 0) {
     return (
-      <p className="mt-6 text-neutral-500">
+      <p className="mt-6 text-muted">
         Your cart is empty.{" "}
-        <a href="/store" className="text-blue-600 underline">
+        <a href="/store" className="text-cyan underline">
           Browse the store →
         </a>
       </p>
@@ -132,7 +132,7 @@ export function CartView() {
     <div className="mt-6">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-      <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
+      <ul className="divide-y divide-white/10 rounded-xl border border-white/10 bg-surface">
         {items.map((i) => {
           const cap = i.maxQty === null ? 99 : Math.min(i.maxQty, 99);
           return (
@@ -142,19 +142,19 @@ export function CartView() {
                 <img
                   src={i.imageUrl}
                   alt={i.title}
-                  className="h-14 w-14 rounded-lg border border-neutral-100 object-cover"
+                  className="h-14 w-14 rounded-lg border border-white/10 object-cover"
                 />
               ) : (
-                <div className="h-14 w-14 rounded-lg bg-neutral-50" />
+                <div className="h-14 w-14 rounded-lg bg-white/5" />
               )}
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{i.title}</div>
-                <div className="text-xs text-neutral-500">{formatRupees(i.pricePaise)} each</div>
+                <div className="text-xs text-muted">{formatRupees(i.pricePaise)} each</div>
               </div>
               <select
                 value={i.qty}
                 onChange={(e) => setQty(i.productId, Number(e.target.value))}
-                className="rounded-lg border border-neutral-300 px-2 py-1 text-sm outline-none focus:border-neutral-900"
+                className="rounded-lg border border-white/10 px-2 py-1 text-sm outline-none focus:border-brand"
               >
                 {Array.from({ length: cap }, (_, n) => n + 1).map((n) => (
                   <option key={n} value={n}>
@@ -164,7 +164,7 @@ export function CartView() {
               </select>
               <button
                 onClick={() => removeFromCart(i.productId)}
-                className="text-xs text-neutral-400 hover:text-red-600"
+                className="text-xs text-muted hover:text-red-600"
                 aria-label={`Remove ${i.title}`}
               >
                 Remove
@@ -181,13 +181,13 @@ export function CartView() {
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="Promo code"
-            className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm uppercase outline-none focus:border-neutral-900"
+            className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-sm uppercase outline-none focus:border-brand"
           />
           <button
             type="button"
             onClick={applyPromo}
             disabled={applying || code.trim() === ""}
-            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-900 disabled:opacity-50"
+            className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-neutral-200 hover:border-brand/40 disabled:opacity-50"
           >
             {applying ? "…" : "Apply"}
           </button>
@@ -204,7 +204,7 @@ export function CartView() {
 
       <div className="mt-4 space-y-1 text-sm">
         <div className="flex items-center justify-between">
-          <span className="text-neutral-600">Subtotal</span>
+          <span className="text-muted">Subtotal</span>
           <span>{formatRupees(subtotal)}</span>
         </div>
         {discount > 0 ? (
@@ -213,7 +213,7 @@ export function CartView() {
             <span>−{formatRupees(discount)}</span>
           </div>
         ) : null}
-        <div className="flex items-center justify-between border-t border-neutral-100 pt-1 font-semibold">
+        <div className="flex items-center justify-between border-t border-white/10 pt-1 font-semibold">
           <span>Total</span>
           <span>{formatRupees(total)}</span>
         </div>
@@ -225,14 +225,14 @@ export function CartView() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email (for your receipt)"
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
         <input
           inputMode="tel"
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           placeholder="Phone (optional)"
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
       </div>
 
@@ -243,11 +243,11 @@ export function CartView() {
       <button
         onClick={checkout}
         disabled={status === "starting"}
-        className="mt-3 w-full rounded-lg bg-neutral-900 px-4 py-2.5 font-medium text-white disabled:opacity-50"
+        className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
       >
         {status === "starting" ? "Starting…" : `Pay ${formatRupees(total)}`}
       </button>
-      <p className="mt-2 text-center text-xs text-neutral-400">
+      <p className="mt-2 text-center text-xs text-muted">
         Paid securely via Razorpay. Final total is confirmed at checkout.
       </p>
     </div>

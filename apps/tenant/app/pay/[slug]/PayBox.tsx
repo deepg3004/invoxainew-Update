@@ -85,14 +85,14 @@ export function PayBox({ paymentPageId }: { paymentPageId: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email (for your receipt)"
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
         <input
           inputMode="tel"
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           placeholder="Phone (optional)"
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
       </div>
       {error ? (
@@ -101,7 +101,7 @@ export function PayBox({ paymentPageId }: { paymentPageId: string }) {
       <button
         onClick={pay}
         disabled={status === "starting"}
-        className="mt-3 w-full rounded-lg bg-neutral-900 px-4 py-2.5 font-medium text-white disabled:opacity-50"
+        className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
       >
         {status === "starting" ? "Starting…" : "Pay now"}
       </button>

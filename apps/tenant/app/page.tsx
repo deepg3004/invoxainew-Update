@@ -35,17 +35,17 @@ export default async function TenantHome() {
   if (!tenant) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-16">
-        <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+        <p className="text-sm font-medium uppercase tracking-wide text-muted">
           InvoxAI · tenant host
         </p>
         <h1 className="mt-1 text-3xl font-bold">No tenant on this host</h1>
-        <p className="mt-2 text-neutral-500">
+        <p className="mt-2 text-muted">
           Visit a seller subdomain to see their site — e.g.{" "}
-          <code className="rounded bg-neutral-100 px-1.5 py-0.5">
+          <code className="rounded bg-white/10 px-1.5 py-0.5">
             deep.localhost:3003
           </code>{" "}
           in development, or{" "}
-          <code className="rounded bg-neutral-100 px-1.5 py-0.5">
+          <code className="rounded bg-white/10 px-1.5 py-0.5">
             deep.invoxai.io
           </code>{" "}
           in production.
@@ -69,11 +69,11 @@ export default async function TenantHome() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
-      <header className="flex items-center justify-between border-b border-neutral-200 pb-5">
-        <h1 className="text-2xl font-bold text-neutral-900">{name}</h1>
+      <header className="flex items-center justify-between border-b border-white/10 pb-5">
+        <h1 className="text-2xl font-bold text-white">{name}</h1>
         <div className="flex items-center gap-4 text-sm">
           <CartLink />
-          <Link href="/account" className="text-blue-600 underline">
+          <Link href="/account" className="text-cyan underline">
             Your orders
           </Link>
         </div>
@@ -81,11 +81,11 @@ export default async function TenantHome() {
 
       {!hasContent ? (
         <div className="mt-16 text-center">
-          <h2 className="text-xl font-semibold text-neutral-900">Welcome to {name}</h2>
-          <p className="mt-2 text-neutral-500">New items are on the way — check back soon.</p>
+          <h2 className="text-xl font-semibold text-white">Welcome to {name}</h2>
+          <p className="mt-2 text-muted">New items are on the way — check back soon.</p>
           <Link
             href="/store"
-            className="mt-5 inline-block rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white"
+            className="mt-5 inline-block rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white"
           >
             Browse the store
           </Link>
@@ -95,8 +95,8 @@ export default async function TenantHome() {
           {featuredProducts.length > 0 ? (
             <section className="mt-10">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-lg font-semibold text-neutral-900">Shop</h2>
-                <Link href="/store" className="text-sm text-blue-600 underline">
+                <h2 className="text-lg font-semibold text-white">Shop</h2>
+                <Link href="/store" className="text-sm text-cyan underline">
                   View all →
                 </Link>
               </div>
@@ -105,15 +105,15 @@ export default async function TenantHome() {
                   <Link
                     key={p.id}
                     href={`/p/${p.slug}`}
-                    className="rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-neutral-900"
+                    className="rounded-xl border border-white/10 bg-surface p-3 transition hover:border-brand/40"
                   >
                     {p.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.imageUrl} alt={p.title} className="aspect-square w-full rounded-lg border border-neutral-100 object-cover" />
+                      <img src={p.imageUrl} alt={p.title} className="aspect-square w-full rounded-lg border border-white/10 object-cover" />
                     ) : (
-                      <div className="aspect-square w-full rounded-lg bg-neutral-50" />
+                      <div className="aspect-square w-full rounded-lg bg-white/5" />
                     )}
-                    <div className="mt-2 truncate text-sm font-medium text-neutral-900">{p.title}</div>
+                    <div className="mt-2 truncate text-sm font-medium text-white">{p.title}</div>
                     <div className="mt-0.5 font-semibold">{formatRupees(p.pricePaise)}</div>
                   </Link>
                 ))}
@@ -124,8 +124,8 @@ export default async function TenantHome() {
           {featuredCourses.length > 0 ? (
             <section className="mt-12">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-lg font-semibold text-neutral-900">Courses</h2>
-                <Link href="/courses" className="text-sm text-blue-600 underline">
+                <h2 className="text-lg font-semibold text-white">Courses</h2>
+                <Link href="/courses" className="text-sm text-cyan underline">
                   View all →
                 </Link>
               </div>
@@ -134,15 +134,15 @@ export default async function TenantHome() {
                   <Link
                     key={c.id}
                     href={`/c/${c.slug}`}
-                    className="rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-neutral-900"
+                    className="rounded-xl border border-white/10 bg-surface p-3 transition hover:border-brand/40"
                   >
                     {c.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={c.imageUrl} alt={c.title} className="aspect-video w-full rounded-lg border border-neutral-100 object-cover" />
+                      <img src={c.imageUrl} alt={c.title} className="aspect-video w-full rounded-lg border border-white/10 object-cover" />
                     ) : (
-                      <div className="aspect-video w-full rounded-lg bg-neutral-50" />
+                      <div className="aspect-video w-full rounded-lg bg-white/5" />
                     )}
-                    <div className="mt-2 truncate text-sm font-medium text-neutral-900">{c.title}</div>
+                    <div className="mt-2 truncate text-sm font-medium text-white">{c.title}</div>
                     <div className="mt-0.5 font-semibold">{formatRupees(c.pricePaise)}</div>
                   </Link>
                 ))}

@@ -79,7 +79,7 @@ export default async function CoursePage({
     <main className="mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <div className="flex items-center justify-between">
-        <Link href="/courses" className="text-sm text-blue-600 underline">
+        <Link href="/courses" className="text-sm text-cyan underline">
           ← {tenant.name ?? tenant.username} courses
         </Link>
         <CartLink />
@@ -90,37 +90,37 @@ export default async function CoursePage({
         <img
           src={course.imageUrl}
           alt={course.title}
-          className="mt-4 aspect-video w-full rounded-xl border border-neutral-200 object-cover"
+          className="mt-4 aspect-video w-full rounded-xl border border-white/10 object-cover"
         />
       ) : null}
 
       <h1 className="mt-4 text-2xl font-bold">{course.title}</h1>
       {course.description ? (
-        <p className="mt-2 whitespace-pre-line text-neutral-500">{course.description}</p>
+        <p className="mt-2 whitespace-pre-line text-muted">{course.description}</p>
       ) : null}
 
       {/* Curriculum */}
       {course.lessons.length > 0 ? (
         <div className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             {course.lessons.length} lesson{course.lessons.length === 1 ? "" : "s"}
           </h2>
-          <ul className="mt-2 divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
+          <ul className="mt-2 divide-y divide-white/10 rounded-xl border border-white/10 bg-surface">
             {course.lessons.map((l, idx) => (
               <li key={l.id} className="p-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-5 text-right text-sm text-neutral-400">{idx + 1}</span>
-                  <span className="flex-1 text-sm font-medium text-neutral-800">{l.title}</span>
+                  <span className="w-5 text-right text-sm text-muted">{idx + 1}</span>
+                  <span className="flex-1 text-sm font-medium text-white">{l.title}</span>
                   {l.isPreview ? (
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
                       Preview
                     </span>
                   ) : (
-                    <span className="text-xs text-neutral-300">🔒</span>
+                    <span className="text-xs text-muted">🔒</span>
                   )}
                 </div>
                 {l.isPreview && l.content ? (
-                  <p className="mt-2 whitespace-pre-line pl-7 text-sm text-neutral-500">
+                  <p className="mt-2 whitespace-pre-line pl-7 text-sm text-muted">
                     {l.content}
                   </p>
                 ) : null}
@@ -130,13 +130,13 @@ export default async function CoursePage({
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-6">
+      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
         {enrolment ? (
           <div className="text-center">
             <p className="text-sm font-medium text-green-700">✓ You’re enrolled in this course.</p>
             <Link
               href={`/account/learn/${course.slug}`}
-              className="mt-3 inline-block w-full rounded-lg bg-neutral-900 px-4 py-2.5 font-medium text-white"
+              className="mt-3 inline-block w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white"
             >
               Go to course →
             </Link>
@@ -144,7 +144,7 @@ export default async function CoursePage({
         ) : (
           <>
             <div className="text-3xl font-bold">{formatRupees(course.pricePaise)}</div>
-            <p className="mt-1 text-xs text-neutral-400">
+            <p className="mt-1 text-xs text-muted">
               Lifetime access · paid securely to {tenant.name ?? tenant.username} via Razorpay.
             </p>
             {sellerReady ? (

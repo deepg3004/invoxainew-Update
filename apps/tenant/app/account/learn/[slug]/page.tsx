@@ -55,30 +55,30 @@ export default async function LearnPage({
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-center justify-between">
-        <Link href="/account" className="text-sm text-blue-600 underline">
+        <Link href="/account" className="text-sm text-cyan underline">
           ← Your account
         </Link>
       </div>
       <h1 className="mt-4 text-3xl font-bold">{course.title}</h1>
       {course.description ? (
-        <p className="mt-2 whitespace-pre-line text-neutral-500">{course.description}</p>
+        <p className="mt-2 whitespace-pre-line text-muted">{course.description}</p>
       ) : null}
 
       {lessons.length === 0 ? (
-        <p className="mt-8 text-neutral-500">The seller hasn’t added any lessons yet.</p>
+        <p className="mt-8 text-muted">The seller hasn’t added any lessons yet.</p>
       ) : (
         <div className="mt-8 space-y-8">
           {lessons.map((l, idx) => (
-            <article key={l.id} className="border-t border-neutral-200 pt-6">
+            <article key={l.id} className="border-t border-white/10 pt-6">
               <h2 className="text-lg font-semibold">
-                <span className="text-neutral-400">{idx + 1}.</span> {l.title}
+                <span className="text-muted">{idx + 1}.</span> {l.title}
               </h2>
               {l.content ? (
-                <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-700">
+                <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-200">
                   {l.content}
                 </p>
               ) : (
-                <p className="mt-3 text-sm text-neutral-400">No content yet.</p>
+                <p className="mt-3 text-sm text-muted">No content yet.</p>
               )}
             </article>
           ))}

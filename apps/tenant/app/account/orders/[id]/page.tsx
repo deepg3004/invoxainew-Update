@@ -58,51 +58,51 @@ export default async function OrderReceipt({
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <div className="flex items-center justify-between print:hidden">
-        <Link href="/account" className="text-sm text-blue-600 underline">
+        <Link href="/account" className="text-sm text-cyan underline">
           ← Your orders
         </Link>
         <PrintButton />
       </div>
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-6">
-        <header className="border-b border-neutral-200 pb-4">
-          <h1 className="text-lg font-bold text-neutral-900">{sellerName}</h1>
-          <p className="mt-0.5 text-sm text-neutral-500">Receipt</p>
+      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
+        <header className="border-b border-white/10 pb-4">
+          <h1 className="text-lg font-bold text-white">{sellerName}</h1>
+          <p className="mt-0.5 text-sm text-muted">Receipt</p>
         </header>
 
         <dl className="mt-4 space-y-1 text-sm">
           <div className="flex justify-between">
-            <dt className="text-neutral-500">Order</dt>
-            <dd className="font-mono text-neutral-700">{order.id.slice(0, 8)}</dd>
+            <dt className="text-muted">Order</dt>
+            <dd className="font-mono text-neutral-200">{order.id.slice(0, 8)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-neutral-500">Date</dt>
-            <dd className="text-neutral-700">{formatDate(order.paidAt)}</dd>
+            <dt className="text-muted">Date</dt>
+            <dd className="text-neutral-200">{formatDate(order.paidAt)}</dd>
           </div>
           {order.razorpayPaymentId ? (
             <div className="flex justify-between">
-              <dt className="text-neutral-500">Payment</dt>
-              <dd className="font-mono text-neutral-700">{order.razorpayPaymentId}</dd>
+              <dt className="text-muted">Payment</dt>
+              <dd className="font-mono text-neutral-200">{order.razorpayPaymentId}</dd>
             </div>
           ) : null}
           <div className="flex justify-between">
-            <dt className="text-neutral-500">Status</dt>
-            <dd className="text-neutral-700">
+            <dt className="text-muted">Status</dt>
+            <dd className="text-neutral-200">
               {STATUS_LABEL[order.fulfillmentStatus] ?? order.fulfillmentStatus}
             </dd>
           </div>
         </dl>
 
         {/* Items */}
-        <div className="mt-4 border-t border-neutral-200 pt-4">
+        <div className="mt-4 border-t border-white/10 pt-4">
           {order.orderItems.length > 0 ? (
             <ul className="space-y-1 text-sm">
               {order.orderItems.map((li, i) => (
                 <li key={i} className="flex justify-between">
-                  <span className="text-neutral-700">
+                  <span className="text-neutral-200">
                     {li.titleSnapshot} × {li.quantity}
                   </span>
-                  <span className="text-neutral-700">
+                  <span className="text-neutral-200">
                     {formatRupees(li.unitPricePaise * li.quantity)}
                   </span>
                 </li>
@@ -110,19 +110,19 @@ export default async function OrderReceipt({
             </ul>
           ) : (
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-700">
+              <span className="text-neutral-200">
                 {order.itemTitle ?? order.paymentPage?.title ?? "Order"}
               </span>
-              <span className="text-neutral-700">{formatRupees(subtotal)}</span>
+              <span className="text-neutral-200">{formatRupees(subtotal)}</span>
             </div>
           )}
         </div>
 
         {/* Totals */}
-        <div className="mt-4 space-y-1 border-t border-neutral-200 pt-4 text-sm">
+        <div className="mt-4 space-y-1 border-t border-white/10 pt-4 text-sm">
           {order.discountPaise > 0 ? (
             <>
-              <div className="flex justify-between text-neutral-500">
+              <div className="flex justify-between text-muted">
                 <span>Subtotal</span>
                 <span>{formatRupees(subtotal)}</span>
               </div>
@@ -132,7 +132,7 @@ export default async function OrderReceipt({
               </div>
             </>
           ) : null}
-          <div className="flex justify-between border-t border-neutral-100 pt-1 font-semibold text-neutral-900">
+          <div className="flex justify-between border-t border-white/10 pt-1 font-semibold text-white">
             <span>Total paid</span>
             <span>{formatRupees(order.amountPaise)}</span>
           </div>
@@ -145,13 +145,13 @@ export default async function OrderReceipt({
         </div>
 
         {order.trackingNote ? (
-          <p className="mt-4 border-t border-neutral-200 pt-4 text-xs text-neutral-500">
+          <p className="mt-4 border-t border-white/10 pt-4 text-xs text-muted">
             <LinkifiedText text={order.trackingNote} />
           </p>
         ) : null}
       </div>
 
-      <p className="mt-4 text-center text-xs text-neutral-400">
+      <p className="mt-4 text-center text-xs text-muted">
         Paid to {sellerName} via Razorpay.
       </p>
     </main>
