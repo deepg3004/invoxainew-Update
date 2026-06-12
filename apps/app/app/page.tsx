@@ -136,6 +136,17 @@ export default async function Dashboard() {
             Manage coupons →
           </Link>
         </Card>
+        <Card title="Courses">
+          <p className="text-sm text-neutral-500">
+            Sell online courses; buyers get instant access after paying.
+          </p>
+          <Link
+            href="/courses"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Manage courses →
+          </Link>
+        </Card>
         <Card title="AI landing pages">
           <p className="text-sm text-neutral-500">
             Let AI write and publish a landing page from a short brief.

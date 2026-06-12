@@ -142,6 +142,7 @@ export function createBuyerPayment(input: {
   tenantId: string;
   paymentPageId?: string | null;
   productId?: string | null;
+  courseId?: string | null;
   quantity?: number;
   itemTitle: string;
   amountPaise: number;
@@ -158,6 +159,7 @@ export function createBuyerPayment(input: {
       tenantId: input.tenantId,
       paymentPageId: input.paymentPageId ?? null,
       productId: input.productId ?? null,
+      courseId: input.courseId ?? null,
       quantity: input.quantity ?? 1,
       itemTitle: input.itemTitle,
       // amountPaise is the POST-discount charged total (server-trusted).
@@ -502,6 +504,22 @@ export async function markBuyerPaymentPaid(input: {
           ],
         },
         data: { redeemedCount: { increment: 1 } },
+      });
+    }
+
+    // Courses / LMS: grant the buyer's enrolment for a course order. Claim-winner
+    // only (so a replay can't double-grant); buyerPaymentId is unique as a second
+    // guard. Attribution mirrors the order (profileId when logged in, else email),
+    // so a guest purchase unlocks access once they sign in with the same email.
+    if (payment.courseId) {
+      await tx.enrolment.create({
+        data: {
+          tenantId: payment.tenantId,
+          courseId: payment.courseId,
+          buyerProfileId: payment.buyerProfileId,
+          buyerEmail: payment.buyerEmail,
+          buyerPaymentId: payment.id,
+        },
       });
     }
 

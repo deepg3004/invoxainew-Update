@@ -67,9 +67,12 @@ export default async function TenantHome() {
             <strong>{host}</strong> resolved to tenant{" "}
             <strong>{tenant.username}</strong>.
           </p>
-          <p className="mt-3">
+          <p className="mt-3 flex gap-4">
             <Link href="/store" className="font-medium text-blue-600 underline">
               Visit the store →
+            </Link>
+            <Link href="/courses" className="font-medium text-blue-600 underline">
+              Browse courses →
             </Link>
           </p>
         </Card>

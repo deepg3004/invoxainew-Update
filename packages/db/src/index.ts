@@ -1,6 +1,6 @@
 export { prisma } from "./client";
 export { PrismaClient, Prisma } from "@prisma/client";
-export type { ProductKind, ProductStatus, DiscountType } from "@prisma/client";
+export type { ProductKind, ProductStatus, DiscountType, CourseStatus } from "@prisma/client";
 export {
   upsertProfile,
   getTenantByOwnerId,
@@ -111,6 +111,24 @@ export {
   type CreateCouponResult,
   type ApplyCouponResult,
 } from "./coupons";
+export {
+  createCourse,
+  listCourses,
+  getCourseById,
+  updateCourse,
+  setCourseStatus,
+  listLessons,
+  getLesson,
+  createLesson,
+  updateLesson,
+  deleteLesson,
+  listPublishedCourses,
+  getPublishedCourse,
+  getPublishedCourseById,
+  getEnrolment,
+  listEnrolledCourses,
+  type CreateCourseResult,
+} from "./courses";
 export {
   chargeAndCreateAiPage,
   createAiPage,

@@ -9,6 +9,7 @@ import {
   upsertProfile,
   ensureBuyerAccount,
   listBuyerOrders,
+  listEnrolledCourses,
 } from "@invoxai/db";
 import { getSessionUser } from "../../lib/auth";
 
@@ -41,11 +42,18 @@ export default async function BuyerCorner() {
   await upsertProfile({ id: user.id, email: user.email ?? null, fullName });
   await ensureBuyerAccount(tenant.id, user.id);
 
-  const orders = await listBuyerOrders({
-    tenantId: tenant.id,
-    profileId: user.id,
-    email: user.email ?? null,
-  });
+  const [orders, courses] = await Promise.all([
+    listBuyerOrders({
+      tenantId: tenant.id,
+      profileId: user.id,
+      email: user.email ?? null,
+    }),
+    listEnrolledCourses({
+      tenantId: tenant.id,
+      profileId: user.id,
+      email: user.email ?? null,
+    }),
+  ]);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -63,6 +71,36 @@ export default async function BuyerCorner() {
           </button>
         </form>
       </div>
+
+      {courses.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+            Your courses
+          </h2>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {courses.map((c) => (
+              <Link
+                key={c.id}
+                href={`/account/learn/${c.slug}`}
+                className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-neutral-900"
+              >
+                {c.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={c.imageUrl}
+                    alt={c.title}
+                    className="h-12 w-12 rounded-lg border border-neutral-100 object-cover"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-lg bg-neutral-50" />
+                )}
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.title}</span>
+                <span className="text-xs text-blue-600">Open →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-8">
         {orders.length === 0 ? (

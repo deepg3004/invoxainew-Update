@@ -75,6 +75,9 @@ model Tenant {
   products     Product[]
   // Store slice 3 (coupons): the seller's discount codes.
   coupons      Coupon[]
+  // Courses / LMS (Final Plan §10): the seller's courses + buyer enrolments.
+  courses      Course[]
+  enrolments   Enrolment[]
 }
 
 /// Per-tenant ads/analytics tracking IDs (Final Plan §21). Injected on the
@@ -174,6 +177,84 @@ model Coupon {
   @@unique([tenantId, code])
   @@index([tenantId])
   @@map("coupons")
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// A sellable course (Courses / LMS, Final Plan §10, slice 1). A first-class
+/// sellable (not a Product) because it has no stock/quantity and grants ongoing
+/// access rather than shipping a unit. A buyer pays on the SELLER's gateway (same
+/// rail as products — money settles seller-direct, commission from the seller's
+/// wallet) and the PAID order grants an Enrolment. `slug` unique per tenant; the
+/// public course page is `username.invoxai.io/c/<slug>`. RLS: deny-anon lockdown.
+model Course {
+  id          String       @id @default(uuid()) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug        String
+  title       String
+  description String?
+  pricePaise  Int          @map("price_paise")
+  imageUrl    String?      @map("image_url")
+  status      CourseStatus @default(DRAFT)
+  sortOrder   Int          @default(0) @map("sort_order")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  lessons       Lesson[]
+  enrolments    Enrolment[]
+  buyerPayments BuyerPayment[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("courses")
+}
+
+/// One lesson in a course's curriculum (slice 1 = text/markdown body; video +
+/// signed URLs come in a later slice). `isPreview` lessons are viewable by anyone
+/// on the public course page; the rest require an Enrolment. Ordered by
+/// `sortOrder`. RLS: deny-anon lockdown — lesson bodies are served server-side
+/// only after the enrolment check (preview lessons excepted).
+model Lesson {
+  id        String   @id @default(uuid()) @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title     String
+  content   String?  // text/markdown lesson body
+  isPreview Boolean  @default(false) @map("is_preview")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([courseId])
+  @@map("lessons")
+}
+
+/// A buyer's access grant to a course (Courses / LMS). Created ONLY by the PAID
+/// claim winner in markBuyerPaymentPaid, keyed by `buyerPaymentId` (unique) so a
+/// replayed webhook can't double-grant. The buyer is attributed by
+/// `buyerProfileId` when logged in at checkout, else by `buyerEmail` (guest) —
+/// mirroring BuyerPayment so a guest purchase grants access once the buyer signs
+/// in with the same email. Always tenant-scoped. RLS: deny-anon lockdown.
+model Enrolment {
+  id             String        @id @default(uuid()) @db.Uuid
+  tenantId       String        @map("tenant_id") @db.Uuid
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId       String        @map("course_id") @db.Uuid
+  course         Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  buyerProfileId String?       @map("buyer_profile_id") @db.Uuid
+  buyerEmail     String?       @map("buyer_email")
+  buyerPaymentId String?       @unique @map("buyer_payment_id") @db.Uuid
+  buyerPayment   BuyerPayment? @relation(fields: [buyerPaymentId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([tenantId, courseId])
+  @@index([courseId, buyerProfileId])
+  @@map("enrolments")
 }
 
 /// C4 subscription lifecycle. PENDING = order created, not yet paid; ACTIVE =
@@ -513,6 +594,11 @@ model BuyerPayment {
   paymentPage       PaymentPage?       @relation(fields: [paymentPageId], references: [id])
   productId         String?            @map("product_id") @db.Uuid
   product           Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  // Courses / LMS: set when this order is a course purchase. On PAID it grants an
+  // Enrolment (in markBuyerPaymentPaid, claim-winner only). Mutually exclusive
+  // with paymentPageId/productId/cart lines.
+  courseId          String?            @map("course_id") @db.Uuid
+  course            Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
   quantity          Int                @default(1)
   itemTitle         String?            @map("item_title")
   // `amountPaise` is the CHARGED total the buyer actually paid. When a coupon was
@@ -547,6 +633,8 @@ model BuyerPayment {
   // single-product quick-buy (which uses productId/quantity above) and for
   // payment-page orders. The order total `amountPaise` is still authoritative.
   orderItems        OrderItem[]
+  // Courses / LMS: the enrolment this purchase granted (course orders only).
+  enrolment         Enrolment?
 
   @@index([tenantId, createdAt])
   @@index([tenantId, buyerProfileId])

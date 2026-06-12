@@ -1,0 +1,94 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { getCourseById, listLessons } from "@invoxai/db";
+import { requireTenant } from "../../../lib/tenant";
+import { CourseForm } from "../CourseForm";
+import { LessonForm } from "../LessonForm";
+import {
+  updateCourseAction,
+  createLessonAction,
+  deleteLessonAction,
+} from "../actions";
+
+export const dynamic = "force-dynamic";
+
+export default async function EditCoursePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { tenant } = await requireTenant();
+  const { id } = await params;
+  const course = await getCourseById(tenant.id, id);
+  if (!course) notFound();
+  const lessons = await listLessons(course.id);
+
+  const courseAction = updateCourseAction.bind(null, course.id);
+  const addLessonAction = createLessonAction.bind(null, course.id);
+
+  return (
+    <main className="mx-auto max-w-2xl px-6 py-12">
+      <h1 className="text-2xl font-bold">Edit course</h1>
+      <p className="mt-1 text-neutral-500">{course.title}</p>
+
+      <section className="mt-6">
+        <CourseForm
+          action={courseAction}
+          submitLabel="Save course"
+          initial={{
+            slug: course.slug,
+            title: course.title,
+            description: course.description,
+            pricePaise: course.pricePaise,
+            imageUrl: course.imageUrl,
+          }}
+        />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">Curriculum</h2>
+        {lessons.length === 0 ? (
+          <p className="mt-2 text-sm text-neutral-500">No lessons yet. Add the first below.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">
+            {lessons.map((l, idx) => (
+              <li key={l.id} className="flex items-center gap-3 p-3">
+                <span className="w-6 text-right text-sm text-neutral-400">{idx + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="truncate font-medium text-neutral-900">{l.title}</span>
+                  {l.isPreview ? (
+                    <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                      Preview
+                    </span>
+                  ) : null}
+                </div>
+                <Link
+                  href={`/courses/${course.id}/lessons/${l.id}`}
+                  className="text-sm text-blue-600 underline"
+                >
+                  Edit
+                </Link>
+                <form action={deleteLessonAction.bind(null, course.id, l.id)}>
+                  <button className="text-sm text-neutral-400 underline hover:text-red-700">
+                    Delete
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-5 rounded-xl border border-dashed border-neutral-300 p-4">
+          <h3 className="text-sm font-semibold text-neutral-700">Add a lesson</h3>
+          <div className="mt-3">
+            <LessonForm
+              action={addLessonAction}
+              submitLabel="Add lesson"
+              courseId={course.id}
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
