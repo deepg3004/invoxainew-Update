@@ -3,11 +3,11 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
-  getPublishedProduct,
   getSellerGateway,
   getTenantTracking,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
+import { cachedProduct } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { ProductBuyBox } from "./ProductBuyBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
@@ -25,7 +25,7 @@ export async function generateMetadata({
   const tenant = await resolveTenantByHost(host);
   if (!tenant || tenant.suspendedAt) return {};
   const { slug } = await params;
-  const product = await getPublishedProduct(tenant.id, slug);
+  const product = await cachedProduct(tenant.id, slug);
   if (!product) return {};
   const description = product.description?.slice(0, 200) ?? undefined;
   const images = product.imageUrl ? [product.imageUrl] : undefined;
@@ -53,7 +53,7 @@ export default async function ProductPage({
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
   const { slug } = await params;
-  const product = await getPublishedProduct(tenant.id, slug);
+  const product = await cachedProduct(tenant.id, slug);
   if (!product) notFound();
 
   const gateway = await getSellerGateway(tenant.id);

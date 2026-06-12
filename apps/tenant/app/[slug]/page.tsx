@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPublishedAiPage, getTenantTracking } from "@invoxai/db";
+import { getTenantTracking } from "@invoxai/db";
+import { cachedAiPage } from "../../lib/content";
 import { normalizeToBlocks, THEME_PRESETS, type Block, type Theme } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
@@ -19,7 +20,7 @@ export async function generateMetadata({
   const tenant = await resolveTenantByHost(host);
   if (!tenant || tenant.suspendedAt) return {};
   const { slug } = await params;
-  const page = await getPublishedAiPage(tenant.id, slug);
+  const page = await cachedAiPage(tenant.id, slug);
   if (!page) return {};
   const content = normalizeToBlocks(page.content);
   const textBlock = content.blocks.find(
@@ -104,7 +105,7 @@ export default async function AiLandingPage({
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
   const { slug } = await params;
-  const page = await getPublishedAiPage(tenant.id, slug);
+  const page = await cachedAiPage(tenant.id, slug);
   if (!page) notFound();
   const content = normalizeToBlocks(page.content);
   // Corrupt/empty content would otherwise render a blank "Untitled" page; keep

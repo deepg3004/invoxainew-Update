@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import {
-  getActivePaymentPage,
   getSellerGateway,
   getTenantTracking,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
+import { cachedPaymentPage } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { PayBox } from "./PayBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
@@ -23,7 +23,7 @@ export async function generateMetadata({
   const tenant = await resolveTenantByHost(host);
   if (!tenant || tenant.suspendedAt) return {};
   const { slug } = await params;
-  const page = await getActivePaymentPage(tenant.id, slug);
+  const page = await cachedPaymentPage(tenant.id, slug);
   if (!page) return {};
   const description = page.description?.slice(0, 200) ?? undefined;
   return {
@@ -44,7 +44,7 @@ export default async function PayPage({
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
   const { slug } = await params;
-  const page = await getActivePaymentPage(tenant.id, slug);
+  const page = await cachedPaymentPage(tenant.id, slug);
   if (!page) notFound();
 
   const gateway = await getSellerGateway(tenant.id);

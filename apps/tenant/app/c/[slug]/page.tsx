@@ -3,12 +3,12 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
-  getPublishedCourse,
   getSellerGateway,
   getTenantTracking,
   getEnrolment,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
+import { cachedCourse } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { CourseBuyBox } from "./CourseBuyBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
@@ -27,7 +27,7 @@ export async function generateMetadata({
   const tenant = await resolveTenantByHost(host);
   if (!tenant || tenant.suspendedAt) return {};
   const { slug } = await params;
-  const course = await getPublishedCourse(tenant.id, slug);
+  const course = await cachedCourse(tenant.id, slug);
   if (!course) return {};
   const description = course.description?.slice(0, 200) ?? undefined;
   const images = course.imageUrl ? [course.imageUrl] : undefined;
@@ -55,7 +55,7 @@ export default async function CoursePage({
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
   const { slug } = await params;
-  const course = await getPublishedCourse(tenant.id, slug);
+  const course = await cachedCourse(tenant.id, slug);
   if (!course) notFound();
 
   const [gateway, tracking, user] = await Promise.all([

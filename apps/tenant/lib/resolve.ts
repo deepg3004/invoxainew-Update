@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import { getTenantByUsername, getTenantByCustomDomain } from "@invoxai/db";
 
@@ -10,11 +11,16 @@ import { getTenantByUsername, getTenantByCustomDomain } from "@invoxai/db";
  *
  * ISOLATION: a custom domain matches at most one VERIFIED row (partial unique
  * index), so a host can never resolve to two tenants.
+ *
+ * Wrapped in React `cache()` so generateMetadata and the page body (which both
+ * resolve the same host per request) share ONE query instead of two.
  */
-export async function resolveTenantByHost(host: string | null | undefined) {
-  const username = tenantUsernameFromHost(host);
-  if (username) return getTenantByUsername(username);
-  const hostname = (host ?? "").split(":")[0]!.trim().toLowerCase();
-  if (!hostname) return null;
-  return getTenantByCustomDomain(hostname);
-}
+export const resolveTenantByHost = cache(
+  async (host: string | null | undefined) => {
+    const username = tenantUsernameFromHost(host);
+    if (username) return getTenantByUsername(username);
+    const hostname = (host ?? "").split(":")[0]!.trim().toLowerCase();
+    if (!hostname) return null;
+    return getTenantByCustomDomain(hostname);
+  },
+);
