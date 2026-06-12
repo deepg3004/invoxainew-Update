@@ -197,6 +197,9 @@ model Product {
   pricePaise  Int           @map("price_paise")
   imageUrl    String?       @map("image_url")
   kind        ProductKind   @default(DIGITAL)
+  // Gated post-purchase access link (community invite / download URL). Revealed
+  // to the buyer ONLY on a PAID order (getBuyerOrder) — never on public pages.
+  accessUrl   String?       @map("access_url")
   status      ProductStatus @default(DRAFT)
   stockQty    Int?          @map("stock_qty")
   sortOrder   Int           @default(0) @map("sort_order")

@@ -15,6 +15,7 @@ export interface ProductValues {
   kind: ProductKind;
   stockQty: number | null;
   sortOrder: number;
+  accessUrl: string | null;
 }
 
 type Action = (prev: ProductFormState, form: FormData) => Promise<ProductFormState>;
@@ -122,6 +123,20 @@ export function ProductForm({
           className={inputCls}
         />
         <span className="mt-1 block text-xs text-muted">Optional.</span>
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-neutral-200">Access link</span>
+        <input
+          name="accessUrl"
+          defaultValue={initial?.accessUrl ?? ""}
+          placeholder="https://t.me/… or download URL"
+          className={inputCls}
+        />
+        <span className="mt-1 block text-xs text-muted">
+          Optional — a community invite (Telegram / Discord / WhatsApp) or
+          download link, revealed to the buyer after they pay.
+        </span>
       </label>
 
       <div className="grid grid-cols-2 gap-4">

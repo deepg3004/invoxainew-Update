@@ -26,6 +26,7 @@ interface ParsedProduct {
   kind: ProductKind;
   stockQty: number | null;
   sortOrder: number;
+  accessUrl: string | null;
 }
 
 function parseProductFields(
@@ -70,6 +71,11 @@ function parseProductFields(
     sortOrder = n;
   }
 
+  const accessRaw = String(form.get("accessUrl") ?? "").trim();
+  if (accessRaw && !/^https?:\/\/\S+$/.test(accessRaw)) {
+    return { ok: false, message: "Access link must start with http:// or https://" };
+  }
+
   const description = String(form.get("description") ?? "").trim() || null;
   return {
     ok: true,
@@ -81,6 +87,7 @@ function parseProductFields(
       kind,
       stockQty,
       sortOrder,
+      accessUrl: accessRaw || null,
     },
   };
 }

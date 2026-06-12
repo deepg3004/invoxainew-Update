@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getBuyerOrder } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
+import { safeUrl } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../../../lib/resolve";
 import { getSessionUser } from "../../../../lib/auth";
 import { PrintButton } from "./PrintButton";
@@ -54,6 +55,16 @@ export default async function OrderReceipt({
 
   const subtotal = order.amountPaise + order.discountPaise;
   const sellerName = tenant.name ?? tenant.username;
+
+  // Gated access links (community invite / download), revealed now that the
+  // order is PAID. Single-product order + any cart line items; URLs sanitized.
+  const accessLinks: { title: string; href: string }[] = [];
+  const pushLink = (title: string | undefined, url: string | null | undefined) => {
+    const href = safeUrl(url);
+    if (href) accessLinks.push({ title: title || "Access link", href });
+  };
+  pushLink(order.product?.title, order.product?.accessUrl);
+  for (const li of order.orderItems) pushLink(li.product?.title ?? li.titleSnapshot, li.product?.accessUrl);
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
@@ -150,6 +161,28 @@ export default async function OrderReceipt({
           </p>
         ) : null}
       </div>
+
+      {accessLinks.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-success/30 bg-success/10 p-5">
+          <h2 className="text-sm font-semibold text-white">Your access</h2>
+          <p className="mt-1 text-xs text-muted">
+            Thanks for your purchase — here’s your access link.
+          </p>
+          <div className="mt-3 space-y-2">
+            {accessLinks.map((l, i) => (
+              <a
+                key={i}
+                href={l.href}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full rounded-lg bg-brand-gradient px-4 py-2.5 text-center text-sm font-medium text-white shadow-glow"
+              >
+                Open: {l.title} →
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <p className="mt-4 text-center text-xs text-muted">
         Paid to {sellerName} via Razorpay.
