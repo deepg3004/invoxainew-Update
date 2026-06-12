@@ -9,7 +9,8 @@
     "./host": "./src/host.ts",
     "./money": "./src/money.ts",
     "./crypto": "./src/crypto.ts",
-    "./redis": "./src/redis.ts"
+    "./redis": "./src/redis.ts",
+    "./blocks": "./src/blocks.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

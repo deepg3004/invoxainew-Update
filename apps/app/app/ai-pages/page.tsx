@@ -90,11 +90,16 @@ export default async function AiPagesPage() {
                       {url}
                     </a>
                   </div>
-                  <form action={deleteAiPageAction.bind(null, p.id)} className="shrink-0">
-                    <button className="text-sm text-neutral-500 underline hover:text-red-700">
-                      Delete
-                    </button>
-                  </form>
+                  <div className="flex shrink-0 items-center gap-3 text-sm">
+                    <Link href={`/ai-pages/${p.id}/edit`} className="text-blue-600 underline">
+                      Edit
+                    </Link>
+                    <form action={deleteAiPageAction.bind(null, p.id)}>
+                      <button className="text-neutral-500 underline hover:text-red-700">
+                        Delete
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
             );

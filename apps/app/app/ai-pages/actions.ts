@@ -8,13 +8,16 @@ import {
   consumeFeature,
   createAiPage,
   setAiPageChargeRef,
+  updateAiPageContent,
   deleteAiPage,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
+import { normalizeToBlocks, type Block } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../lib/tenant";
 import { aiConfigured, generateLandingPage } from "../../lib/ai";
 
 export type AiPageFormState = { error?: string };
+export type SaveResult = { ok: true } | { ok: false; error: string };
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
 const RESERVED = new Set(["pay", "account", "api", "health", "store", "p", "cart", "c", "courses", "learn", "_next", "favicon"]);
@@ -90,7 +93,35 @@ export async function generateAiPageAction(
   }
 
   revalidatePath("/ai-pages");
-  redirect("/ai-pages");
+  // Drop the seller straight into the block editor to refine the generated page.
+  redirect(`/ai-pages/${created.id}/edit`);
+}
+
+/**
+ * Save edited blocks for a page (AI builder editor). SECURITY: the blocks come
+ * from the browser, so they're re-validated + sanitized through normalizeToBlocks
+ * server-side (the same trust boundary as generation) before storage — the editor
+ * can't persist an unrecognized block type or a `javascript:` URL.
+ */
+export async function saveAiPageAction(
+  id: string,
+  title: string,
+  blocks: Block[],
+): Promise<SaveResult> {
+  const { tenant } = await requireTenant();
+  const safe = normalizeToBlocks({ title, blocks });
+  if (safe.blocks.length === 0) {
+    return { ok: false, error: "Add at least one block before saving." };
+  }
+  const res = await updateAiPageContent(
+    tenant.id,
+    id,
+    safe.title,
+    JSON.parse(JSON.stringify(safe)),
+  );
+  if (res.count === 0) return { ok: false, error: "Page not found." };
+  revalidatePath("/ai-pages");
+  return { ok: true };
 }
 
 export async function deleteAiPageAction(id: string) {

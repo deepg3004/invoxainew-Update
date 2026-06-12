@@ -153,6 +153,8 @@ export {
   setAiPageChargeRef,
   listAiPages,
   getPublishedAiPage,
+  getAiPageForOwner,
+  updateAiPageContent,
   deleteAiPage,
   type ChargeCreateResult,
   type CreateAiPageResult,

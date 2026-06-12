@@ -140,6 +140,26 @@ export function getPublishedAiPage(tenantId: string, slug: string) {
   });
 }
 
+/** A tenant's own AI page by id — for the seller block editor. Scoped. */
+export function getAiPageForOwner(tenantId: string, id: string) {
+  return prisma.aiPage.findFirst({ where: { id, tenantId } });
+}
+
+/** Save edited block content (and title) for a tenant's own page. Scoped via
+ *  updateMany so another tenant's id can't be written. `content` is the
+ *  validated {title, blocks} JSON (sanitized app-side before this call). */
+export function updateAiPageContent(
+  tenantId: string,
+  id: string,
+  title: string,
+  content: Prisma.InputJsonValue,
+) {
+  return prisma.aiPage.updateMany({
+    where: { id, tenantId },
+    data: { title, content },
+  });
+}
+
 /** Delete a tenant's own AI page (scoped). */
 export function deleteAiPage(tenantId: string, id: string) {
   return prisma.aiPage.deleteMany({ where: { id, tenantId } });

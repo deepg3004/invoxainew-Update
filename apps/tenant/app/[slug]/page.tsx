@@ -2,30 +2,46 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPublishedAiPage, getTenantTracking } from "@invoxai/db";
+import { normalizeToBlocks, type Block } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 
 export const dynamic = "force-dynamic";
 
-// Shape Claude was constrained to (see app/lib/ai.ts). Rendered as structured
-// markup here — never as raw HTML — so a generated page can't inject scripts.
-interface LandingPageContent {
-  title: string;
-  tagline: string;
-  sections: { heading: string; body: string }[];
-  ctaLabel: string;
-}
-
-function isContent(v: unknown): v is LandingPageContent {
-  if (!v || typeof v !== "object") return false;
-  const c = v as Record<string, unknown>;
-  return (
-    typeof c.title === "string" &&
-    typeof c.tagline === "string" &&
-    Array.isArray(c.sections) &&
-    typeof c.ctaLabel === "string"
-  );
+// Render one block as structured markup. SECURITY: blocks are validated +
+// sanitized by normalizeToBlocks (server-side), and we never inject raw HTML —
+// text is rendered as text, links/images only with sanitized http(s)/relative
+// URLs — so a generated or edited page can't run scripts on the seller's site.
+function BlockView({ block }: { block: Block }) {
+  switch (block.type) {
+    case "heading": {
+      const cls =
+        block.level === 1
+          ? "text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl"
+          : block.level === 2
+            ? "mt-10 text-2xl font-semibold text-neutral-900"
+            : "mt-6 text-lg font-semibold text-neutral-800";
+      if (block.level === 1) return <h1 className={cls}>{block.text}</h1>;
+      if (block.level === 2) return <h2 className={cls}>{block.text}</h2>;
+      return <h3 className={cls}>{block.text}</h3>;
+    }
+    case "text":
+      return <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-600">{block.text}</p>;
+    case "image":
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img src={block.url} alt={block.alt} className="mt-6 w-full rounded-xl border border-neutral-200 object-cover" />;
+    case "button":
+      return (
+        <div className="mt-6">
+          <a href={block.href} className="inline-block rounded-lg bg-neutral-900 px-6 py-3 font-medium text-white">
+            {block.label}
+          </a>
+        </div>
+      );
+    case "divider":
+      return <hr className="mt-10 border-neutral-200" />;
+  }
 }
 
 export default async function AiLandingPage({
@@ -40,33 +56,18 @@ export default async function AiLandingPage({
 
   const { slug } = await params;
   const page = await getPublishedAiPage(tenant.id, slug);
-  if (!page || !isContent(page.content)) notFound();
-  const content = page.content;
+  if (!page) notFound();
+  const content = normalizeToBlocks(page.content);
   const tracking = await getTenantTracking(tenant.id);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-20">
       <TrackingScripts ids={tracking ?? {}} />
-      <header className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
-          {content.title}
-        </h1>
-        <p className="mt-4 text-lg text-neutral-500">{content.tagline}</p>
-        <div className="mt-8">
-          <span className="inline-block cursor-default rounded-lg bg-neutral-900 px-6 py-3 font-medium text-white">
-            {content.ctaLabel}
-          </span>
-        </div>
-      </header>
-
-      <div className="mt-16 space-y-10">
-        {content.sections.map((s, i) => (
-          <section key={i} className="border-t border-neutral-200 pt-8">
-            <h2 className="text-xl font-semibold text-neutral-900">{s.heading}</h2>
-            <p className="mt-2 leading-relaxed text-neutral-600">{s.body}</p>
-          </section>
+      <article>
+        {content.blocks.map((b, i) => (
+          <BlockView key={i} block={b} />
         ))}
-      </div>
+      </article>
 
       <footer className="mt-20 border-t border-neutral-200 pt-6 text-center text-sm text-neutral-400">
         {tenant.name ?? tenant.username} ·{" "}
