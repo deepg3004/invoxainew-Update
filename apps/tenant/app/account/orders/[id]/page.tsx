@@ -1,3 +1,4 @@
+import {formatDateTimeIST} from "@invoxai/utils/date";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -13,13 +14,7 @@ export const dynamic = "force-dynamic";
 
 function formatDate(d: Date | null): string {
   if (!d) return "—";
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatDateTimeIST(d);
 }
 
 const STATUS_LABEL: Record<string, string> = {

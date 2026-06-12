@@ -1,3 +1,4 @@
+import {formatDateIST} from "@invoxai/utils/date";
 import { GlassCard } from "@invoxai/ui";
 import { listTenantOrders, getTenantSalesSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
@@ -19,11 +20,7 @@ function tabCls(active: boolean): string {
 
 function formatDate(d: Date | null): string {
   if (!d) return "—";
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(d);
+  return formatDateIST(d);
 }
 
 export default async function OrdersPage({

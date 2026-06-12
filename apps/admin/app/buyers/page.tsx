@@ -1,3 +1,4 @@
+import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { searchBuyerPayments } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
@@ -9,11 +10,7 @@ export const dynamic = "force-dynamic";
 
 function fmtDate(d: Date | null): string {
   if (!d) return "—";
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(d);
+  return formatDateIST(d);
 }
 
 export default async function BuyersPage({

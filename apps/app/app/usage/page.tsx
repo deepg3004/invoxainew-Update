@@ -1,3 +1,4 @@
+import {formatMonthIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { getTenantFeatureUsageSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
@@ -5,10 +6,7 @@ import { requireTenant } from "../../lib/tenant";
 
 export const dynamic = "force-dynamic";
 
-const thisMonth = new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-  month: "long",
-  year: "numeric",
-}).format(new Date());
+const thisMonth = formatMonthIST(new Date());
 
 export default async function UsagePage() {
   const { tenant } = await requireTenant();

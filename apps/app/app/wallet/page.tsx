@@ -1,3 +1,4 @@
+import {formatDateTimeIST} from "@invoxai/utils/date";
 import { GlassCard } from "@invoxai/ui";
 import {
   getWalletByTenant,
@@ -10,13 +11,7 @@ import { WalletTopup } from "./WalletTopup";
 export const dynamic = "force-dynamic";
 
 function formatDateTime(d: Date): string {
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  return formatDateTimeIST(d);
 }
 
 export default async function WalletPage() {

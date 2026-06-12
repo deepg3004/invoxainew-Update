@@ -1,3 +1,4 @@
+import {formatDateTimeShortIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GlassCard } from "@invoxai/ui";
@@ -17,12 +18,7 @@ function publicBase(username: string): string {
 }
 
 function formatDate(d: Date): string {
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  return formatDateTimeShortIST(d);
 }
 
 export default async function FormDetailPage({

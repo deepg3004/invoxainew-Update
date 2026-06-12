@@ -1,3 +1,4 @@
+import {formatDateIST} from "@invoxai/utils/date";
 import { GlassCard } from "@invoxai/ui";
 import { getSellerGateway } from "@invoxai/db";
 import { maskKeyId } from "@invoxai/utils/crypto";
@@ -43,11 +44,7 @@ export default async function GatewayPage() {
                     {gateway.mode}
                   </span>{" "}
                   · connected{" "}
-                  {new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  }).format(gateway.connectedAt)}
+                  {formatDateIST(gateway.connectedAt)}
                 </p>
                 {gateway.mode === "TEST" ? (
                   <p className="mt-2 text-xs text-warning">

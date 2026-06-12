@@ -1,3 +1,4 @@
+import {formatDateIST} from "@invoxai/utils/date";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -17,11 +18,7 @@ export const dynamic = "force-dynamic";
 
 function formatDate(d: Date | null): string {
   if (!d) return "—";
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(d);
+  return formatDateIST(d);
 }
 
 export default async function BuyerCorner() {

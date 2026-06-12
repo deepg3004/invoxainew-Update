@@ -1,3 +1,4 @@
+import {formatDateTimeShortIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { listNotifications, countUnreadNotifications } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
@@ -6,12 +7,7 @@ import { markAllReadAction } from "./actions";
 export const dynamic = "force-dynamic";
 
 function timeAgo(d: Date): string {
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(d);
+  return formatDateTimeShortIST(d);
 }
 
 export default async function NotificationsPage() {

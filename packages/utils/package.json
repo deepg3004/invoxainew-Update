@@ -8,6 +8,7 @@
     "./username": "./src/username.ts",
     "./host": "./src/host.ts",
     "./money": "./src/money.ts",
+    "./date": "./src/date.ts",
     "./crypto": "./src/crypto.ts",
     "./redis": "./src/redis.ts",
     "./blocks": "./src/blocks.ts"

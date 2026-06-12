@@ -1,3 +1,4 @@
+import {formatDateTimeShortIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { GlassCard } from "@invoxai/ui";
 import {
@@ -13,12 +14,7 @@ import { NotAuthorized } from "../components/NotAuthorized";
 export const dynamic = "force-dynamic";
 
 function fmtDateTime(d: Date): string {
-  return new Intl.DateTimeFormat("en-IN", { timeZone: "Asia/Kolkata",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  return formatDateTimeShortIST(d);
 }
 
 export default async function ReportsPage() {
