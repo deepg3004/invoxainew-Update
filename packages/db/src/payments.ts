@@ -173,6 +173,53 @@ export function getBuyerPaymentByOrderId(razorpayOrderId: string) {
   });
 }
 
+/**
+ * Create a pending multi-item (cart) order — Store slice 3. ONE BuyerPayment
+ * (productId null, the payment/commission/fulfillment record) plus one OrderItem
+ * per line, in a single transaction. `amountPaise` is the server-trusted total
+ * (sum of unitPricePaise×quantity); `itemTitle` is a human summary so existing
+ * order displays render uniformly without reading the lines. Same money rail as
+ * single-item: the Razorpay order was created on the SELLER's gateway upstream.
+ */
+export function createCartOrder(input: {
+  razorpayOrderId: string;
+  tenantId: string;
+  amountPaise: number;
+  itemTitle: string;
+  items: {
+    productId: string;
+    titleSnapshot: string;
+    unitPricePaise: number;
+    quantity: number;
+  }[];
+  buyerProfileId?: string | null;
+  buyerEmail?: string | null;
+  buyerContact?: string | null;
+}) {
+  return prisma.buyerPayment.create({
+    data: {
+      razorpayOrderId: input.razorpayOrderId,
+      tenantId: input.tenantId,
+      // Cart orders are multi-product, so no single productId; lines carry it.
+      productId: null,
+      itemTitle: input.itemTitle,
+      amountPaise: input.amountPaise,
+      buyerProfileId: input.buyerProfileId ?? null,
+      buyerEmail: input.buyerEmail ?? null,
+      buyerContact: input.buyerContact ?? null,
+      orderItems: {
+        create: input.items.map((it) => ({
+          productId: it.productId,
+          titleSnapshot: it.titleSnapshot,
+          unitPricePaise: it.unitPricePaise,
+          quantity: it.quantity,
+        })),
+      },
+    },
+    select: { id: true, razorpayOrderId: true },
+  });
+}
+
 // ── Order tracking (C10) ──────────────────────────────────────────────────────
 
 /** A seller's paid orders, newest first, with item + commission. Scoped. */
@@ -184,6 +231,9 @@ export function listTenantOrders(tenantId: string, take = 100) {
     include: {
       paymentPage: { select: { title: true, slug: true } },
       commission: { select: { status: true, amountPaise: true } },
+      orderItems: {
+        select: { titleSnapshot: true, unitPricePaise: true, quantity: true },
+      },
     },
   });
 }
@@ -391,17 +441,33 @@ export async function markBuyerPaymentPaid(input: {
     }
     if (!payment) return { ok: false, reason: "not_found" };
 
-    // Store slice 2: decrement tracked stock for product orders (the claim
-    // winner only, so it can't double-decrement on a refreshed callback). Stock
-    // is reduced at PAID — the safe point, since only paid orders consume stock.
-    // Clamped at 0; a rare concurrent-oversell can't drive it negative.
-    if (payment.productId) {
+    // Decrement tracked stock for product orders (the claim winner only, so it
+    // can't double-decrement on a refreshed callback). Stock is reduced at PAID
+    // — the safe point, since only paid orders consume stock. Clamped at 0; a
+    // rare concurrent-oversell can't drive it negative.
+    //
+    // Two mutually-exclusive sources: a multi-item CART order carries OrderItem
+    // lines (productId on the payment is null), while a single-product quick-buy
+    // (Store slice 2) carries productId/quantity directly. We drive off the
+    // lines when present, else the legacy single-product field — never both, so
+    // no order is decremented twice.
+    const lines = await tx.orderItem.findMany({
+      where: { buyerPaymentId: payment.id, productId: { not: null } },
+      select: { productId: true, quantity: true },
+    });
+    const stockToDecrement =
+      lines.length > 0
+        ? lines.map((l) => ({ productId: l.productId as string, quantity: l.quantity }))
+        : payment.productId
+          ? [{ productId: payment.productId, quantity: payment.quantity }]
+          : [];
+    for (const { productId, quantity } of stockToDecrement) {
       await tx.product.updateMany({
-        where: { id: payment.productId, stockQty: { not: null } },
-        data: { stockQty: { decrement: payment.quantity } },
+        where: { id: productId, stockQty: { not: null } },
+        data: { stockQty: { decrement: quantity } },
       });
       await tx.product.updateMany({
-        where: { id: payment.productId, stockQty: { lt: 0 } },
+        where: { id: productId, stockQty: { lt: 0 } },
         data: { stockQty: 0 },
       });
     }

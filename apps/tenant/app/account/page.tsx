@@ -88,6 +88,15 @@ export default async function BuyerCorner() {
                     <td className="px-4 py-3 font-medium text-neutral-900">
                       {o.itemTitle ?? o.paymentPage?.title ?? "Order"}
                       {o.quantity > 1 ? ` ×${o.quantity}` : ""}
+                      {o.orderItems.length > 0 ? (
+                        <ul className="mt-1 text-xs font-normal text-neutral-400">
+                          {o.orderItems.map((li, idx) => (
+                            <li key={idx}>
+                              {li.titleSnapshot} ×{li.quantity}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-neutral-500">{formatDate(o.paidAt)}</td>
                     <td className="px-4 py-3">

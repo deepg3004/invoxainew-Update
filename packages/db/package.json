@@ -10,9 +10,6 @@
     "generate": "prisma generate",
     "typecheck": "tsc --noEmit"
   },
-  "prisma": {
-    "schema": "prisma/schema.prisma"
-  },
   "dependencies": {
     "@invoxai/config": "workspace:*",
     "@prisma/client": "^6.1.0"

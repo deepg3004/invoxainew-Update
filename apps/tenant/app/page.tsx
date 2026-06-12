@@ -6,6 +6,7 @@ import { tenantUsernameFromHost } from "@invoxai/utils/host";
 import { getTenantByUsername, getTenantTracking } from "@invoxai/db";
 import { StoreUnavailable } from "./StoreUnavailable";
 import { TrackingScripts } from "./TrackingScripts";
+import { CartLink } from "./CartLink";
 
 // Resolved per-request from the Host header, so never cache.
 export const dynamic = "force-dynamic";
@@ -50,9 +51,12 @@ export default async function TenantHome() {
         <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
           {tenant.username}.invoxai.io
         </p>
-        <Link href="/account" className="text-sm text-blue-600 underline">
-          Your orders
-        </Link>
+        <div className="flex gap-4">
+          <CartLink />
+          <Link href="/account" className="text-sm text-blue-600 underline">
+            Your orders
+          </Link>
+        </div>
       </div>
       <h1 className="mt-1 text-3xl font-bold">{tenant.name ?? tenant.username}</h1>
 

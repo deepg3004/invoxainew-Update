@@ -88,6 +88,15 @@ export default async function OrdersPage() {
                     {formatRupees(o.amountPaise)} · {formatDate(o.paidAt)}
                     {o.buyerEmail ? ` · ${o.buyerEmail}` : ""}
                   </div>
+                  {o.orderItems.length > 0 ? (
+                    <ul className="mt-1 text-xs text-neutral-400">
+                      {o.orderItems.map((li, idx) => (
+                        <li key={idx}>
+                          {li.titleSnapshot} ×{li.quantity} · {formatRupees(li.unitPricePaise)}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                   {o.refundedPaise > 0 ? (
                     <div className="mt-0.5 text-xs font-medium text-red-700">
                       Refunded {formatRupees(o.refundedPaise)}

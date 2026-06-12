@@ -39,6 +39,11 @@ export function listBuyerOrders(input: {
       OR: attribution,
     },
     orderBy: { paidAt: "desc" },
-    include: { paymentPage: { select: { title: true, slug: true } } },
+    include: {
+      paymentPage: { select: { title: true, slug: true } },
+      orderItems: {
+        select: { titleSnapshot: true, unitPricePaise: true, quantity: true },
+      },
+    },
   });
 }

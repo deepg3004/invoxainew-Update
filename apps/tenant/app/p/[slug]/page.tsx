@@ -12,6 +12,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { ProductBuyBox } from "./ProductBuyBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
+import { CartLink } from "../../CartLink";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +40,12 @@ export default async function ProductPage({
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
-      <Link href="/store" className="text-sm text-blue-600 underline">
-        ← {tenant.name ?? tenant.username} store
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/store" className="text-sm text-blue-600 underline">
+          ← {tenant.name ?? tenant.username} store
+        </Link>
+        <CartLink />
+      </div>
 
       {product.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -65,7 +69,16 @@ export default async function ProductPage({
         </p>
 
         {sellerReady ? (
-          <ProductBuyBox productId={product.id} maxQty={product.stockQty} />
+          <ProductBuyBox
+            product={{
+              id: product.id,
+              slug: product.slug,
+              title: product.title,
+              pricePaise: product.pricePaise,
+              imageUrl: product.imageUrl,
+              stockQty: product.stockQty,
+            }}
+          />
         ) : (
           <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
             This seller hasn’t finished setting up payments yet.

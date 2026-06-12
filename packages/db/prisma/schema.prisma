@@ -119,6 +119,8 @@ model Product {
 
   // Store slice 2: buyer orders placed against this product.
   buyerPayments BuyerPayment[]
+  // Store slice 3: line items referencing this product (multi-item carts).
+  orderItems    OrderItem[]
 }
 
 enum ProductKind {
@@ -491,10 +493,36 @@ model BuyerPayment {
   updatedAt         DateTime           @updatedAt @map("updated_at")
   commission        CommissionCharge?
   refunds           Refund[]
+  // Store slice 3: line items for a multi-item (cart) order. Empty for a
+  // single-product quick-buy (which uses productId/quantity above) and for
+  // payment-page orders. The order total `amountPaise` is still authoritative.
+  orderItems        OrderItem[]
 
   @@index([tenantId, createdAt])
   @@index([tenantId, buyerProfileId])
   @@map("buyer_payments")
+}
+
+/// One line of a multi-item (cart) order — Store slice 3. A cart checkout
+/// creates ONE BuyerPayment (the payment/commission/fulfillment record, on the
+/// seller's gateway) plus one OrderItem per product. `unitPricePaise` and
+/// `titleSnapshot` capture the price/name at sale time so order history is
+/// immutable even if the product is later edited or deleted (productId then
+/// nulls out via SetNull). Stock is decremented per line on the PAID claim.
+/// RLS: deny-anon lockdown (read/written server-side via Prisma).
+model OrderItem {
+  id             String       @id @default(uuid()) @db.Uuid
+  buyerPaymentId String       @map("buyer_payment_id") @db.Uuid
+  buyerPayment   BuyerPayment @relation(fields: [buyerPaymentId], references: [id], onDelete: Cascade)
+  productId      String?      @map("product_id") @db.Uuid
+  product        Product?     @relation(fields: [productId], references: [id], onDelete: SetNull)
+  titleSnapshot  String       @map("title_snapshot")
+  unitPricePaise Int          @map("unit_price_paise")
+  quantity       Int
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@index([buyerPaymentId])
+  @@map("order_items")
 }
 
 /// Links a Supabase user (Profile) to a tenant as a BUYER (C8). One per

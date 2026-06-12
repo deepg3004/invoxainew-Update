@@ -4,6 +4,7 @@ import { useState } from "react";
 import Script from "next/script";
 import { startProductCheckout } from "./actions";
 import { firePurchase } from "../../TrackingScripts";
+import { AddToCartButton } from "../../AddToCartButton";
 
 declare global {
   interface Window {
@@ -13,13 +14,18 @@ declare global {
 
 type Status = "idle" | "starting" | "paid";
 
-export function ProductBuyBox({
-  productId,
-  maxQty,
-}: {
-  productId: string;
-  maxQty: number | null;
-}) {
+export interface BuyBoxProduct {
+  id: string;
+  slug: string;
+  title: string;
+  pricePaise: number;
+  imageUrl: string | null;
+  stockQty: number | null;
+}
+
+export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
+  const productId = product.id;
+  const maxQty = product.stockQty;
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [qty, setQty] = useState(1);
@@ -134,6 +140,18 @@ export function ProductBuyBox({
           >
             {status === "starting" ? "Starting…" : "Buy now"}
           </button>
+          <div className="mt-2">
+            <AddToCartButton
+              product={{
+                productId: product.id,
+                slug: product.slug,
+                title: product.title,
+                pricePaise: product.pricePaise,
+                imageUrl: product.imageUrl,
+                maxQty: product.stockQty,
+              }}
+            />
+          </div>
         </>
       )}
     </div>
