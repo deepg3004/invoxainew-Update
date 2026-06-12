@@ -239,6 +239,9 @@ export {
 
 export {
   getAnalytics,
+  recordPageView,
+  getTrafficAnalytics,
   type AnalyticsResult,
   type AnalyticsDay,
+  type TrafficResult,
 } from "./analytics";

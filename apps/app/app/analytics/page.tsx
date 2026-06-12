@@ -1,8 +1,9 @@
 import { Button, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
-import { getAnalytics } from "@invoxai/db";
+import { getAnalytics, getTrafficAnalytics } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { RevenueChart } from "../components/RevenueChart";
+import { TrafficChart } from "../components/TrafficChart";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,10 @@ export default async function AnalyticsPage({
     ? (Number(rawDays) as (typeof RANGES)[number])
     : 30;
 
-  const a = await getAnalytics(tenant.id, days);
+  const [a, traffic] = await Promise.all([
+    getAnalytics(tenant.id, days),
+    getTrafficAnalytics(tenant.id, days),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -76,6 +80,38 @@ export default async function AnalyticsPage({
               }))}
             />
           </div>
+        )}
+      </GlassCard>
+
+      {/* Traffic (page-level analytics) */}
+      <GlassCard className="mt-6">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold text-zinc-900">Traffic</h2>
+          <span className="text-sm text-muted">
+            {traffic.views} view{traffic.views === 1 ? "" : "s"} · {traffic.sessions} session
+            {traffic.sessions === 1 ? "" : "s"}
+          </span>
+        </div>
+        {traffic.views === 0 ? (
+          <p className="mt-6 text-sm text-muted">
+            No page views yet. Views start counting as visitors land on your public pages
+            (store, product, payment and AI pages).
+          </p>
+        ) : (
+          <>
+            <div className="mt-4">
+              <TrafficChart data={traffic.daily} />
+            </div>
+            <h3 className="mt-6 text-sm font-semibold text-zinc-900">Top pages</h3>
+            <ul className="mt-2 divide-y divide-zinc-100">
+              {traffic.topPaths.map((p) => (
+                <li key={p.path} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="min-w-0 truncate font-mono text-zinc-700">{p.path}</span>
+                  <span className="shrink-0 text-muted">{p.views}</span>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </GlassCard>
 

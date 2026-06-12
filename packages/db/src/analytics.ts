@@ -109,3 +109,77 @@ export async function getAnalytics(
     topSources,
   };
 }
+
+// ── Page-view (traffic) analytics ────────────────────────────────────────────
+
+/** Record one public page view. Best-effort, append-only. Caller (the /api/pv
+ *  route) resolves the tenant from the Host header and trims the inputs. */
+export function recordPageView(input: {
+  tenantId: string;
+  path: string;
+  referrer?: string | null;
+  sessionId?: string | null;
+  source?: string | null;
+}) {
+  return prisma.pageView.create({
+    data: {
+      tenantId: input.tenantId,
+      path: input.path,
+      referrer: input.referrer ?? null,
+      sessionId: input.sessionId ?? null,
+      source: input.source ?? null,
+    },
+  });
+}
+
+export interface TrafficResult {
+  days: number;
+  views: number;
+  sessions: number;
+  daily: { date: string; views: number }[];
+  topPaths: { path: string; views: number }[];
+}
+
+/**
+ * Page-level traffic for a seller's public site over the last `days` (IST day
+ * buckets, tenant-scoped). In-memory aggregation over the window's views, capped
+ * for safety — a rollup table is the path to very high volume.
+ */
+export async function getTrafficAnalytics(tenantId: string, days = 30): Promise<TrafficResult> {
+  const istKey = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d);
+  const now = new Date();
+  const dayKeys: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    dayKeys.push(istKey(new Date(now.getTime() - i * 86_400_000)));
+  }
+  const cutoff = new Date(`${dayKeys[0]}T00:00:00+05:30`);
+
+  const rows = await prisma.pageView.findMany({
+    where: { tenantId, createdAt: { gte: cutoff } },
+    select: { path: true, sessionId: true, createdAt: true },
+    take: 100_000,
+  });
+
+  const byDay = new Map(dayKeys.map((k) => [k, 0]));
+  const byPath = new Map<string, number>();
+  const sessions = new Set<string>();
+  for (const r of rows) {
+    const k = istKey(r.createdAt);
+    if (byDay.has(k)) byDay.set(k, byDay.get(k)! + 1);
+    byPath.set(r.path, (byPath.get(r.path) ?? 0) + 1);
+    if (r.sessionId) sessions.add(r.sessionId);
+  }
+  const topPaths = [...byPath.entries()]
+    .map(([path, views]) => ({ path, views }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10);
+
+  return {
+    days,
+    views: rows.length,
+    sessions: sessions.size,
+    daily: dayKeys.map((k) => ({ date: k, views: byDay.get(k)! })),
+    topPaths,
+  };
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sora, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { UtmCapture } from "./UtmCapture";
+import { PageViewBeacon } from "./PageViewBeacon";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en" className={`${sora.variable} ${jakarta.variable}`}>
       <body>
         <UtmCapture />
+        <PageViewBeacon />
         {children}
       </body>
     </html>

@@ -559,6 +559,23 @@ model PlatformSetting {
   @@map("platform_settings")
 }
 
+/// Public page-view events for a tenant's site (Phase 13 page-level analytics).
+/// Append-only, recorded by a best-effort beacon on the public tenant pages.
+/// No PII — path + referrer + a random session id (cookie) + optional utm source.
+/// deny-anon RLS; reads are tenant-scoped for the seller's analytics.
+model PageView {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  path      String
+  referrer  String?
+  sessionId String?  @map("session_id")
+  source    String? // utm_source / campaign, if present
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("page_views")
+}
+
 /// A seller's platform subscription (C4). Exactly one per tenant (`tenantId`
 /// unique). This is the seller paying InvoxAI's OWN fees via InvoxAI's platform
 /// gateway — NOT buyer money (hard rule). `currentPeriodEnd` is extended on each
