@@ -20,7 +20,7 @@ export default async function BillingPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · billing
       </p>

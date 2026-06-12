@@ -42,7 +42,7 @@ export default function UtmBuilderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <a href="/analytics" className="text-sm text-cyan underline">
         ← Analytics
       </a>

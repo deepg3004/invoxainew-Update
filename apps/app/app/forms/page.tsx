@@ -16,7 +16,7 @@ export default async function FormsPage() {
   const forms = await listLeadForms(tenant.id);
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-wide text-muted">

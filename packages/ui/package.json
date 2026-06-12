@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "canvas-confetti": "^1.9.3"
+    "canvas-confetti": "^1.9.3",
+    "lucide-react": "^1.17.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",

@@ -26,7 +26,7 @@ export default async function InvoiceDetail({
   const isTax = Boolean(env.INVOICE_GSTIN);
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
+    <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-between print:hidden">
         <Link href="/invoices" className="text-sm text-cyan underline">
           ← Invoices

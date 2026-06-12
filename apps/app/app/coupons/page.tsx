@@ -29,7 +29,7 @@ export default async function CouponsPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-wide text-muted">

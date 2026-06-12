@@ -19,7 +19,7 @@ export default async function EditProductPage({
   const action = updateProductAction.bind(null, product.id);
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <h1 className="text-2xl font-bold">Edit product</h1>
       <p className="mt-1 text-muted">{product.title}</p>
       <div className="mt-6">

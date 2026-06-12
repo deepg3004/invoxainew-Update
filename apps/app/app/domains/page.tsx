@@ -32,7 +32,7 @@ export default async function DomainsPage({
   const banner = msg ? MSG[msg] : null;
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <p className="text-sm font-medium uppercase tracking-wide text-muted">InvoxAI</p>
       <h1 className="mt-1 text-3xl font-bold">Custom domains</h1>
       <p className="mt-1 text-muted">

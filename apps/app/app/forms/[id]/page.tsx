@@ -36,7 +36,7 @@ export default async function FormDetailPage({
   const isPublished = form.status === "PUBLISHED";
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <Link href="/forms" className="text-sm text-cyan underline">
         ← Lead forms
       </Link>

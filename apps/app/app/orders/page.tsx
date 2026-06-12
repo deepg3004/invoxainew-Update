@@ -83,7 +83,7 @@ export default async function OrdersPage({
   })()}`;
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · orders
       </p>

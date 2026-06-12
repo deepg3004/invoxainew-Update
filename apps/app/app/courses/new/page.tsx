@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function NewCoursePage() {
   await requireTenant();
   return (
-    <div className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <h1 className="text-2xl font-bold">New course</h1>
       <p className="mt-1 text-muted">
         Create the course, then add its lessons. Buyers pay you directly on your

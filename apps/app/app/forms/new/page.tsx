@@ -18,7 +18,7 @@ export default async function NewFormPage({
   const { error } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-12">
+    <div className="mx-auto max-w-6xl">
       <Link href="/forms" className="text-sm text-cyan underline">
         ← Lead forms
       </Link>
