@@ -47,3 +47,34 @@ export function listBuyerOrders(input: {
     },
   });
 }
+
+/**
+ * A single PAID order, but ONLY if it belongs to this buyer — for the order
+ * receipt page. ACCESS CONTROL: scoped by tenantId AND attribution (the buyer's
+ * profileId OR their email), so a buyer can never view another buyer's order by
+ * guessing the id (a non-owned id simply returns null → 404). Returns the line
+ * items + page title for the receipt.
+ */
+export function getBuyerOrder(input: {
+  tenantId: string;
+  orderId: string;
+  profileId: string;
+  email?: string | null;
+}) {
+  const attribution: object[] = [{ buyerProfileId: input.profileId }];
+  if (input.email) attribution.push({ buyerEmail: input.email });
+  return prisma.buyerPayment.findFirst({
+    where: {
+      id: input.orderId,
+      tenantId: input.tenantId,
+      status: "PAID",
+      OR: attribution,
+    },
+    include: {
+      paymentPage: { select: { title: true } },
+      orderItems: {
+        select: { titleSnapshot: true, unitPricePaise: true, quantity: true },
+      },
+    },
+  });
+}

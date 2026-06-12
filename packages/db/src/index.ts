@@ -79,6 +79,7 @@ export {
 export {
   ensureBuyerAccount,
   listBuyerOrders,
+  getBuyerOrder,
 } from "./buyer";
 export {
   issueSubscriptionInvoices,

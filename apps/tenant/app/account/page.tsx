@@ -132,6 +132,12 @@ export default async function BuyerCorner() {
                           ))}
                         </ul>
                       ) : null}
+                      <Link
+                        href={`/account/orders/${o.id}`}
+                        className="mt-1 block text-xs font-normal text-blue-600 underline"
+                      >
+                        View receipt →
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-neutral-500">{formatDate(o.paidAt)}</td>
                     <td className="px-4 py-3">
