@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Script from "next/script";
-import { startProductCheckout } from "./actions";
+import { formatRupees } from "@invoxai/utils/money";
+import { startProductCheckout, previewProductCoupon } from "./actions";
 import { firePurchase } from "../../TrackingScripts";
 import { AddToCartButton } from "../../AddToCartButton";
 
@@ -31,14 +32,46 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
   const [qty, setQty] = useState(1);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
 
   const cap = maxQty === null ? 99 : Math.min(maxQty, 99);
+  const subtotal = product.pricePaise * qty;
+  const discount = applied ? Math.min(applied.discountPaise, subtotal) : 0;
+  const total = Math.max(0, subtotal - discount);
+
+  // Drop a stale discount when quantity changes (checkout re-validates anyway).
+  useEffect(() => {
+    setApplied(null);
+    setCouponMsg(null);
+  }, [qty]);
+
+  async function applyPromo() {
+    setApplying(true);
+    setCouponMsg(null);
+    try {
+      const res = await previewProductCoupon(productId, qty, code);
+      if (res.ok) {
+        setApplied({ code: res.code, discountPaise: res.discountPaise });
+        setCode(res.code);
+      } else {
+        setApplied(null);
+        setCouponMsg(res.error);
+      }
+    } catch {
+      setCouponMsg("Couldn’t check that code. Try again.");
+    } finally {
+      setApplying(false);
+    }
+  }
 
   async function buy() {
     setError(null);
     setStatus("starting");
     try {
-      const result = await startProductCheckout(productId, qty, { email, contact });
+      const result = await startProductCheckout(productId, qty, { email, contact }, applied?.code);
       if (!result.ok) {
         setError(result.error);
         setStatus("idle");
@@ -130,6 +163,32 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
             />
           </div>
+          {/* Promo code */}
+          <div className="mt-3 flex gap-2">
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="Promo code"
+              className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm uppercase outline-none focus:border-neutral-900"
+            />
+            <button
+              type="button"
+              onClick={applyPromo}
+              disabled={applying || code.trim() === ""}
+              className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-900 disabled:opacity-50"
+            >
+              {applying ? "…" : "Apply"}
+            </button>
+          </div>
+          {couponMsg ? (
+            <p className="mt-1.5 text-xs text-red-600">{couponMsg}</p>
+          ) : null}
+          {discount > 0 ? (
+            <p className="mt-1.5 text-xs font-medium text-green-700">
+              Code {applied?.code} applied — {formatRupees(discount)} off
+            </p>
+          ) : null}
+
           {error ? (
             <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
           ) : null}
@@ -138,7 +197,7 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
             disabled={status === "starting"}
             className="mt-3 w-full rounded-lg bg-neutral-900 px-4 py-2.5 font-medium text-white disabled:opacity-50"
           >
-            {status === "starting" ? "Starting…" : "Buy now"}
+            {status === "starting" ? "Starting…" : `Buy now · ${formatRupees(total)}`}
           </button>
           <div className="mt-2">
             <AddToCartButton

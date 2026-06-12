@@ -110,6 +110,11 @@ export default async function BuyerCorner() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {formatRupees(o.amountPaise)}
+                      {o.discountPaise > 0 ? (
+                        <div className="text-xs font-medium text-green-700">
+                          {o.couponCode ? `${o.couponCode}: ` : ""}−{formatRupees(o.discountPaise)}
+                        </div>
+                      ) : null}
                       {o.refundedPaise > 0 ? (
                         <div className="text-xs font-medium text-red-700">
                           −{formatRupees(o.refundedPaise)} refunded

@@ -97,6 +97,13 @@ export default async function OrdersPage() {
                       ))}
                     </ul>
                   ) : null}
+                  {o.discountPaise > 0 ? (
+                    <div className="mt-0.5 text-xs font-medium text-green-700">
+                      {o.couponCode ? `${o.couponCode}: ` : "Discount: "}
+                      −{formatRupees(o.discountPaise)} (subtotal{" "}
+                      {formatRupees(o.amountPaise + o.discountPaise)})
+                    </div>
+                  ) : null}
                   {o.refundedPaise > 0 ? (
                     <div className="mt-0.5 text-xs font-medium text-red-700">
                       Refunded {formatRupees(o.refundedPaise)}

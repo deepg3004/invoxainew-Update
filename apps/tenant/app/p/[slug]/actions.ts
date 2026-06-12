@@ -3,11 +3,13 @@
 import {
   getPublishedProductById,
   createBuyerPayment,
+  applyCoupon,
   isTenantSuspended,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
+import { couponErrorMessage } from "../../../lib/coupon-message";
 
 export type StartProductResult =
   | { ok: false; error: string }
@@ -30,6 +32,7 @@ export async function startProductCheckout(
   productId: string,
   quantity: number,
   buyer: { email?: string; contact?: string },
+  couponCode?: string,
 ): Promise<StartProductResult> {
   const qty = Math.floor(Number(quantity));
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
@@ -59,7 +62,24 @@ export async function startProductCheckout(
     return { ok: false, error: "The seller hasn’t finished setting up payments yet." };
   }
 
-  const amountPaise = product.pricePaise * qty;
+  // Subtotal before discount (server-trusted).
+  let amountPaise = product.pricePaise * qty;
+
+  // Apply a coupon if supplied — authoritative (re-validated + recomputed here).
+  // amountPaise becomes the charged, post-discount total commission is taken on.
+  const code = (couponCode ?? "").trim();
+  let couponId: string | null = null;
+  let couponSnapshot: string | null = null;
+  let discountPaise = 0;
+  if (code) {
+    const result = await applyCoupon(product.tenantId, code, amountPaise);
+    if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
+    couponId = result.couponId;
+    couponSnapshot = result.code;
+    discountPaise = result.discountPaise;
+    amountPaise -= discountPaise;
+  }
+
   const order = await createOrderWithKeys(creds.keyId, creds.keySecret, {
     amountPaise,
     receipt: `prod_${product.id}`.slice(0, 40),
@@ -75,6 +95,9 @@ export async function startProductCheckout(
     quantity: qty,
     itemTitle: product.title,
     amountPaise,
+    couponId,
+    couponCode: couponSnapshot,
+    discountPaise,
     buyerProfileId: user?.id ?? null,
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
@@ -87,4 +110,32 @@ export async function startProductCheckout(
     keyId: creds.keyId,
     title: product.title,
   };
+}
+
+export type PreviewCouponResult =
+  | { ok: true; code: string; discountPaise: number }
+  | { ok: false; error: string };
+
+/**
+ * Read-only coupon preview for the product buy box. Re-prices server-trusted
+ * (qty × DB price) and validates the code. The authoritative apply still runs in
+ * startProductCheckout, so this preview can't change what the buyer is charged.
+ */
+export async function previewProductCoupon(
+  productId: string,
+  quantity: number,
+  code: string,
+): Promise<PreviewCouponResult> {
+  const trimmed = (code ?? "").trim();
+  if (!trimmed) return { ok: false, error: "Enter a code." };
+  const qty = Math.floor(Number(quantity));
+  if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
+    return { ok: false, error: "Choose a valid quantity first." };
+  }
+  const product = await getPublishedProductById(productId);
+  if (!product) return { ok: false, error: "This product is unavailable." };
+
+  const result = await applyCoupon(product.tenantId, trimmed, product.pricePaise * qty);
+  if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
+  return { ok: true, code: result.code, discountPaise: result.discountPaise };
 }

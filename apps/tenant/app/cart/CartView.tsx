@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { useCart, setQty, removeFromCart, clearCart } from "../../lib/cart";
-import { startCartCheckout } from "./actions";
+import { startCartCheckout, previewCartCoupon } from "./actions";
 import { firePurchase } from "../TrackingScripts";
 
 declare global {
@@ -21,15 +21,49 @@ export function CartView() {
   const [contact, setContact] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
 
   const subtotal = items.reduce((n, i) => n + i.pricePaise * i.qty, 0);
+  const discount = applied ? Math.min(applied.discountPaise, subtotal) : 0;
+  const total = Math.max(0, subtotal - discount);
+
+  // If the cart contents change after a code was applied, the discount is stale —
+  // drop it so the buyer re-applies against the new subtotal. (Checkout also
+  // re-validates server-side, so this is just to keep the displayed total honest.)
+  useEffect(() => {
+    setApplied(null);
+    setCouponMsg(null);
+  }, [subtotal]);
+
+  async function applyPromo() {
+    setApplying(true);
+    setCouponMsg(null);
+    try {
+      const lines = items.map((i) => ({ productId: i.productId, qty: i.qty }));
+      const res = await previewCartCoupon(lines, code);
+      if (res.ok) {
+        setApplied({ code: res.code, discountPaise: res.discountPaise });
+        setCode(res.code);
+      } else {
+        setApplied(null);
+        setCouponMsg(res.error);
+      }
+    } catch {
+      setCouponMsg("Couldn’t check that code. Try again.");
+    } finally {
+      setApplying(false);
+    }
+  }
 
   async function checkout() {
     setError(null);
     setStatus("starting");
     try {
       const lines = items.map((i) => ({ productId: i.productId, qty: i.qty }));
-      const result = await startCartCheckout(lines, { email, contact });
+      const result = await startCartCheckout(lines, { email, contact }, applied?.code);
       if (!result.ok) {
         setError(result.error);
         setStatus("idle");
@@ -140,9 +174,49 @@ export function CartView() {
         })}
       </ul>
 
-      <div className="mt-4 flex items-center justify-between text-sm">
-        <span className="text-neutral-600">Subtotal</span>
-        <span className="font-semibold">{formatRupees(subtotal)}</span>
+      {/* Promo code */}
+      <div className="mt-4">
+        <div className="flex gap-2">
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Promo code"
+            className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm uppercase outline-none focus:border-neutral-900"
+          />
+          <button
+            type="button"
+            onClick={applyPromo}
+            disabled={applying || code.trim() === ""}
+            className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:border-neutral-900 disabled:opacity-50"
+          >
+            {applying ? "…" : "Apply"}
+          </button>
+        </div>
+        {couponMsg ? (
+          <p className="mt-1.5 text-xs text-red-600">{couponMsg}</p>
+        ) : null}
+        {applied ? (
+          <p className="mt-1.5 text-xs font-medium text-green-700">
+            Code {applied.code} applied — {formatRupees(discount)} off
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-4 space-y-1 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-neutral-600">Subtotal</span>
+          <span>{formatRupees(subtotal)}</span>
+        </div>
+        {discount > 0 ? (
+          <div className="flex items-center justify-between text-green-700">
+            <span>Discount{applied ? ` (${applied.code})` : ""}</span>
+            <span>−{formatRupees(discount)}</span>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-between border-t border-neutral-100 pt-1 font-semibold">
+          <span>Total</span>
+          <span>{formatRupees(total)}</span>
+        </div>
       </div>
 
       <div className="mt-4 space-y-2">
@@ -171,7 +245,7 @@ export function CartView() {
         disabled={status === "starting"}
         className="mt-3 w-full rounded-lg bg-neutral-900 px-4 py-2.5 font-medium text-white disabled:opacity-50"
       >
-        {status === "starting" ? "Starting…" : `Pay ${formatRupees(subtotal)}`}
+        {status === "starting" ? "Starting…" : `Pay ${formatRupees(total)}`}
       </button>
       <p className="mt-2 text-center text-xs text-neutral-400">
         Paid securely via Razorpay. Final total is confirmed at checkout.

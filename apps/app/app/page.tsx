@@ -125,6 +125,17 @@ export default async function Dashboard() {
             Manage products →
           </Link>
         </Card>
+        <Card title="Coupons">
+          <p className="text-sm text-neutral-500">
+            Create discount codes buyers apply at checkout.
+          </p>
+          <Link
+            href="/coupons"
+            className="mt-3 inline-block text-sm font-medium text-blue-600 underline"
+          >
+            Manage coupons →
+          </Link>
+        </Card>
         <Card title="AI landing pages">
           <p className="text-sm text-neutral-500">
             Let AI write and publish a landing page from a short brief.

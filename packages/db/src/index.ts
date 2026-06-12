@@ -1,6 +1,6 @@
 export { prisma } from "./client";
 export { PrismaClient, Prisma } from "@prisma/client";
-export type { ProductKind, ProductStatus } from "@prisma/client";
+export type { ProductKind, ProductStatus, DiscountType } from "@prisma/client";
 export {
   upsertProfile,
   getTenantByOwnerId,
@@ -99,6 +99,18 @@ export {
   setProductStatus,
   type CreateProductResult,
 } from "./products";
+export {
+  createCoupon,
+  listCoupons,
+  getCouponById,
+  updateCoupon,
+  setCouponActive,
+  deleteCoupon,
+  applyCoupon,
+  type CouponInput,
+  type CreateCouponResult,
+  type ApplyCouponResult,
+} from "./coupons";
 export {
   chargeAndCreateAiPage,
   createAiPage,

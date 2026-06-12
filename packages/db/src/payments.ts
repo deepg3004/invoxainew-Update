@@ -145,6 +145,9 @@ export function createBuyerPayment(input: {
   quantity?: number;
   itemTitle: string;
   amountPaise: number;
+  couponId?: string | null;
+  couponCode?: string | null;
+  discountPaise?: number;
   buyerProfileId?: string | null;
   buyerEmail?: string | null;
   buyerContact?: string | null;
@@ -157,7 +160,11 @@ export function createBuyerPayment(input: {
       productId: input.productId ?? null,
       quantity: input.quantity ?? 1,
       itemTitle: input.itemTitle,
+      // amountPaise is the POST-discount charged total (server-trusted).
       amountPaise: input.amountPaise,
+      couponId: input.couponId ?? null,
+      couponCode: input.couponCode ?? null,
+      discountPaise: input.discountPaise ?? 0,
       buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerContact: input.buyerContact ?? null,
@@ -192,6 +199,9 @@ export function createCartOrder(input: {
     unitPricePaise: number;
     quantity: number;
   }[];
+  couponId?: string | null;
+  couponCode?: string | null;
+  discountPaise?: number;
   buyerProfileId?: string | null;
   buyerEmail?: string | null;
   buyerContact?: string | null;
@@ -203,7 +213,11 @@ export function createCartOrder(input: {
       // Cart orders are multi-product, so no single productId; lines carry it.
       productId: null,
       itemTitle: input.itemTitle,
+      // POST-discount charged total; the lines carry the pre-discount unit prices.
       amountPaise: input.amountPaise,
+      couponId: input.couponId ?? null,
+      couponCode: input.couponCode ?? null,
+      discountPaise: input.discountPaise ?? 0,
       buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerContact: input.buyerContact ?? null,
@@ -469,6 +483,25 @@ export async function markBuyerPaymentPaid(input: {
       await tx.product.updateMany({
         where: { id: productId, stockQty: { lt: 0 } },
         data: { stockQty: 0 },
+      });
+    }
+
+    // Count the coupon redemption — claim-winner only, so a replayed webhook
+    // can't double-count. Conditional on the cap so we never push redeemedCount
+    // past maxRedemptions; if the cap was just reached by a concurrent order,
+    // this buyer's already-honored discount simply isn't counted (accepted
+    // over-redemption window, same as stock). Discount is baked into amountPaise,
+    // so commission below is already on the discounted total.
+    if (payment.couponId) {
+      await tx.coupon.updateMany({
+        where: {
+          id: payment.couponId,
+          OR: [
+            { maxRedemptions: null },
+            { redeemedCount: { lt: prisma.coupon.fields.maxRedemptions } },
+          ],
+        },
+        data: { redeemedCount: { increment: 1 } },
       });
     }
 
