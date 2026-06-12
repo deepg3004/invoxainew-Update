@@ -21,7 +21,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
-  if (!tenant) return {};
+  if (!tenant || tenant.suspendedAt) return {};
   const { slug } = await params;
   const page = await getActivePaymentPage(tenant.id, slug);
   if (!page) return {};

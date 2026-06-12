@@ -50,16 +50,6 @@ export async function startCourseCheckout(
   }
 
   const user = await getSessionUser();
-  // If the buyer is signed in and already enrolled, don't let them pay twice.
-  if (user) {
-    const existing = await getEnrolment({
-      tenantId: tenant.id,
-      courseId: course.id,
-      profileId: user.id,
-      email: user.email ?? null,
-    });
-    if (existing) return { ok: false, error: "You already have access to this course." };
-  }
 
   // Access is granted by an Enrolment attributed by profileId (signed in) OR
   // email. A guest who pays with no email could never be matched to their
@@ -69,6 +59,19 @@ export async function startCourseCheckout(
   if (!user && !buyerEmail) {
     return { ok: false, error: "Enter your email so you can access the course after paying." };
   }
+
+  // Don't let the same buyer pay for a course they already own — checked by
+  // profileId AND email, so a GUEST re-purchase (by email) is blocked too, not
+  // just the signed-in case. (NO_MATCH stands in for "no profile" so the email
+  // branch still does the lookup.) A concurrent double-buy can still slip
+  // through — accepted, like the stock/coupon over-redemption windows.
+  const existing = await getEnrolment({
+    tenantId: tenant.id,
+    courseId: course.id,
+    profileId: user?.id ?? "00000000-0000-0000-0000-000000000000",
+    email: buyerEmail,
+  });
+  if (existing) return { ok: false, error: "You already have access to this course." };
 
   const creds = await getGatewayCredentials(tenant.id);
   if (!creds) {

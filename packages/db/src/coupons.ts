@@ -190,5 +190,16 @@ export async function applyCoupon(
   const maxDiscount = Math.max(0, subtotalPaise - MIN_CHARGE_PAISE);
   const discountPaise = Math.max(0, Math.min(raw, maxDiscount));
 
+  // If the clamp left nothing (cart at/under the ₹1 floor), the coupon does
+  // nothing here — don't "apply" it (which would attach + burn a limited
+  // redemption for zero benefit).
+  if (discountPaise <= 0) {
+    return {
+      ok: false,
+      reason: "min_subtotal",
+      minSubtotalPaise: coupon.minSubtotalPaise ?? undefined,
+    };
+  }
+
   return { ok: true, couponId: coupon.id, code: coupon.code, discountPaise };
 }
