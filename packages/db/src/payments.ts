@@ -510,6 +510,18 @@ export function updateOrderFulfillment(
   });
 }
 
+/** Quick status-only advance (keeps the tracking note intact). Seller-scoped. */
+export function setOrderFulfillmentStatus(
+  tenantId: string,
+  id: string,
+  status: "NEW" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED",
+) {
+  return prisma.buyerPayment.updateMany({
+    where: { id, tenantId },
+    data: { fulfillmentStatus: status },
+  });
+}
+
 export type BuyerPaidResult =
   | { ok: true; alreadyProcessed: boolean; commission: "paid" | "due" | "none" }
   | { ok: false; reason: "not_found" };

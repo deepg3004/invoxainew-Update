@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   updateOrderFulfillment,
+  setOrderFulfillmentStatus,
   getRefundableOrder,
   recordRefund,
 } from "@invoxai/db";
@@ -29,6 +30,18 @@ export async function updateOrderFulfillmentAction(id: string, form: FormData) {
   const note = String(form.get("note") ?? "").trim() || null;
 
   await updateOrderFulfillment(tenant.id, id, status, note);
+  revalidatePath("/orders");
+}
+
+/**
+ * One-tap advance to the next fulfillment status (status-only, keeps the note).
+ * The target is validated against the allowed statuses; the DB write is tenant-
+ * scoped, so a forged id/target can't touch another seller's order.
+ */
+export async function advanceOrderAction(id: string, next: string) {
+  const { tenant } = await requireTenant();
+  if (!(STATUSES as readonly string[]).includes(next)) return;
+  await setOrderFulfillmentStatus(tenant.id, id, next as Status);
   revalidatePath("/orders");
 }
 

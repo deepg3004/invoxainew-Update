@@ -3,12 +3,20 @@ import { GlassCard } from "@invoxai/ui";
 import { listTenantOrders, getTenantSalesSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
-import { updateOrderFulfillmentAction } from "./actions";
+import { updateOrderFulfillmentAction, advanceOrderAction } from "./actions";
 import { RefundForm } from "./RefundForm";
 
 export const dynamic = "force-dynamic";
 
 const STATUSES = ["NEW", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
+
+// Forward fulfillment flow for the one-tap "advance" button.
+const FLOW = ["NEW", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
+function nextStatus(s: string): string | null {
+  const i = (FLOW as readonly string[]).indexOf(s);
+  return i >= 0 && i < FLOW.length - 1 ? (FLOW[i + 1] as string) : null;
+}
+const titleCase = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
 function tabCls(active: boolean): string {
   return `rounded-full px-3 py-1 text-xs font-medium ${
@@ -139,31 +147,46 @@ export default async function OrdersPage({
                     </div>
                   ) : null}
                 </div>
-                <form
-                  action={updateOrderFulfillmentAction.bind(null, o.id)}
-                  className="flex flex-wrap items-center gap-2"
-                >
-                  <select
-                    name="status"
-                    defaultValue={o.fulfillmentStatus}
-                    className="rounded-lg border border-white/10 px-2 py-1.5 text-sm"
+                <div className="flex flex-col items-end gap-2">
+                  {nextStatus(o.fulfillmentStatus) ? (
+                    <form
+                      action={advanceOrderAction.bind(
+                        null,
+                        o.id,
+                        nextStatus(o.fulfillmentStatus)!,
+                      )}
+                    >
+                      <button className="whitespace-nowrap rounded-lg bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white shadow-glow">
+                        Mark {titleCase(nextStatus(o.fulfillmentStatus)!)} →
+                      </button>
+                    </form>
+                  ) : null}
+                  <form
+                    action={updateOrderFulfillmentAction.bind(null, o.id)}
+                    className="flex flex-wrap items-center gap-2"
                   >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>
-                        {s.charAt(0) + s.slice(1).toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    name="note"
-                    defaultValue={o.trackingNote ?? ""}
-                    placeholder="Tracking / note"
-                    className="w-44 rounded-lg border border-white/10 px-2 py-1.5 text-sm outline-none focus:border-brand"
-                  />
-                  <button className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white">
-                    Save
-                  </button>
-                </form>
+                    <select
+                      name="status"
+                      defaultValue={o.fulfillmentStatus}
+                      className="rounded-lg border border-white/10 px-2 py-1.5 text-sm"
+                    >
+                      {STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {titleCase(s)}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      name="note"
+                      defaultValue={o.trackingNote ?? ""}
+                      placeholder="Tracking / note"
+                      className="w-44 rounded-lg border border-white/10 px-2 py-1.5 text-sm outline-none focus:border-brand"
+                    />
+                    <button className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white">
+                      Save
+                    </button>
+                  </form>
+                </div>
               </div>
               {o.razorpayPaymentId && o.refundedPaise < o.amountPaise ? (
                 <div className="mt-3 border-t border-neutral-100 pt-3">

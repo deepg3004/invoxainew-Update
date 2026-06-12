@@ -72,6 +72,7 @@ export {
   listSoldOutProductsForOrder,
   getTenantSalesSummary,
   updateOrderFulfillment,
+  setOrderFulfillmentStatus,
   getRefundableOrder,
   recordRefund,
   type CreatePageResult,
