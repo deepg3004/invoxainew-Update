@@ -6,7 +6,9 @@ import {
   getWalletStatus,
   getOnboardingStatus,
   countUnreadNotifications,
+  getTenantSalesSummary,
 } from "@invoxai/db";
+import { formatRupees } from "@invoxai/utils/money";
 import { getSessionUser } from "../lib/auth";
 import { LowBalanceBanner } from "./components/LowBalanceBanner";
 import { OnboardingChecklist } from "./components/OnboardingChecklist";
@@ -28,10 +30,11 @@ export default async function Dashboard() {
   if (!tenant) redirect("/onboarding");
 
   const siteUrl = publicSiteUrl(tenant.username);
-  const [wallet, onboarding, unread] = await Promise.all([
+  const [wallet, onboarding, unread, sales] = await Promise.all([
     getWalletStatus(tenant.id),
     getOnboardingStatus(tenant.id),
     countUnreadNotifications(tenant.id),
+    getTenantSalesSummary(tenant.id),
   ]);
 
   return (
@@ -73,6 +76,33 @@ export default async function Dashboard() {
         />
         <OnboardingChecklist status={onboarding} />
       </div>
+
+      {sales.orderCount > 0 ? (
+        <Link href="/orders" className="mt-6 block">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-neutral-200 bg-white p-3">
+              <div className="text-xs uppercase tracking-wide text-neutral-400">Orders</div>
+              <div className="mt-1 text-xl font-bold">{sales.orderCount}</div>
+            </div>
+            <div className="rounded-xl border border-neutral-200 bg-white p-3">
+              <div className="text-xs uppercase tracking-wide text-neutral-400">Sales</div>
+              <div className="mt-1 text-xl font-bold">{formatRupees(sales.grossPaise)}</div>
+            </div>
+            <div className="rounded-xl border border-neutral-200 bg-white p-3">
+              <div className="text-xs uppercase tracking-wide text-neutral-400">
+                Commission due
+              </div>
+              <div
+                className={`mt-1 text-xl font-bold ${
+                  sales.commissionDuePaise > 0 ? "text-amber-600" : "text-neutral-900"
+                }`}
+              >
+                {formatRupees(sales.commissionDuePaise)}
+              </div>
+            </div>
+          </div>
+        </Link>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card title="Your address is live">
