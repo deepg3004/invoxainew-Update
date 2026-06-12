@@ -9,6 +9,8 @@ import {
   createAiPage,
   setAiPageChargeRef,
   updateAiPageContent,
+  recordAiPageVersion,
+  getAiPageVersion,
   setAiPagePublished,
   deleteAiPage,
 } from "@invoxai/db";
@@ -116,15 +118,36 @@ export async function saveAiPageAction(
   if (safe.blocks.length === 0) {
     return { ok: false, error: "Add at least one block before saving." };
   }
-  const res = await updateAiPageContent(
-    tenant.id,
-    id,
-    safe.title,
-    JSON.parse(JSON.stringify(safe)),
-  );
+  const snapshot = JSON.parse(JSON.stringify(safe));
+  const res = await updateAiPageContent(tenant.id, id, safe.title, snapshot);
   if (res.count === 0) return { ok: false, error: "Page not found." };
+  // Snapshot into version history (best-effort — never block the save).
+  await recordAiPageVersion(tenant.id, id, snapshot).catch(() => {});
   revalidatePath("/ai-pages");
   return { ok: true };
+}
+
+/**
+ * Restore a previous version of a page (AI builder history). Non-destructive:
+ * the version's content is re-sanitized and written back, and the restore is
+ * itself snapshotted, so the pre-restore state stays in history. Tenant-scoped.
+ */
+export async function restoreAiPageVersionAction(
+  pageId: string,
+  versionId: string,
+  _formData?: FormData,
+): Promise<void> {
+  const { tenant } = await requireTenant();
+  const version = await getAiPageVersion(tenant.id, pageId, versionId);
+  if (!version) return;
+  const safe = normalizeToBlocks(version.content);
+  if (safe.blocks.length === 0) return;
+  const snapshot = JSON.parse(JSON.stringify(safe));
+  const res = await updateAiPageContent(tenant.id, pageId, safe.title, snapshot);
+  if (res.count === 0) return;
+  await recordAiPageVersion(tenant.id, pageId, snapshot).catch(() => {});
+  revalidatePath(`/ai-pages/${pageId}/edit`);
+  redirect(`/ai-pages/${pageId}/edit`);
 }
 
 /**

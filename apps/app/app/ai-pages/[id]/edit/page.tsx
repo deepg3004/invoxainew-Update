@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { getAiPageForOwner } from "@invoxai/db";
+import { getAiPageForOwner, listAiPageVersions } from "@invoxai/db";
 import { normalizeToBlocks } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../../../lib/tenant";
 import { PageEditor } from "./PageEditor";
+import { VersionHistory } from "./VersionHistory";
 
 export const dynamic = "force-dynamic";
 
@@ -24,15 +25,22 @@ export default async function EditAiPage({
 
   const content = normalizeToBlocks(page.content);
   const liveUrl = `${buyerBase(tenant.username)}/${page.slug}`;
+  const versions = await listAiPageVersions(tenant.id, page.id);
 
   return (
-    <PageEditor
-      pageId={page.id}
-      slug={page.slug}
-      liveUrl={liveUrl}
-      initialTitle={content.title}
-      initialBlocks={content.blocks}
-      initialTheme={content.theme}
-    />
+    <>
+      {/* key by updatedAt so a Restore (which redirects back) remounts the editor
+          with the restored content instead of keeping stale local state. */}
+      <PageEditor
+        key={page.updatedAt.getTime()}
+        pageId={page.id}
+        slug={page.slug}
+        liveUrl={liveUrl}
+        initialTitle={content.title}
+        initialBlocks={content.blocks}
+        initialTheme={content.theme}
+      />
+      <VersionHistory pageId={page.id} versions={versions} />
+    </>
   );
 }

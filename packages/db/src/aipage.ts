@@ -174,3 +174,41 @@ export function setAiPagePublished(tenantId: string, id: string, isPublished: bo
 export function deleteAiPage(tenantId: string, id: string) {
   return prisma.aiPage.deleteMany({ where: { id, tenantId } });
 }
+
+const KEEP_VERSIONS = 20;
+
+/** Snapshot a page's content into version history, then prune to the latest 20.
+ *  Best-effort — callers ignore failures so history never blocks a save. */
+export async function recordAiPageVersion(
+  tenantId: string,
+  aiPageId: string,
+  content: Prisma.InputJsonValue,
+) {
+  await prisma.aiPageVersion.create({ data: { aiPageId, tenantId, content } });
+  const stale = await prisma.aiPageVersion.findMany({
+    where: { aiPageId, tenantId },
+    orderBy: { createdAt: "desc" },
+    skip: KEEP_VERSIONS,
+    select: { id: true },
+  });
+  if (stale.length) {
+    await prisma.aiPageVersion.deleteMany({ where: { id: { in: stale.map((s) => s.id) } } });
+  }
+}
+
+/** A page's version snapshots, newest first. Scoped by tenant + page. */
+export function listAiPageVersions(tenantId: string, aiPageId: string, take = KEEP_VERSIONS) {
+  return prisma.aiPageVersion.findMany({
+    where: { aiPageId, tenantId },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { id: true, createdAt: true },
+  });
+}
+
+/** One version's full content, scoped by tenant + page (for restore). */
+export function getAiPageVersion(tenantId: string, aiPageId: string, versionId: string) {
+  return prisma.aiPageVersion.findFirst({
+    where: { id: versionId, aiPageId, tenantId },
+  });
+}

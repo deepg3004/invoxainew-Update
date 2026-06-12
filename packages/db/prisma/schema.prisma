@@ -850,9 +850,27 @@ model AiPage {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  versions    AiPageVersion[]
+
   @@unique([tenantId, slug])
   @@index([tenantId])
   @@map("ai_pages")
+}
+
+/// A snapshot of an AI page's content on each save (AI builder version history).
+/// Keeps the latest ~20 per page (pruned app-side). Restore copies a snapshot
+/// back onto the page (itself snapshotted, so restore is non-destructive).
+/// deny-anon RLS; tenant-scoped reads/writes via the seller editor.
+model AiPageVersion {
+  id        String   @id @default(uuid()) @db.Uuid
+  aiPageId  String   @map("ai_page_id") @db.Uuid
+  aiPage    AiPage   @relation(fields: [aiPageId], references: [id], onDelete: Cascade)
+  tenantId  String   @map("tenant_id") @db.Uuid
+  content   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([aiPageId, createdAt])
+  @@map("ai_page_versions")
 }
 
 /// A GST tax invoice for a charge a seller paid InvoxAI (Phase 1.3). One per
