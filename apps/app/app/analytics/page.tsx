@@ -111,6 +111,44 @@ export default async function AnalyticsPage({
                 </li>
               ))}
             </ul>
+
+            {traffic.topReferrers.length > 0 || traffic.topCampaigns.length > 0 ? (
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">Top referrers</h3>
+                  {traffic.topReferrers.length === 0 ? (
+                    <p className="mt-2 text-sm text-muted">All direct so far.</p>
+                  ) : (
+                    <ul className="mt-2 divide-y divide-zinc-100">
+                      {traffic.topReferrers.map((r) => (
+                        <li key={r.source} className="flex items-center justify-between gap-3 py-2 text-sm">
+                          <span className="min-w-0 truncate text-zinc-700">{r.source}</span>
+                          <span className="shrink-0 text-muted">{r.views}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">Top campaigns</h3>
+                  {traffic.topCampaigns.length === 0 ? (
+                    <p className="mt-2 text-sm text-muted">
+                      Tag links with{" "}
+                      <a href="/utm" className="text-brand-strong underline">UTM</a> to track campaigns.
+                    </p>
+                  ) : (
+                    <ul className="mt-2 divide-y divide-zinc-100">
+                      {traffic.topCampaigns.map((c) => (
+                        <li key={c.source} className="flex items-center justify-between gap-3 py-2 text-sm">
+                          <span className="min-w-0 truncate text-zinc-700">{c.source}</span>
+                          <span className="shrink-0 text-muted">{c.views}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </>
         )}
       </GlassCard>

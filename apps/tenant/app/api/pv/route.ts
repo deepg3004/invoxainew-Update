@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     if (!tenant) return new NextResponse(null, { status: 204 });
 
     const body = (await req.json().catch(() => null)) as
-      | { path?: unknown; sid?: unknown; source?: unknown }
+      | { path?: unknown; sid?: unknown; source?: unknown; ref?: unknown }
       | null;
     const path = typeof body?.path === "string" ? body.path.slice(0, 512) : "";
     if (!path || !path.startsWith("/")) return new NextResponse(null, { status: 204 });
@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
 
     const sessionId = typeof body?.sid === "string" ? body.sid.slice(0, 64) : null;
     const source = typeof body?.source === "string" ? body.source.slice(0, 120) : null;
-    const referrer = (req.headers.get("referer") ?? "").slice(0, 512) || null;
+    // The external referrer the client computed (same-host already filtered out).
+    const referrer = typeof body?.ref === "string" ? body.ref.slice(0, 512) || null : null;
 
     await recordPageView({ tenantId: tenant.id, path, sessionId, source, referrer });
   } catch {

@@ -138,6 +138,17 @@ export interface TrafficResult {
   sessions: number;
   daily: { date: string; views: number }[];
   topPaths: { path: string; views: number }[];
+  topReferrers: { source: string; views: number }[];
+  topCampaigns: { source: string; views: number }[];
+}
+
+/** Hostname of a referrer URL (www-stripped), or null if unparseable. */
+function referrerHost(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -157,29 +168,40 @@ export async function getTrafficAnalytics(tenantId: string, days = 30): Promise<
 
   const rows = await prisma.pageView.findMany({
     where: { tenantId, createdAt: { gte: cutoff } },
-    select: { path: true, sessionId: true, createdAt: true },
+    select: { path: true, sessionId: true, referrer: true, source: true, createdAt: true },
     take: 100_000,
   });
 
   const byDay = new Map(dayKeys.map((k) => [k, 0]));
   const byPath = new Map<string, number>();
+  const byRef = new Map<string, number>();
+  const byCampaign = new Map<string, number>();
   const sessions = new Set<string>();
   for (const r of rows) {
     const k = istKey(r.createdAt);
     if (byDay.has(k)) byDay.set(k, byDay.get(k)! + 1);
     byPath.set(r.path, (byPath.get(r.path) ?? 0) + 1);
     if (r.sessionId) sessions.add(r.sessionId);
+    const host = r.referrer ? referrerHost(r.referrer) : null;
+    if (host) byRef.set(host, (byRef.get(host) ?? 0) + 1);
+    if (r.source) byCampaign.set(r.source, (byCampaign.get(r.source) ?? 0) + 1);
   }
-  const topPaths = [...byPath.entries()]
-    .map(([path, views]) => ({ path, views }))
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 10);
+  const top = (m: Map<string, number>, n: number) =>
+    [...m.entries()]
+      .map(([source, views]) => ({ source, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, n);
 
   return {
     days,
     views: rows.length,
     sessions: sessions.size,
     daily: dayKeys.map((k) => ({ date: k, views: byDay.get(k)! })),
-    topPaths,
+    topPaths: [...byPath.entries()]
+      .map(([path, views]) => ({ path, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10),
+    topReferrers: top(byRef, 8),
+    topCampaigns: top(byCampaign, 8),
   };
 }

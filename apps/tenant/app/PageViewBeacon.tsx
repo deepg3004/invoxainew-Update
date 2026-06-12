@@ -3,8 +3,6 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-const KEYS = ["source", "medium", "campaign", "content", "term"] as const;
-
 function sessionId(): string {
   const m = document.cookie.match(/(?:^|; )invox_sid=([^;]+)/);
   if (m) return decodeURIComponent(m[1]!);
@@ -27,16 +25,23 @@ export function PageViewBeacon() {
   useEffect(() => {
     if (!pathname || pathname.startsWith("/account") || pathname.startsWith("/api")) return;
     try {
-      let source: string | undefined;
       const params = new URLSearchParams(window.location.search);
-      for (const k of KEYS) {
-        if (k === "source" && params.get("utm_source")) source = params.get("utm_source")!.slice(0, 120);
+      const source = params.get("utm_source")?.slice(0, 120) || undefined;
+      // The REAL external referrer (the site that linked here) — not our own
+      // pages. document.referrer is empty on direct visits; same-host referrers
+      // (internal navigation) are dropped so only external sources are counted.
+      let ref: string | undefined;
+      try {
+        const r = document.referrer;
+        if (r && new URL(r).host !== window.location.host) ref = r.slice(0, 512);
+      } catch {
+        // ignore malformed referrer
       }
       void fetch("/api/pv", {
         method: "POST",
         keepalive: true,
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ path: pathname, sid: sessionId(), source }),
+        body: JSON.stringify({ path: pathname, sid: sessionId(), source, ref }),
       }).catch(() => {});
     } catch {
       // ignore
