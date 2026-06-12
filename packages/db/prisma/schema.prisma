@@ -78,6 +78,8 @@ model Tenant {
   // Courses / LMS (Final Plan §10): the seller's courses + buyer enrolments.
   courses      Course[]
   enrolments   Enrolment[]
+  // Notifications (Final Plan §28): the seller's in-app notifications.
+  notifications Notification[]
 }
 
 /// Per-tenant ads/analytics tracking IDs (Final Plan §21). Injected on the
@@ -806,6 +808,29 @@ model Refund {
 
   @@index([tenantId, createdAt])
   @@map("refunds")
+}
+
+/// A seller-facing in-app notification (Notifications engine, slice 1). Created
+/// as a best-effort side effect of events (a sale, a low wallet) AFTER the money
+/// path commits — never inside a payment transaction, and only once per event
+/// (the caller fires it only on a newly-PAID order, not on webhook replays).
+/// `link` is a relative path in the seller app (e.g. "/orders"). `readAt` set
+/// when the seller has seen it. Tenant-scoped; RLS: deny-anon lockdown. Email +
+/// buyer notifications come in a later slice.
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type      String // e.g. "sale", "wallet_low"
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, readAt])
+  @@map("notifications")
 }
 
 /// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`

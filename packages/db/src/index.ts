@@ -89,6 +89,13 @@ export {
   upsertTenantTracking,
 } from "./tracking";
 export {
+  notifyTenant,
+  listNotifications,
+  countUnreadNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "./notifications";
+export {
   createProduct,
   listProducts,
   getProductById,

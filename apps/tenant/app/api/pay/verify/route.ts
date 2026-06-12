@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   getBuyerPaymentByOrderId,
   markBuyerPaymentPaid,
+  notifyTenant,
 } from "@invoxai/db";
+import { formatRupees } from "@invoxai/utils/money";
 import { getGatewayCredentials } from "../../../../lib/gateway";
 import { verifyPaymentSignatureWithKeys } from "../../../../lib/razorpay";
 
@@ -51,6 +53,29 @@ export async function POST(request: NextRequest) {
   });
   if (!result.ok) {
     return NextResponse.json({ ok: false, error: result.reason }, { status: 409 });
+  }
+
+  // Best-effort seller notifications — only on a NEWLY-paid order (so a refreshed
+  // callback can't duplicate them), and never allowed to fail the confirmation.
+  if (!result.alreadyProcessed) {
+    try {
+      await notifyTenant(payment.tenantId, {
+        type: "sale",
+        title: "New sale",
+        body: `${payment.itemTitle ?? "Order"} — ${formatRupees(payment.amountPaise)}`,
+        link: "/orders",
+      });
+      if (result.commission === "due") {
+        await notifyTenant(payment.tenantId, {
+          type: "wallet_low",
+          title: "Wallet low — commission due",
+          body: "A sale's commission couldn't be collected. Top up your wallet to clear it.",
+          link: "/wallet",
+        });
+      }
+    } catch {
+      // Swallow: a notification failure must not affect the payment outcome.
+    }
   }
 
   return NextResponse.json({ ok: true });

@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card } from "@invoxai/ui";
-import { getTenantByOwnerId, getWalletStatus, getOnboardingStatus } from "@invoxai/db";
+import {
+  getTenantByOwnerId,
+  getWalletStatus,
+  getOnboardingStatus,
+  countUnreadNotifications,
+} from "@invoxai/db";
 import { getSessionUser } from "../lib/auth";
 import { LowBalanceBanner } from "./components/LowBalanceBanner";
 import { OnboardingChecklist } from "./components/OnboardingChecklist";
@@ -23,9 +28,10 @@ export default async function Dashboard() {
   if (!tenant) redirect("/onboarding");
 
   const siteUrl = publicSiteUrl(tenant.username);
-  const [wallet, onboarding] = await Promise.all([
+  const [wallet, onboarding, unread] = await Promise.all([
     getWalletStatus(tenant.id),
     getOnboardingStatus(tenant.id),
+    countUnreadNotifications(tenant.id),
   ]);
 
   return (
@@ -40,11 +46,24 @@ export default async function Dashboard() {
           </h1>
           <p className="mt-1 text-neutral-500">Signed in as {user.email}</p>
         </div>
-        <form action="/auth/signout" method="post">
-          <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/notifications"
+            className="relative rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50"
+          >
+            Notifications
+            {unread > 0 ? (
+              <span className="ml-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">
+                {unread}
+              </span>
+            ) : null}
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className="mt-8">
