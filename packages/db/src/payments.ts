@@ -544,15 +544,27 @@ export async function markBuyerPaymentPaid(input: {
     // only (so a replay can't double-grant); buyerPaymentId is unique as a second
     // guard. Attribution mirrors the order (profileId when logged in, else email),
     // so a guest purchase unlocks access once they sign in with the same email.
+    //
+    // createMany(skipDuplicates) → INSERT … ON CONFLICT DO NOTHING: a concurrent
+    // second purchase of the SAME course by the SAME buyer (which races past the
+    // app-level getEnrolment check) hits the (course, profile)/(course, email)
+    // partial unique indexes and is skipped — the buyer keeps a single enrolment,
+    // and crucially this does NOT throw, so it can't abort/poison the payment
+    // transaction (a plain create() would raise P2002 here and roll back the PAID
+    // claim + commission). The double charge itself is gateway-side and out of
+    // scope; the seller can refund the extra payment.
     if (payment.courseId) {
-      await tx.enrolment.create({
-        data: {
-          tenantId: payment.tenantId,
-          courseId: payment.courseId,
-          buyerProfileId: payment.buyerProfileId,
-          buyerEmail: payment.buyerEmail,
-          buyerPaymentId: payment.id,
-        },
+      await tx.enrolment.createMany({
+        data: [
+          {
+            tenantId: payment.tenantId,
+            courseId: payment.courseId,
+            buyerProfileId: payment.buyerProfileId,
+            buyerEmail: payment.buyerEmail,
+            buyerPaymentId: payment.id,
+          },
+        ],
+        skipDuplicates: true,
       });
     }
 
