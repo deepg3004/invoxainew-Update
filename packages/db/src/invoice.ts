@@ -74,16 +74,26 @@ async function issueOne(
 }
 
 /**
- * Ensure a tax invoice exists for every PAID subscription order of the tenant
- * (lazy issuance — called when the seller opens their invoices). Returns the
- * count newly issued.
+ * Ensure a tax invoice exists for every PAID platform order of the tenant —
+ * both SUBSCRIPTION and WALLET_TOPUP (lazy issuance, called when the seller opens
+ * their invoices). Returns the count newly issued.
+ *
+ * Both are seller→InvoxAI payments via the platform gateway, so both are treated
+ * identically: a tax-inclusive GST invoice in the shared INV-<FY> series, issued
+ * in paidAt order so numbering is chronological. Idempotent on (refType, refId).
+ *
+ * TAX-TREATMENT NOTE (CA to confirm): a wallet recharge is invoiced HERE, at
+ * recharge ("tax at collection"). The fee debits it funds (commission, AI pages)
+ * must therefore NOT be GST-invoiced again when usage-side invoicing is built,
+ * or that would double-count GST. The alternative (receipt at recharge + tax
+ * invoice per fee debit) is also valid — pick one with the CA.
  */
-export async function issueSubscriptionInvoices(
+export async function issuePlatformInvoices(
   tenantId: string,
   gstRateBps: number,
 ): Promise<number> {
   const orders = await prisma.platformOrder.findMany({
-    where: { tenantId, purpose: "SUBSCRIPTION", status: "PAID" },
+    where: { tenantId, purpose: { in: ["SUBSCRIPTION", "WALLET_TOPUP"] }, status: "PAID" },
     orderBy: { paidAt: "asc" },
     include: { plan: { select: { name: true } } },
   });
@@ -98,13 +108,16 @@ export async function issueSubscriptionInvoices(
   let issued = 0;
   for (const o of orders) {
     if (existing.has(o.id)) continue;
+    const isTopup = o.purpose === "WALLET_TOPUP";
     await issueOne(
       tenantId,
       {
-        kind: "SUBSCRIPTION",
+        kind: isTopup ? "WALLET_TOPUP" : "SUBSCRIPTION",
         refType: "platform_order",
         refId: o.id,
-        descriptionLine: `${o.plan?.name ?? "Plan"} subscription (${(o.billingCycle ?? "MONTHLY").toLowerCase()})`,
+        descriptionLine: isTopup
+          ? "Wallet recharge"
+          : `${o.plan?.name ?? "Plan"} subscription (${(o.billingCycle ?? "MONTHLY").toLowerCase()})`,
         totalPaise: o.amountPaise,
       },
       gstRateBps,

@@ -89,7 +89,7 @@ export {
   getBuyerOrder,
 } from "./buyer";
 export {
-  issueSubscriptionInvoices,
+  issuePlatformInvoices,
   listInvoices,
   getInvoice,
 } from "./invoice";

@@ -1,7 +1,7 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { serverEnv } from "@invoxai/config";
-import { issueSubscriptionInvoices, listInvoices } from "@invoxai/db";
+import { issuePlatformInvoices, listInvoices } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../lib/tenant";
@@ -16,8 +16,9 @@ export default async function InvoicesPage() {
   const { tenant } = await requireTenant();
   const env = serverEnv();
 
-  // Lazily issue any missing subscription invoices, then list.
-  await issueSubscriptionInvoices(tenant.id, env.INVOICE_GST_RATE_BPS);
+  // Lazily issue any missing platform invoices (subscriptions + wallet recharges),
+  // then list.
+  await issuePlatformInvoices(tenant.id, env.INVOICE_GST_RATE_BPS);
   const invoices = await listInvoices(tenant.id);
 
   return (
@@ -25,7 +26,7 @@ export default async function InvoicesPage() {
       <PageHeader
         eyebrow="InvoxAI · invoices"
         title="Tax invoices"
-        description="Invoices for what you’ve paid InvoxAI (subscriptions). AI-page and commission invoices will appear here as they roll out."
+        description="Invoices for what you’ve paid InvoxAI — subscriptions and wallet recharges. AI-page and commission invoices will appear here as they roll out."
         actions={
           <Button href="/invoices/export" variant="secondary" size="sm">
             Export CSV
