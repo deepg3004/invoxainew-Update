@@ -64,13 +64,13 @@ export function OnboardingForm() {
         <input
           name="name"
           placeholder="Deep's Store"
-          className="mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
+          className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
         />
       </div>
 
       <div>
         <label className="text-sm font-medium">Choose your username</label>
-        <div className="mt-1 flex items-center rounded-lg border border-white/10 focus-within:border-neutral-900">
+        <div className="mt-1 flex items-center rounded-lg border border-zinc-300 bg-white focus-within:border-brand">
           <input
             name="username"
             required
@@ -78,7 +78,7 @@ export function OnboardingForm() {
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase())}
             placeholder="deep"
-            className="w-full rounded-l-lg px-3 py-2 outline-none"
+            className="w-full rounded-l-lg bg-transparent px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none"
           />
           <span className="px-3 text-sm text-muted">.{ROOT}</span>
         </div>

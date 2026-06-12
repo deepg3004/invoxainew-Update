@@ -74,9 +74,9 @@ export default async function ReportsPage() {
       {attention.length === 0 ? (
         <p className="mt-2 text-sm text-green-700">All sellers healthy ✓</p>
       ) : (
-        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
+        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-white/10 text-muted">
+            <thead className="border-b border-zinc-200 text-muted">
               <tr>
                 <th className="px-4 py-2 font-medium">Tenant</th>
                 <th className="px-4 py-2 font-medium text-right">Wallet</th>
@@ -85,7 +85,7 @@ export default async function ReportsPage() {
             </thead>
             <tbody>
               {attention.map((a) => (
-                <tr key={a.id} className="border-b border-white/10 last:border-0">
+                <tr key={a.id} className="border-b border-zinc-200 last:border-0">
                   <td className="px-4 py-2">
                     <Link href={`/tenants/${a.id}`} className="text-cyan underline">
                       {a.username}
@@ -110,11 +110,11 @@ export default async function ReportsPage() {
       {events.length === 0 ? (
         <p className="mt-2 text-sm text-muted">No events yet.</p>
       ) : (
-        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
+        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
           <table className="w-full text-left text-sm">
             <tbody>
               {events.map((e) => (
-                <tr key={e.id} className="border-b border-white/10 last:border-0">
+                <tr key={e.id} className="border-b border-zinc-200 last:border-0">
                   <td className="px-4 py-2 text-muted">{fmtDateTime(e.createdAt)}</td>
                   <td className="px-4 py-2 font-medium">{e.type}</td>
                   <td className="px-4 py-2">

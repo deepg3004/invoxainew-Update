@@ -75,20 +75,20 @@ export default async function CouponsPage() {
                 ? `${c.redeemedCount} used`
                 : `${c.redeemedCount} / ${c.maxRedemptions} used`;
             return (
-              <div key={c.id} className="rounded-xl border border-white/10 bg-surface p-4">
+              <div key={c.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-white">{c.code}</span>
+                      <span className="font-mono font-semibold text-zinc-900">{c.code}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          c.isActive ? "bg-green-50 text-green-700" : "bg-white/10 text-muted"
+                          c.isActive ? "bg-green-50 text-green-700" : "bg-zinc-100 text-muted"
                         }`}
                       >
                         {c.isActive ? "Active" : "Inactive"}
                       </span>
                     </div>
-                    <span className="mt-1 block text-sm text-neutral-200">
+                    <span className="mt-1 block text-sm text-zinc-700">
                       {discountLabel(c.type, c.value)}
                       {c.minSubtotalPaise != null
                         ? ` · min ${formatRupees(c.minSubtotalPaise)}`
@@ -106,13 +106,13 @@ export default async function CouponsPage() {
                       </Link>
                       {c.isActive ? (
                         <form action={setCouponActiveAction.bind(null, c.id, false)}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Deactivate
                           </button>
                         </form>
                       ) : (
                         <form action={setCouponActiveAction.bind(null, c.id, true)}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Activate
                           </button>
                         </form>

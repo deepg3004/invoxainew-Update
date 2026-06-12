@@ -16,7 +16,7 @@ export default function AdminError({
 
   return (
     <main className="mx-auto max-w-md px-6 py-24 text-center">
-      <h1 className="text-2xl font-bold text-white">Something went wrong</h1>
+      <h1 className="text-2xl font-bold text-zinc-900">Something went wrong</h1>
       <p className="mt-2 text-muted">Please try again in a moment.</p>
       <button
         onClick={reset}

@@ -11,11 +11,11 @@ export const dynamic = "force-dynamic";
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-surface p-4">
+    <div className="rounded-xl border border-zinc-200 bg-surface p-4">
       <div className="text-xs font-medium uppercase tracking-wide text-muted">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-white">{value}</div>
+      <div className="mt-1 text-2xl font-bold text-zinc-900">{value}</div>
       {hint ? <div className="mt-0.5 text-xs text-muted">{hint}</div> : null}
     </div>
   );

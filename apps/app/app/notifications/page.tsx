@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
         </div>
         {unread > 0 ? (
           <form action={markAllReadAction}>
-            <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5">
+            <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-50">
               Mark all read ({unread})
             </button>
           </form>
@@ -38,7 +38,7 @@ export default async function NotificationsPage() {
       {items.length === 0 ? (
         <p className="mt-8 text-muted">No notifications yet.</p>
       ) : (
-        <ul className="mt-6 divide-y divide-white/10 rounded-xl border border-white/10 bg-surface">
+        <ul className="mt-6 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
           {items.map((n) => {
             const inner = (
               <div className="flex items-start gap-3 p-4">
@@ -50,7 +50,7 @@ export default async function NotificationsPage() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
-                    <span className={`text-sm ${n.readAt ? "text-neutral-200" : "font-semibold text-white"}`}>
+                    <span className={`text-sm ${n.readAt ? "text-muted" : "font-semibold text-zinc-900"}`}>
                       {n.title}
                     </span>
                     <span className="shrink-0 text-xs text-muted">{timeAgo(n.createdAt)}</span>
@@ -62,7 +62,7 @@ export default async function NotificationsPage() {
             return (
               <li key={n.id}>
                 {n.link ? (
-                  <Link href={n.link} className="block hover:bg-white/5">
+                  <Link href={n.link} className="block hover:bg-zinc-50">
                     {inner}
                   </Link>
                 ) : (

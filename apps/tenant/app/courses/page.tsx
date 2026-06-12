@@ -64,7 +64,7 @@ export default async function CoursesListPage({
               name="q"
               defaultValue={q}
               placeholder="Search courses"
-              className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
             <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
               Search
@@ -89,19 +89,19 @@ export default async function CoursesListPage({
             <Link
               key={c.id}
               href={`/c/${c.slug}`}
-              className="rounded-xl border border-white/10 bg-surface p-4 transition hover:border-brand/40"
+              className="rounded-xl border border-zinc-200 bg-surface p-4 transition hover:border-brand/40"
             >
               {c.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={c.imageUrl}
                   alt={c.title}
-                  className="aspect-video w-full rounded-lg border border-white/10 object-cover"
+                  className="aspect-video w-full rounded-lg border border-zinc-200 object-cover"
                 />
               ) : (
-                <div className="aspect-video w-full rounded-lg bg-white/5" />
+                <div className="aspect-video w-full rounded-lg bg-zinc-50" />
               )}
-              <h2 className="mt-3 font-semibold text-white">{c.title}</h2>
+              <h2 className="mt-3 font-semibold text-zinc-900">{c.title}</h2>
               <p className="mt-1 text-xs text-muted">
                 {c._count.lessons} lesson{c._count.lessons === 1 ? "" : "s"}
               </p>

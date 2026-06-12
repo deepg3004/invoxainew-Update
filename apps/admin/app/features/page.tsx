@@ -7,7 +7,7 @@ import { saveFeatureRuleAction, setFeatureLimitsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const input = "rounded-lg border border-white/10 px-2 py-1 text-sm";
+const input = "rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand";
 
 export default async function FeaturesPage() {
   const gate = await requireAdmin();
@@ -36,7 +36,7 @@ export default async function FeaturesPage() {
           <form
             key={r.featureKey}
             action={saveFeatureRuleAction}
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-surface p-3 text-sm"
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-200 bg-surface p-3 text-sm"
           >
             <input type="hidden" name="featureKey" value={r.featureKey} />
             <span className="font-mono text-xs text-muted">{r.featureKey}</span>
@@ -51,7 +51,7 @@ export default async function FeaturesPage() {
         ))}
 
         {/* New rule */}
-        <form action={saveFeatureRuleAction} className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-white/10 p-3 text-sm">
+        <form action={saveFeatureRuleAction} className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 text-sm">
           <input name="featureKey" placeholder="feature_key" className={`${input} w-32 font-mono`} />
           <input name="name" placeholder="Name" className={`${input} w-40`} />
           <label className="flex items-center gap-1">₹<input name="base" placeholder="0" className={`${input} w-20`} /></label>
@@ -59,7 +59,7 @@ export default async function FeaturesPage() {
           <label className="flex items-center gap-1"><input type="checkbox" name="wallet" defaultChecked /> wallet</label>
           <label className="flex items-center gap-1"><input type="checkbox" name="direct" /> direct</label>
           <label className="flex items-center gap-1"><input type="checkbox" name="active" defaultChecked /> active</label>
-          <button className="rounded-lg border border-white/10 px-3 py-1 font-medium hover:bg-white/5">Add</button>
+          <button className="rounded-lg border border-zinc-200 px-3 py-1 font-medium hover:bg-zinc-100">Add</button>
         </form>
       </div>
 
@@ -70,7 +70,7 @@ export default async function FeaturesPage() {
           <form
             key={r.featureKey}
             action={setFeatureLimitsAction.bind(null, r.featureKey)}
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-surface p-3 text-sm"
+            className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-surface p-3 text-sm"
           >
             <span className="w-36 font-medium">{r.name}</span>
             {plans.map((p) => (

@@ -13,7 +13,7 @@ export interface LeadFormConfig {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm outline-none focus:border-brand";
+  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 export function LeadFormView({ form }: { form: LeadFormConfig }) {
   const [name, setName] = useState("");
@@ -45,11 +45,11 @@ export function LeadFormView({ form }: { form: LeadFormConfig }) {
 
   if (status === "done") {
     return (
-      <div className="mt-6 rounded-2xl border border-success/30 bg-success/10 px-5 py-6 text-center">
+      <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-6 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success text-white">
           ✓
         </div>
-        <p className="mt-3 font-medium text-white">
+        <p className="mt-3 font-medium text-zinc-900">
           {form.successMessage || "Thanks — we’ll be in touch!"}
         </p>
       </div>
@@ -92,7 +92,7 @@ export function LeadFormView({ form }: { form: LeadFormConfig }) {
         />
       ) : null}
       {error ? (
-        <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       ) : null}
       <button
         type="submit"

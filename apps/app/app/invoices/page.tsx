@@ -28,7 +28,7 @@ export default async function InvoicesPage() {
         <h1 className="mt-1 text-3xl font-bold">Tax invoices</h1>
         <a
           href="/invoices/export"
-          className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/5"
+          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100"
         >
           Export CSV
         </a>
@@ -47,9 +47,9 @@ export default async function InvoicesPage() {
       {invoices.length === 0 ? (
         <p className="mt-8 text-muted">No invoices yet.</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-white/10 bg-surface">
+        <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-white/10 text-muted">
+            <thead className="border-b border-zinc-200 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Invoice</th>
                 <th className="px-4 py-3 font-medium">Date</th>
@@ -59,7 +59,7 @@ export default async function InvoicesPage() {
             </thead>
             <tbody>
               {invoices.map((inv) => (
-                <tr key={inv.id} className="border-b border-neutral-100 last:border-0">
+                <tr key={inv.id} className="border-b border-zinc-200 last:border-0">
                   <td className="px-4 py-3">
                     <Link href={`/invoices/${inv.id}`} className="font-medium text-cyan underline">
                       {inv.number}

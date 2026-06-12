@@ -34,7 +34,7 @@ export function RefundForm({
         name="amount"
         inputMode="decimal"
         defaultValue={paiseToRupeeString(remainingPaise)}
-        className="w-24 rounded-lg border border-white/10 px-2 py-1 text-sm outline-none focus:border-brand"
+        className="w-24 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
       />
       <button
         disabled={pending}

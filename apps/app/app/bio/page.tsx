@@ -12,7 +12,7 @@ function publicBase(username: string): string {
 }
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 const SOCIALS: { name: string; label: string }[] = [
   { name: "instagram", label: "Instagram URL" },
@@ -63,7 +63,7 @@ export default async function BioEditorPage() {
           <ul className="mt-3 space-y-1.5 text-sm">
             {clicks.byTarget.slice(0, 8).map((c) => (
               <li key={c.targetUrl} className="flex items-center justify-between gap-3">
-                <span className="min-w-0 truncate text-white">
+                <span className="min-w-0 truncate text-zinc-900">
                   {c.label ?? c.targetUrl}
                 </span>
                 <span className="shrink-0 text-muted">{c.clicks}</span>

@@ -34,7 +34,7 @@ export default async function InvoiceDetail({
         <PrintButton />
       </div>
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-8">
+      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-8">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold">
@@ -57,7 +57,7 @@ export default async function InvoiceDetail({
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-muted">From</div>
             <div className="mt-1 text-sm">
-              <div className="font-semibold text-white">{env.INVOICE_LEGAL_NAME}</div>
+              <div className="font-semibold text-zinc-900">{env.INVOICE_LEGAL_NAME}</div>
               {env.INVOICE_ADDRESS ? (
                 <div className="whitespace-pre-line text-muted">{env.INVOICE_ADDRESS}</div>
               ) : null}
@@ -69,7 +69,7 @@ export default async function InvoiceDetail({
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-muted">Billed to</div>
             <div className="mt-1 text-sm">
-              <div className="font-semibold text-white">{tenant.name ?? tenant.username}</div>
+              <div className="font-semibold text-zinc-900">{tenant.name ?? tenant.username}</div>
               <div className="text-muted">{tenant.username}.invoxai.io</div>
               <div className="text-muted">{user.email}</div>
             </div>
@@ -77,14 +77,14 @@ export default async function InvoiceDetail({
         </div>
 
         <table className="mt-8 w-full text-left text-sm">
-          <thead className="border-b border-white/10 text-muted">
+          <thead className="border-b border-zinc-200 text-muted">
             <tr>
               <th className="py-2 font-medium">Description</th>
               <th className="py-2 text-right font-medium">Amount</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-neutral-100">
+            <tr className="border-b border-zinc-200">
               <td className="py-2">{inv.descriptionLine}</td>
               <td className="py-2 text-right">{formatRupees(inv.basePaise)}</td>
             </tr>
@@ -102,7 +102,7 @@ export default async function InvoiceDetail({
             </span>
             <span>{formatRupees(inv.taxPaise)}</span>
           </div>
-          <div className="flex justify-between border-t border-white/10 pt-1 font-semibold">
+          <div className="flex justify-between border-t border-zinc-200 pt-1 font-semibold">
             <span>Total</span>
             <span>{formatRupees(inv.totalPaise)}</span>
           </div>

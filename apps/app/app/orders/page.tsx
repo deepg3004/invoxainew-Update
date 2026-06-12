@@ -22,7 +22,7 @@ function tabCls(active: boolean): string {
   return `rounded-full px-3 py-1 text-xs font-medium ${
     active
       ? "bg-brand text-white"
-      : "border border-white/10 text-muted hover:border-neutral-900"
+      : "border border-zinc-200 text-muted hover:border-zinc-300"
   }`;
 }
 
@@ -119,7 +119,7 @@ export default async function OrdersPage({
         {total > 0 ? (
           <a
             href={exportHref}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/5"
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
           >
             Export CSV
           </a>
@@ -134,15 +134,15 @@ export default async function OrdersPage({
           name="q"
           defaultValue={search}
           placeholder="Search buyer email, phone, item, payment id…"
-          className="w-full max-w-xs rounded-lg border border-white/10 bg-surface px-3 py-1.5 text-sm outline-none focus:border-brand"
+          className="w-full max-w-xs rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
         />
-        <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/5">
+        <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium hover:bg-zinc-50">
           Search
         </button>
         {search ? (
           <a
             href={buildHref({ status: activeStatus })}
-            className="px-2 py-1.5 text-sm text-muted hover:text-white"
+            className="px-2 py-1.5 text-sm text-muted hover:text-zinc-900"
           >
             Clear
           </a>
@@ -178,10 +178,10 @@ export default async function OrdersPage({
         <>
         <div className="mt-4 space-y-3">
           {orders.map((o) => (
-            <div key={o.id} className="rounded-xl border border-white/10 bg-surface p-4">
+            <div key={o.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-medium text-white">
+                  <div className="font-medium text-zinc-900">
                     {o.itemTitle ?? o.paymentPage?.title ?? "Order"}
                     {o.quantity > 1 ? (
                       <span className="ml-1 text-sm font-normal text-muted">
@@ -237,7 +237,7 @@ export default async function OrdersPage({
                     <select
                       name="status"
                       defaultValue={o.fulfillmentStatus}
-                      className="rounded-lg border border-white/10 px-2 py-1.5 text-sm"
+                      className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900"
                     >
                       {STATUSES.map((s) => (
                         <option key={s} value={s}>
@@ -249,7 +249,7 @@ export default async function OrdersPage({
                       name="note"
                       defaultValue={o.trackingNote ?? ""}
                       placeholder="Tracking / note"
-                      className="w-44 rounded-lg border border-white/10 px-2 py-1.5 text-sm outline-none focus:border-brand"
+                      className="w-44 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
                     />
                     <button className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white">
                       Save
@@ -258,7 +258,7 @@ export default async function OrdersPage({
                 </div>
               </div>
               {o.razorpayPaymentId && o.refundedPaise < o.amountPaise ? (
-                <div className="mt-3 border-t border-neutral-100 pt-3">
+                <div className="mt-3 border-t border-zinc-200 pt-3">
                   <RefundForm orderId={o.id} remainingPaise={o.amountPaise - o.refundedPaise} />
                 </div>
               ) : null}
@@ -275,12 +275,12 @@ export default async function OrdersPage({
               {page > 1 ? (
                 <a
                   href={buildHref({ status: activeStatus, q: search, page: page - 1 })}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 font-medium hover:bg-white/5"
+                  className="rounded-lg border border-zinc-200 px-3 py-1.5 font-medium hover:bg-zinc-50"
                 >
                   ← Prev
                 </a>
               ) : (
-                <span className="rounded-lg border border-white/5 px-3 py-1.5 text-muted/40">
+                <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-muted/40">
                   ← Prev
                 </span>
               )}
@@ -290,12 +290,12 @@ export default async function OrdersPage({
               {page < totalPages ? (
                 <a
                   href={buildHref({ status: activeStatus, q: search, page: page + 1 })}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 font-medium hover:bg-white/5"
+                  className="rounded-lg border border-zinc-200 px-3 py-1.5 font-medium hover:bg-zinc-50"
                 >
                   Next →
                 </a>
               ) : (
-                <span className="rounded-lg border border-white/5 px-3 py-1.5 text-muted/40">
+                <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-muted/40">
                   Next →
                 </span>
               )}

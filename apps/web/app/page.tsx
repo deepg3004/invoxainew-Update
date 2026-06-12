@@ -49,19 +49,19 @@ export default function Home() {
       <AuroraBackground />
 
       {/* Nav */}
-      <header className="sticky top-0 z-20 border-b border-white/5 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-ink/80 backdrop-blur-xl">
         <Container className="flex h-16 items-center justify-between">
           <span className="font-display text-lg font-bold tracking-tight">
             Invox<span className="text-gradient">AI</span>
           </span>
           <nav className="hidden items-center gap-8 text-sm text-muted sm:flex">
-            <a className="transition hover:text-white" href="#how">
+            <a className="transition hover:text-zinc-900" href="#how">
               How it works
             </a>
-            <a className="transition hover:text-white" href="#features">
+            <a className="transition hover:text-zinc-900" href="#features">
               Features
             </a>
-            <a className="transition hover:text-white" href="#pricing">
+            <a className="transition hover:text-zinc-900" href="#pricing">
               Pricing
             </a>
           </nav>
@@ -159,7 +159,7 @@ export default function Home() {
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <GlassCard key={f.title} className="transition hover:border-brand/30">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-brand/10 text-accent">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-brand/10 text-brand-strong">
                   {f.icon}
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold">
@@ -198,14 +198,14 @@ export default function Home() {
       </Section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-10">
+      <footer className="border-t border-zinc-200 py-10">
         <Container className="flex flex-col items-center justify-between gap-4 text-sm text-muted sm:flex-row">
-          <span className="font-display font-semibold text-white">
+          <span className="font-display font-semibold text-zinc-900">
             Invox<span className="text-gradient">AI</span>
           </span>
           <span>
             Buyers pay your gateway. You keep your money. ·{" "}
-            <a className="underline transition hover:text-white" href="/health">
+            <a className="underline transition hover:text-zinc-900" href="/health">
               status
             </a>
           </span>

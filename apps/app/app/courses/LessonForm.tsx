@@ -14,7 +14,7 @@ export interface LessonValues {
 type Action = (prev: LessonFormState, form: FormData) => Promise<LessonFormState>;
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 export function LessonForm({
   action,
@@ -38,7 +38,7 @@ export function LessonForm({
 
       <div className="grid grid-cols-[1fr_6rem] gap-3">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Lesson title</span>
+          <span className="text-sm font-medium text-zinc-700">Lesson title</span>
           <input
             name="title"
             defaultValue={initial?.title ?? ""}
@@ -48,7 +48,7 @@ export function LessonForm({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Order</span>
+          <span className="text-sm font-medium text-zinc-700">Order</span>
           <input
             name="sortOrder"
             inputMode="numeric"
@@ -59,7 +59,7 @@ export function LessonForm({
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Content</span>
+        <span className="text-sm font-medium text-zinc-700">Content</span>
         <textarea
           name="content"
           defaultValue={initial?.content ?? ""}
@@ -76,7 +76,7 @@ export function LessonForm({
           defaultChecked={initial?.isPreview ?? false}
           className="h-4 w-4"
         />
-        <span className="text-sm text-neutral-200">
+        <span className="text-sm text-zinc-700">
           Free preview (visible before buying)
         </span>
       </label>

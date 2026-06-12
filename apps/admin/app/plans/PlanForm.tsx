@@ -37,7 +37,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-neutral-200">{label}</span>
+      <span className="text-sm font-medium text-zinc-700">{label}</span>
       {children}
       {hint ? <span className="mt-1 block text-xs text-muted">{hint}</span> : null}
     </label>
@@ -45,7 +45,7 @@ function Field({
 }
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 /**
  * Create/edit form for a Plan. `initial` is undefined when creating. The `key`
@@ -86,7 +86,7 @@ export function PlanForm({
           readOnly={isEdit}
           required={!isEdit}
           placeholder="starter"
-          className={`${inputCls} ${isEdit ? "bg-white/10 text-muted" : ""}`}
+          className={`${inputCls} ${isEdit ? "bg-zinc-100 text-muted" : ""}`}
         />
       </Field>
 
@@ -165,7 +165,7 @@ export function PlanForm({
           defaultChecked={initial?.customDomainAllowed ?? false}
           className="h-4 w-4"
         />
-        <span className="text-sm text-neutral-200">Allow custom domains (premium)</span>
+        <span className="text-sm text-zinc-700">Allow custom domains (premium)</span>
       </label>
 
       <Field label="Sort order" hint="Lower numbers show first.">

@@ -78,7 +78,7 @@ export function BillingPlans({
     <div className="mt-4">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-      <div className="inline-flex rounded-lg border border-white/10 bg-surface p-1 text-sm">
+      <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1 text-sm">
         {(["MONTHLY", "YEARLY"] as const).map((c) => (
           <button
             key={c}
@@ -105,9 +105,9 @@ export function BillingPlans({
           return (
             <div
               key={p.id}
-              className="flex flex-col rounded-xl border border-white/10 bg-surface p-5 shadow-sm"
+              className="flex flex-col rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
             >
-              <h3 className="text-lg font-semibold text-white">{p.name}</h3>
+              <h3 className="text-lg font-semibold text-zinc-900">{p.name}</h3>
               <p className="mt-1 text-2xl font-bold">
                 {priceLabel}
                 <span className="text-sm font-normal text-muted">

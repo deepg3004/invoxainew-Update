@@ -17,7 +17,7 @@ function buyerBase(username: string): string {
 const STATUS_BADGE: Record<string, string> = {
   PUBLISHED: "bg-green-50 text-green-700",
   DRAFT: "bg-amber-50 text-amber-700",
-  ARCHIVED: "bg-white/10 text-muted",
+  ARCHIVED: "bg-zinc-100 text-muted",
 };
 
 export default async function CoursesPage() {
@@ -71,14 +71,14 @@ export default async function CoursesPage() {
           {courses.map((c) => {
             const url = `${base}/c/${c.slug}`;
             return (
-              <div key={c.id} className="rounded-xl border border-white/10 bg-surface p-4">
+              <div key={c.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{c.title}</span>
+                      <span className="font-medium text-zinc-900">{c.title}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          STATUS_BADGE[c.status] ?? "bg-white/10 text-muted"
+                          STATUS_BADGE[c.status] ?? "bg-zinc-100 text-muted"
                         }`}
                       >
                         {c.status.charAt(0) + c.status.slice(1).toLowerCase()}
@@ -110,19 +110,19 @@ export default async function CoursesPage() {
                       </Link>
                       {c.status === "PUBLISHED" ? (
                         <form action={setCourseStatusAction.bind(null, c.id, "DRAFT")}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Unpublish
                           </button>
                         </form>
                       ) : c.status === "DRAFT" ? (
                         <form action={setCourseStatusAction.bind(null, c.id, "PUBLISHED")}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Publish
                           </button>
                         </form>
                       ) : (
                         <form action={setCourseStatusAction.bind(null, c.id, "DRAFT")}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Restore
                           </button>
                         </form>

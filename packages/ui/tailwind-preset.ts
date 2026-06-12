@@ -1,6 +1,6 @@
-// InvoxAI premium-dark design system — the single source of truth for tokens.
+// InvoxAI "Sunset Gradient" design system — the single source of truth for tokens.
 // Apps consume this via `presets: [invoxPreset]` in their tailwind.config.ts.
-// Palette is taken verbatim from the product design spec.
+// Light theme: warm white surfaces, orange→pink→violet sunset accents.
 // Deliberately untyped (no `tailwindcss` import) so any app can import it
 // without that type needing to resolve from this package; apps cast to Config.
 export const invoxPreset = {
@@ -8,23 +8,25 @@ export const invoxPreset = {
   theme: {
     extend: {
       colors: {
-        // Brand
+        // Brand — sunset
         brand: {
-          DEFAULT: "#7C3AED", // primary violet
-          strong: "#6D28D9", // hover / pressed
-          soft: "#8B5CF6",
+          DEFAULT: "#EC4899", // primary pink
+          strong: "#DB2777", // hover / pressed / text-on-light
+          soft: "#F472B6",
         },
-        cyan: { DEFAULT: "#06B6D4" }, // secondary
-        accent: { DEFAULT: "#A855F7" },
-        gold: { DEFAULT: "#FACC15" }, // premium
+        flame: { DEFAULT: "#F97316" }, // sunset orange
+        accent: { DEFAULT: "#8B5CF6" }, // violet
+        // Legacy token name kept (used ~78×) but recoloured violet to fit sunset.
+        cyan: { DEFAULT: "#7C3AED" },
+        gold: { DEFAULT: "#F59E0B" }, // premium
 
-        // Surfaces
-        ink: "#050816", // page background
-        surface: "#0F172A", // card
-        hairline: "#1E293B", // border
+        // Surfaces (LIGHT — only ever used as backgrounds)
+        ink: "#FFFBF8", // page background (warm white)
+        surface: "#FFFFFF", // card
+        hairline: "#F1E7E0", // border
 
         // Text
-        muted: "#94A3B8", // secondary text
+        muted: "#78716C", // secondary text (warm gray, readable on light)
 
         // Status
         success: "#10B981",
@@ -40,13 +42,14 @@ export const invoxPreset = {
         "3xl": "1.5rem",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(124,58,237,0.25), 0 20px 60px -20px rgba(124,58,237,0.55)",
-        "glow-cyan": "0 20px 60px -25px rgba(6,182,212,0.55)",
-        card: "0 24px 60px -30px rgba(0,0,0,0.8)",
+        // Soft, warm shadows for a light surface
+        glow: "0 1px 2px rgba(0,0,0,0.05), 0 16px 40px -16px rgba(236,72,153,0.40)",
+        "glow-cyan": "0 16px 40px -18px rgba(139,92,246,0.40)",
+        card: "0 1px 2px rgba(0,0,0,0.04), 0 10px 30px -18px rgba(0,0,0,0.18)",
       },
       backgroundImage: {
-        // Violet→cyan headline / button gradient
-        "brand-gradient": "linear-gradient(100deg, #7C3AED 0%, #A855F7 45%, #06B6D4 100%)",
+        // Orange→pink→violet sunset gradient for headlines / buttons
+        "brand-gradient": "linear-gradient(100deg, #F97316 0%, #EC4899 50%, #8B5CF6 100%)",
       },
       keyframes: {
         float: {

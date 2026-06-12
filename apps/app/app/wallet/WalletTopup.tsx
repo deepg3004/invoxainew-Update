@@ -63,8 +63,8 @@ export function WalletTopup() {
             onClick={() => setAmount(String(r))}
             className={`rounded-lg border px-3 py-1.5 text-sm ${
               amount === String(r)
-                ? "border-neutral-900 bg-brand text-white"
-                : "border-white/10 hover:bg-white/5"
+                ? "border-zinc-200 bg-brand text-white"
+                : "border-zinc-200 hover:bg-zinc-100"
             }`}
           >
             ₹{r}
@@ -78,7 +78,7 @@ export function WalletTopup() {
           inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="w-28 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
+          className="w-28 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
         />
         <button
           type="button"

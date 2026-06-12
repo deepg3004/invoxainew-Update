@@ -5,7 +5,7 @@ import Link from "next/link";
 import { generateAiPageAction } from "./actions";
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 export function AiPageForm({ priceLabel }: { priceLabel: string }) {
   const [state, formAction, pending] = useActionState(generateAiPageAction, {});
@@ -17,14 +17,14 @@ export function AiPageForm({ priceLabel }: { priceLabel: string }) {
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Page address</span>
+        <span className="text-sm font-medium text-zinc-900">Page address</span>
         <div className="mt-1 flex items-center gap-1 text-sm">
           <span className="text-muted">yoursite.invoxai.io/</span>
           <input
             name="slug"
             required
             placeholder="home"
-            className="flex-1 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
+            className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
           />
         </div>
         <span className="mt-1 block text-xs text-muted">
@@ -33,12 +33,12 @@ export function AiPageForm({ priceLabel }: { priceLabel: string }) {
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Business name</span>
+        <span className="text-sm font-medium text-zinc-900">Business name</span>
         <input name="businessName" required placeholder="Acme Coffee Co." className={inputCls} />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Brief</span>
+        <span className="text-sm font-medium text-zinc-900">Brief</span>
         <textarea
           name="brief"
           required

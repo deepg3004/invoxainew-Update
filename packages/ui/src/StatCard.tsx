@@ -20,11 +20,11 @@ export function StatCard({
       ? "text-warning"
       : accent === "success"
         ? "text-success"
-        : "text-white";
+        : "text-zinc-900";
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl",
+        "rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-card",
         className,
       )}
     >

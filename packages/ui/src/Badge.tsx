@@ -4,10 +4,10 @@ import { cn } from "./cn";
 type Tone = "brand" | "cyan" | "neutral" | "success";
 
 const tones: Record<Tone, string> = {
-  brand: "border-brand/30 bg-brand/10 text-accent",
-  cyan: "border-cyan/30 bg-cyan/10 text-cyan",
-  neutral: "border-white/10 bg-white/5 text-muted",
-  success: "border-success/30 bg-success/10 text-success",
+  brand: "border-pink-200 bg-pink-50 text-pink-700",
+  cyan: "border-violet-200 bg-violet-50 text-violet-700",
+  neutral: "border-zinc-200 bg-zinc-50 text-zinc-600",
+  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
 export function Badge({

@@ -21,7 +21,7 @@ export interface ProductValues {
 type Action = (prev: ProductFormState, form: FormData) => Promise<ProductFormState>;
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 const KIND_LABELS: Record<ProductKind, string> = {
   DIGITAL: "Digital",
@@ -50,7 +50,7 @@ export function ProductForm({
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Link</span>
+        <span className="text-sm font-medium text-zinc-900">Link</span>
         <div className="mt-1 flex items-center gap-1 text-sm">
           <span className="text-muted">/p/</span>
           <input
@@ -59,8 +59,8 @@ export function ProductForm({
             readOnly={isEdit}
             required={!isEdit}
             placeholder="blue-tshirt"
-            className={`flex-1 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand ${
-              isEdit ? "bg-white/10 text-muted" : ""
+            className={`flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand ${
+              isEdit ? "bg-zinc-100 text-muted" : ""
             }`}
           />
         </div>
@@ -70,7 +70,7 @@ export function ProductForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Title</span>
+        <span className="text-sm font-medium text-zinc-900">Title</span>
         <input
           name="title"
           defaultValue={initial?.title ?? ""}
@@ -81,7 +81,7 @@ export function ProductForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Description</span>
+        <span className="text-sm font-medium text-zinc-900">Description</span>
         <textarea
           name="description"
           defaultValue={initial?.description ?? ""}
@@ -92,7 +92,7 @@ export function ProductForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Price (₹)</span>
+          <span className="text-sm font-medium text-zinc-900">Price (₹)</span>
           <input
             name="price"
             inputMode="decimal"
@@ -103,7 +103,7 @@ export function ProductForm({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Type</span>
+          <span className="text-sm font-medium text-zinc-900">Type</span>
           <select name="kind" defaultValue={initial?.kind ?? "DIGITAL"} className={inputCls}>
             {(Object.keys(KIND_LABELS) as ProductKind[]).map((k) => (
               <option key={k} value={k}>
@@ -115,7 +115,7 @@ export function ProductForm({
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Image URL</span>
+        <span className="text-sm font-medium text-zinc-900">Image URL</span>
         <input
           name="imageUrl"
           defaultValue={initial?.imageUrl ?? ""}
@@ -126,7 +126,7 @@ export function ProductForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Access link</span>
+        <span className="text-sm font-medium text-zinc-900">Access link</span>
         <input
           name="accessUrl"
           defaultValue={initial?.accessUrl ?? ""}
@@ -141,7 +141,7 @@ export function ProductForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Stock</span>
+          <span className="text-sm font-medium text-zinc-900">Stock</span>
           <input
             name="stockQty"
             inputMode="numeric"
@@ -152,7 +152,7 @@ export function ProductForm({
           <span className="mt-1 block text-xs text-muted">Units, or blank.</span>
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Display order</span>
+          <span className="text-sm font-medium text-zinc-900">Display order</span>
           <input
             name="sortOrder"
             inputMode="numeric"
@@ -166,7 +166,7 @@ export function ProductForm({
       {!isEdit ? (
         <label className="flex items-center gap-2">
           <input type="checkbox" name="publish" className="h-4 w-4" />
-          <span className="text-sm text-neutral-200">Publish to my store now</span>
+          <span className="text-sm text-zinc-900">Publish to my store now</span>
         </label>
       ) : null}
 

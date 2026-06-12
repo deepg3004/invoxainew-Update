@@ -62,7 +62,7 @@ export default async function PayPage({
         <p className="mt-2 text-muted">{page.description}</p>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
+      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
         <div className="text-3xl font-bold">{formatRupees(page.amountPaise)}</div>
         <p className="mt-1 text-xs text-muted">
           Paid securely to {tenant.name ?? tenant.username} via Razorpay.

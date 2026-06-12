@@ -27,7 +27,7 @@ export default async function TenantsPage({
           name="q"
           defaultValue={q ?? ""}
           placeholder="Search by username, name, or owner email"
-          className="w-full max-w-md rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
+          className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
         />
         <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
           Search
@@ -44,9 +44,9 @@ export default async function TenantsPage({
         {q ? ` matching "${q}"` : ""} (max 100)
       </p>
 
-      <div className="mt-3 overflow-x-auto rounded-xl border border-white/10 bg-surface">
+      <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-white/10 text-muted">
+          <thead className="border-b border-zinc-200 text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Tenant</th>
               <th className="px-4 py-3 font-medium">Owner</th>
@@ -58,7 +58,7 @@ export default async function TenantsPage({
           </thead>
           <tbody>
             {tenants.map((t) => (
-              <tr key={t.id} className="border-b border-white/10 last:border-0">
+              <tr key={t.id} className="border-b border-zinc-200 last:border-0">
                 <td className="px-4 py-3">
                   <Link href={`/tenants/${t.id}`} className="font-medium text-cyan underline">
                     {t.username}

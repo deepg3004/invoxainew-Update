@@ -76,10 +76,10 @@ export default async function DomainsPage({
       {domains.length > 0 ? (
         <div className="mt-6 space-y-4">
           {domains.map((d) => (
-            <div key={d.id} className="rounded-xl border border-white/10 bg-surface p-4">
+            <div key={d.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-white">{d.domain}</span>
+                  <span className="font-medium text-zinc-900">{d.domain}</span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       d.status === "VERIFIED"
@@ -103,8 +103,8 @@ export default async function DomainsPage({
               </div>
 
               {d.status !== "VERIFIED" ? (
-                <div className="mt-3 space-y-2 rounded-lg bg-white/5 p-3 text-xs text-muted">
-                  <p className="font-medium text-neutral-200">Add these DNS records, then click Verify:</p>
+                <div className="mt-3 space-y-2 rounded-lg bg-zinc-50 p-3 text-xs text-muted">
+                  <p className="font-medium text-zinc-900">Add these DNS records, then click Verify:</p>
                   <div>
                     <span className="font-semibold">1. TXT</span> — host{" "}
                     <code className="rounded bg-surface px-1 py-0.5">_invoxai-challenge.{d.domain}</code>{" "}

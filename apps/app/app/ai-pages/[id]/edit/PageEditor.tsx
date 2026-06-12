@@ -11,7 +11,7 @@ import {
 import { saveAiPageAction } from "../../actions";
 
 const inputCls =
-  "w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand";
+  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 type AddType = Block["type"];
 
@@ -109,7 +109,7 @@ export function PageEditor({
       </div>
 
       <label className="mt-6 block">
-        <span className="text-sm font-medium text-neutral-200">Page title</span>
+        <span className="text-sm font-medium text-zinc-900">Page title</span>
         <input
           value={title}
           onChange={(e) => {
@@ -124,8 +124,8 @@ export function PageEditor({
       </label>
 
       {/* Theme */}
-      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-4">
-        <span className="text-sm font-medium text-neutral-200">Theme</span>
+      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-4">
+        <span className="text-sm font-medium text-zinc-900">Theme</span>
         <div className="mt-2 flex flex-wrap gap-2">
           {presetIds.map((id) => {
             const p = THEME_PRESETS[id];
@@ -139,7 +139,7 @@ export function PageEditor({
                   setTheme({ preset: id, accent: p.accent });
                 }}
                 className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-                  selected ? "border-neutral-900" : "border-white/10"
+                  selected ? "border-brand" : "border-zinc-200"
                 }`}
               >
                 <span
@@ -160,7 +160,7 @@ export function PageEditor({
               setStatus("idle");
               setTheme((t) => ({ ...t, accent: e.target.value }));
             }}
-            className="h-7 w-10 cursor-pointer rounded border border-white/10"
+            className="h-7 w-10 cursor-pointer rounded border border-zinc-300"
           />
           <span className="font-mono text-xs text-muted">{theme.accent}</span>
         </label>
@@ -168,7 +168,7 @@ export function PageEditor({
 
       <div className="mt-6 space-y-3">
         {blocks.map((b, i) => (
-          <div key={i} className="rounded-xl border border-white/10 bg-surface p-3">
+          <div key={i} className="rounded-xl border border-zinc-200 bg-surface p-3">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted">
                 {b.type}
@@ -192,7 +192,7 @@ export function PageEditor({
                 <select
                   value={b.level}
                   onChange={(e) => update(i, { level: Number(e.target.value) as 1 | 2 | 3 })}
-                  className="rounded-lg border border-white/10 px-2 py-2 text-sm"
+                  className="rounded-lg border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-900"
                 >
                   <option value={1}>H1</option>
                   <option value={2}>H2</option>
@@ -234,7 +234,7 @@ export function PageEditor({
             ) : null}
 
             {b.type === "divider" ? (
-              <div className="border-t border-dashed border-white/10" />
+              <div className="border-t border-dashed border-zinc-200" />
             ) : null}
           </div>
         ))}
@@ -248,7 +248,7 @@ export function PageEditor({
           <button
             key={t}
             onClick={() => add(t)}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-neutral-200 hover:border-neutral-900"
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
           >
             + {t}
           </button>

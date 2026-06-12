@@ -50,7 +50,7 @@ export default async function AiPagesPage() {
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/ai-pages/templates"
-            className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-neutral-200 hover:border-neutral-900"
+            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
           >
             Templates
           </Link>
@@ -86,16 +86,16 @@ export default async function AiPagesPage() {
           {pages.map((p) => {
             const url = `${base}/${p.slug}`;
             return (
-              <div key={p.id} className="rounded-xl border border-white/10 bg-surface p-4">
+              <div key={p.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{p.title}</span>
+                      <span className="font-medium text-zinc-900">{p.title}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           p.isPublished
                             ? "bg-green-50 text-green-700"
-                            : "bg-white/10 text-muted"
+                            : "bg-zinc-100 text-muted"
                         }`}
                       >
                         {p.isPublished ? "Published" : "Hidden"}
@@ -120,7 +120,7 @@ export default async function AiPagesPage() {
                       Edit
                     </Link>
                     <form action={setAiPagePublishedAction.bind(null, p.id, !p.isPublished)}>
-                      <button className="text-muted underline hover:text-white">
+                      <button className="text-muted underline hover:text-zinc-900">
                         {p.isPublished ? "Unpublish" : "Publish"}
                       </button>
                     </form>

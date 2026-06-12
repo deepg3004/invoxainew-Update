@@ -51,12 +51,12 @@ export default async function EditCoursePage({
         {lessons.length === 0 ? (
           <p className="mt-2 text-sm text-muted">No lessons yet. Add the first below.</p>
         ) : (
-          <ul className="mt-3 divide-y divide-white/10 rounded-xl border border-white/10 bg-surface">
+          <ul className="mt-3 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
             {lessons.map((l, idx) => (
               <li key={l.id} className="flex items-center gap-3 p-3">
                 <span className="w-6 text-right text-sm text-muted">{idx + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <span className="truncate font-medium text-white">{l.title}</span>
+                  <span className="truncate font-medium text-zinc-900">{l.title}</span>
                   {l.isPreview ? (
                     <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
                       Preview
@@ -79,8 +79,8 @@ export default async function EditCoursePage({
           </ul>
         )}
 
-        <div className="mt-5 rounded-xl border border-dashed border-white/10 p-4">
-          <h3 className="text-sm font-semibold text-neutral-200">Add a lesson</h3>
+        <div className="mt-5 rounded-xl border border-dashed border-zinc-200 p-4">
+          <h3 className="text-sm font-semibold text-zinc-700">Add a lesson</h3>
           <div className="mt-3">
             <LessonForm
               action={addLessonAction}

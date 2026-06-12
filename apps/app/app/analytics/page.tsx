@@ -9,7 +9,7 @@ const RANGES = [7, 30, 90] as const;
 
 function rangeCls(active: boolean): string {
   return `rounded-full px-3 py-1 text-xs font-medium ${
-    active ? "bg-brand text-white" : "border border-white/10 text-muted hover:bg-white/5"
+    active ? "bg-brand text-white" : "border border-zinc-200 text-muted hover:bg-zinc-50"
   }`;
 }
 
@@ -45,7 +45,7 @@ export default async function AnalyticsPage({
           ))}
           <a
             href="/utm"
-            className="rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-cyan hover:bg-white/5"
+            className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-medium text-cyan hover:bg-zinc-50"
           >
             UTM builder
           </a>
@@ -100,7 +100,7 @@ export default async function AnalyticsPage({
           </div>
           <p className="mt-4 text-sm text-muted">
             Conversion:{" "}
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-zinc-900">
               {(a.conversionRate * 100).toFixed(1)}%
             </span>
             {a.startedCheckouts - a.paidOrders > 0 ? (
@@ -123,7 +123,7 @@ export default async function AnalyticsPage({
             <ul className="mt-4 space-y-2">
               {a.topItems.map((it) => (
                 <li key={it.title} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="min-w-0 truncate text-white">{it.title}</span>
+                  <span className="min-w-0 truncate text-zinc-900">{it.title}</span>
                   <span className="shrink-0 text-muted">
                     {formatRupees(it.revenuePaise)} · {it.count}
                   </span>
@@ -141,7 +141,7 @@ export default async function AnalyticsPage({
             <ul className="mt-4 space-y-2">
               {a.topSources.map((s) => (
                 <li key={s.source} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="min-w-0 truncate text-white">{s.source}</span>
+                  <span className="min-w-0 truncate text-zinc-900">{s.source}</span>
                   <span className="shrink-0 text-muted">
                     {formatRupees(s.revenuePaise)} · {s.count}
                   </span>
@@ -167,9 +167,9 @@ function FunnelRow({ label, value, pct }: { label: string; value: number; pct: n
     <div>
       <div className="flex justify-between text-sm">
         <span className="text-muted">{label}</span>
-        <span className="font-medium text-white">{value}</span>
+        <span className="font-medium text-zinc-900">{value}</span>
       </div>
-      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-white/10">
+      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
         <div className="h-full rounded-full bg-brand-gradient" style={{ width: `${Math.max(2, pct)}%` }} />
       </div>
     </div>

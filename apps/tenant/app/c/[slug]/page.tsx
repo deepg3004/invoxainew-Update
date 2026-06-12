@@ -92,7 +92,7 @@ export default async function CoursePage({
         <img
           src={course.imageUrl}
           alt={course.title}
-          className="mt-4 aspect-video w-full rounded-xl border border-white/10 object-cover"
+          className="mt-4 aspect-video w-full rounded-xl border border-zinc-200 object-cover"
         />
       ) : null}
 
@@ -107,12 +107,12 @@ export default async function CoursePage({
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             {course.lessons.length} lesson{course.lessons.length === 1 ? "" : "s"}
           </h2>
-          <ul className="mt-2 divide-y divide-white/10 rounded-xl border border-white/10 bg-surface">
+          <ul className="mt-2 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
             {course.lessons.map((l, idx) => (
               <li key={l.id} className="p-3">
                 <div className="flex items-center gap-2">
                   <span className="w-5 text-right text-sm text-muted">{idx + 1}</span>
-                  <span className="flex-1 text-sm font-medium text-white">{l.title}</span>
+                  <span className="flex-1 text-sm font-medium text-zinc-900">{l.title}</span>
                   {l.isPreview ? (
                     <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
                       Preview
@@ -132,7 +132,7 @@ export default async function CoursePage({
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
+      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
         {enrolment ? (
           <div className="text-center">
             <p className="text-sm font-medium text-green-700">✓ You’re enrolled in this course.</p>

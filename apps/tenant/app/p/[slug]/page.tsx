@@ -77,7 +77,7 @@ export default async function ProductPage({
         <img
           src={product.imageUrl}
           alt={product.title}
-          className="mt-4 aspect-square w-full rounded-xl border border-white/10 object-cover"
+          className="mt-4 aspect-square w-full rounded-xl border border-zinc-200 object-cover"
         />
       ) : null}
 
@@ -86,7 +86,7 @@ export default async function ProductPage({
         <p className="mt-2 whitespace-pre-line text-muted">{product.description}</p>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
+      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
         <div className="text-3xl font-bold">{formatRupees(product.pricePaise)}</div>
         <p className="mt-1 text-xs text-muted">
           {product.kind.charAt(0) + product.kind.slice(1).toLowerCase()} · paid securely

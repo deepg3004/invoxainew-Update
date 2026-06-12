@@ -20,7 +20,7 @@ export default async function PricingPage() {
         Global platform fees (e.g. the AI-page fee). All values are in rupees.
       </p>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-surface">
+      <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
         {settings.length === 0 ? (
           <p className="px-4 py-6 text-sm text-muted">
             No settings yet. Add one below.

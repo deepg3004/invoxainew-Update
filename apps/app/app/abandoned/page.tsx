@@ -30,7 +30,7 @@ export default async function AbandonedPage() {
         out with the contact they entered to recover the sale.
       </p>
 
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-muted">
+      <div className="mt-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-muted">
         💡 Automatic email / WhatsApp recovery nudges turn on once you connect an
         email provider. For now, follow up manually below.
       </div>
@@ -53,7 +53,7 @@ export default async function AbandonedPage() {
               <GlassCard key={c.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="font-medium text-white">
+                    <div className="font-medium text-zinc-900">
                       {itemLabel}
                       {c.quantity > 1 ? (
                         <span className="ml-1 text-sm font-normal text-muted">
@@ -92,7 +92,7 @@ export default async function AbandonedPage() {
                         href={`https://wa.me/${c.buyerContact.replace(/[^0-9]/g, "")}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-0.5 block text-xs text-muted underline hover:text-white"
+                        className="mt-0.5 block text-xs text-muted underline hover:text-zinc-900"
                       >
                         {c.buyerContact} · WhatsApp
                       </a>

@@ -22,7 +22,7 @@ export interface CouponValues {
 type Action = (prev: CouponFormState, form: FormData) => Promise<CouponFormState>;
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 export function CouponForm({
   action,
@@ -54,7 +54,7 @@ export function CouponForm({
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Code</span>
+        <span className="text-sm font-medium text-zinc-700">Code</span>
         <input
           name="code"
           defaultValue={initial?.code ?? ""}
@@ -64,8 +64,8 @@ export function CouponForm({
           onChange={(e) => {
             e.target.value = e.target.value.toUpperCase();
           }}
-          className={`mt-1 w-full rounded-lg border border-white/10 px-3 py-2 uppercase outline-none focus:border-brand ${
-            isEdit ? "bg-white/10 text-muted" : ""
+          className={`mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 uppercase text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand ${
+            isEdit ? "bg-zinc-100 text-muted" : ""
           }`}
         />
         <span className="mt-1 block text-xs text-muted">
@@ -77,7 +77,7 @@ export function CouponForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Type</span>
+          <span className="text-sm font-medium text-zinc-700">Type</span>
           <select
             name="type"
             value={type}
@@ -89,7 +89,7 @@ export function CouponForm({
           </select>
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">
+          <span className="text-sm font-medium text-zinc-700">
             {type === "PERCENT" ? "Discount (%)" : "Discount (₹)"}
           </span>
           <input
@@ -104,7 +104,7 @@ export function CouponForm({
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">
+        <span className="text-sm font-medium text-zinc-700">
           Minimum order (₹)
         </span>
         <input
@@ -121,7 +121,7 @@ export function CouponForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Usage limit</span>
+        <span className="text-sm font-medium text-zinc-700">Usage limit</span>
         <input
           name="maxRedemptions"
           inputMode="numeric"
@@ -136,7 +136,7 @@ export function CouponForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Starts</span>
+          <span className="text-sm font-medium text-zinc-700">Starts</span>
           <input
             type="datetime-local"
             name="startsAt"
@@ -145,7 +145,7 @@ export function CouponForm({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Expires</span>
+          <span className="text-sm font-medium text-zinc-700">Expires</span>
           <input
             type="datetime-local"
             name="expiresAt"
@@ -158,7 +158,7 @@ export function CouponForm({
       {!isEdit ? (
         <label className="flex items-center gap-2">
           <input type="checkbox" name="active" defaultChecked className="h-4 w-4" />
-          <span className="text-sm text-neutral-200">Active immediately</span>
+          <span className="text-sm text-zinc-700">Active immediately</span>
         </label>
       ) : null}
 

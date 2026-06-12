@@ -5,7 +5,7 @@ import { paiseToRupeeString } from "@invoxai/utils/money";
 import { savePricingSettingAction } from "./actions";
 
 const inputCls =
-  "rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
+  "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 /** Inline editor for one existing pricing knob — key & label fixed, value editable. */
 export function PricingRow({
@@ -22,12 +22,12 @@ export function PricingRow({
   return (
     <form
       action={formAction}
-      className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3 last:border-0"
+      className="flex flex-wrap items-center gap-3 border-b border-zinc-200 px-4 py-3 last:border-0"
     >
       <input type="hidden" name="key" value={settingKey} />
       <input type="hidden" name="label" value={label} />
       <div className="min-w-0 flex-1">
-        <div className="font-medium text-white">{label}</div>
+        <div className="font-medium text-zinc-900">{label}</div>
         <div className="text-xs text-muted">{settingKey}</div>
       </div>
       <div className="flex items-center gap-1">
@@ -81,7 +81,7 @@ export function NewSettingForm() {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5 disabled:opacity-50"
+        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Add setting"}
       </button>

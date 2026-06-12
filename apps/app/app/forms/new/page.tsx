@@ -25,7 +25,7 @@ export default async function NewFormPage({
       <h1 className="mt-3 text-3xl font-bold">New lead form</h1>
 
       {error ? (
-        <p className="mt-4 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {ERRORS[error] ?? "Something went wrong."}
         </p>
       ) : null}
@@ -37,7 +37,7 @@ export default async function NewFormPage({
             name="title"
             required
             placeholder="Get in touch"
-            className="mt-1 w-full rounded-lg border border-white/10 bg-surface px-3 py-2 outline-none focus:border-brand"
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
           />
         </div>
         <div>
@@ -46,7 +46,7 @@ export default async function NewFormPage({
             name="description"
             rows={3}
             placeholder="Tell buyers what this form is for."
-            className="mt-1 w-full rounded-lg border border-white/10 bg-surface px-3 py-2 outline-none focus:border-brand"
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -55,7 +55,7 @@ export default async function NewFormPage({
             <input
               name="buttonLabel"
               defaultValue="Submit"
-              className="mt-1 w-full rounded-lg border border-white/10 bg-surface px-3 py-2 outline-none focus:border-brand"
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
           </div>
           <div>
@@ -63,12 +63,12 @@ export default async function NewFormPage({
             <input
               name="successMessage"
               placeholder="Thanks — we’ll be in touch!"
-              className="mt-1 w-full rounded-lg border border-white/10 bg-surface px-3 py-2 outline-none focus:border-brand"
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
           </div>
         </div>
 
-        <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="space-y-2 rounded-xl border border-zinc-200 bg-white p-4">
           <p className="text-sm font-medium">Fields to collect</p>
           <p className="text-xs text-muted">Name and email are always collected.</p>
           <label className="flex items-center gap-2 text-sm">

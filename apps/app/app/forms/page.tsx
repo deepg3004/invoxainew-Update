@@ -6,9 +6,9 @@ import { requireTenant } from "../../lib/tenant";
 export const dynamic = "force-dynamic";
 
 const STATUS_BADGE: Record<string, string> = {
-  PUBLISHED: "bg-success/10 text-success border-success/30",
-  DRAFT: "bg-warning/10 text-warning border-warning/30",
-  ARCHIVED: "bg-white/5 text-muted border-white/10",
+  PUBLISHED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  DRAFT: "bg-amber-50 text-amber-700 border-amber-200",
+  ARCHIVED: "bg-zinc-50 text-muted border-zinc-200",
 };
 
 export default async function FormsPage() {
@@ -50,7 +50,7 @@ export default async function FormsPage() {
               <GlassCard className="transition hover:border-brand/30">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="font-medium text-white">{f.title}</div>
+                    <div className="font-medium text-zinc-900">{f.title}</div>
                     <div className="mt-0.5 text-sm text-muted">
                       /f/{f.slug} · {f._count.submissions} submission
                       {f._count.submissions === 1 ? "" : "s"}

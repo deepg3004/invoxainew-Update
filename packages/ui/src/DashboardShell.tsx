@@ -102,16 +102,16 @@ export function DashboardShell({
   return (
     <div className="min-h-screen bg-ink">
       {/* Sidebar (lg+) */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/5 bg-surface/40 backdrop-blur-xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-zinc-200 bg-white/70 backdrop-blur-xl lg:flex">
         <div className="flex h-16 items-center px-6">
-          <a href="/" className="font-display text-lg font-bold tracking-tight text-white">
+          <a href="/" className="font-display text-lg font-bold tracking-tight text-zinc-900">
             Invox<span className="text-gradient">AI</span>
           </a>
         </div>
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
           {NAV.map((group) => (
             <div key={group.heading}>
-              <div className="px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-muted/70">
+              <div className="px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-muted/80">
                 {group.heading}
               </div>
               <div className="mt-2 space-y-0.5">
@@ -124,11 +124,11 @@ export function DashboardShell({
                       className={cn(
                         "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
                         active
-                          ? "bg-brand/15 font-medium text-white shadow-[inset_0_0_0_1px_rgba(124,58,237,0.3)]"
-                          : "text-muted hover:bg-white/5 hover:text-white",
+                          ? "bg-brand/10 font-medium text-brand-strong shadow-[inset_0_0_0_1px_rgba(236,72,153,0.25)]"
+                          : "text-muted hover:bg-zinc-100 hover:text-zinc-900",
                       )}
                     >
-                      <span className={active ? "text-accent" : ""}>
+                      <span className={active ? "text-brand-strong" : ""}>
                         <Icon d={item.icon} />
                       </span>
                       {item.label}
@@ -144,22 +144,22 @@ export function DashboardShell({
       {/* Main column */}
       <div className="lg:pl-64">
         {/* Topbar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/5 bg-ink/70 px-4 backdrop-blur-xl sm:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-zinc-200 bg-ink/80 px-4 backdrop-blur-xl sm:px-6">
           <a
             href="/"
-            className="font-display text-base font-bold tracking-tight text-white lg:hidden"
+            className="font-display text-base font-bold tracking-tight text-zinc-900 lg:hidden"
           >
             Invox<span className="text-gradient">AI</span>
           </a>
           <div className="ml-auto flex items-center gap-2">
             <a
               href="/notifications"
-              className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-muted transition hover:bg-white/5 hover:text-white"
+              className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-muted transition hover:bg-zinc-50 hover:text-zinc-900"
             >
               Notifications
             </a>
             <form action="/auth/signout" method="post">
-              <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-muted transition hover:bg-white/5 hover:text-white">
+              <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-muted transition hover:bg-zinc-50 hover:text-zinc-900">
                 Sign out
               </button>
             </form>
@@ -167,7 +167,7 @@ export function DashboardShell({
         </header>
 
         {/* Mobile nav strip */}
-        <div className="flex gap-1.5 overflow-x-auto border-b border-white/5 px-4 py-2 lg:hidden">
+        <div className="flex gap-1.5 overflow-x-auto border-b border-zinc-200 px-4 py-2 lg:hidden">
           {FLAT.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -177,8 +177,8 @@ export function DashboardShell({
                 className={cn(
                   "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition",
                   active
-                    ? "bg-brand/15 font-medium text-white"
-                    : "text-muted hover:bg-white/5 hover:text-white",
+                    ? "bg-brand/10 font-medium text-brand-strong"
+                    : "text-muted hover:bg-zinc-100 hover:text-zinc-900",
                 )}
               >
                 {item.label}

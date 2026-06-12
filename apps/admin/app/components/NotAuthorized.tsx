@@ -13,7 +13,7 @@ export function NotAuthorized({ email }: { email: string | null | undefined }) {
         allowlist.
       </p>
       <form action="/auth/signout" method="post" className="mt-6">
-        <button className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5">
+        <button className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium hover:bg-zinc-100">
           Sign out
         </button>
       </form>

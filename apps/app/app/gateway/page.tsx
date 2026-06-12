@@ -29,7 +29,7 @@ export default async function GatewayPage() {
           <GlassCard title="Connected">
             <div className="flex items-start justify-between gap-4">
               <div className="text-sm">
-                <p className="font-medium text-white">
+                <p className="font-medium text-zinc-900">
                   Razorpay · {maskKeyId(gateway.keyId)}
                 </p>
                 <p className="mt-1 text-muted">
@@ -54,7 +54,7 @@ export default async function GatewayPage() {
                 ) : null}
               </div>
               <form action={disconnectGateway}>
-                <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5">
+                <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-100">
                   Disconnect
                 </button>
               </form>

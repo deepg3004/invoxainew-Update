@@ -83,14 +83,14 @@ export default async function OrderReceipt({
       </div>
 
       {cancelled ? (
-        <div className="mt-6 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-medium text-danger">
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           This order was cancelled.
         </div>
       ) : null}
 
       {showTimeline ? (
-        <div className="mt-6 rounded-xl border border-white/10 bg-surface p-5 print:hidden">
-          <h2 className="text-sm font-semibold text-white">Order status</h2>
+        <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-5 print:hidden">
+          <h2 className="text-sm font-semibold text-zinc-900">Order status</h2>
           <ol className="mt-4">
             {FULFILL_STEPS.map(([key, label], i) => {
               const done = i <= fulfillIdx;
@@ -101,17 +101,17 @@ export default async function OrderReceipt({
                   <div className="flex flex-col items-center">
                     <span
                       className={`flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] ${
-                        done ? "bg-success text-white" : "border border-white/15 text-transparent"
+                        done ? "bg-success text-white" : "border border-zinc-200 text-transparent"
                       } ${current ? "ring-2 ring-success/40" : ""}`}
                     >
                       ✓
                     </span>
                     {!isLast ? (
-                      <span className={`h-7 w-px ${i < fulfillIdx ? "bg-success" : "bg-white/10"}`} />
+                      <span className={`h-7 w-px ${i < fulfillIdx ? "bg-success" : "bg-zinc-200"}`} />
                     ) : null}
                   </div>
                   <span
-                    className={`pt-0.5 text-sm ${done ? "text-white" : "text-muted"} ${
+                    className={`pt-0.5 text-sm ${done ? "text-zinc-900" : "text-muted"} ${
                       current ? "font-medium" : ""
                     }`}
                   >
@@ -124,45 +124,45 @@ export default async function OrderReceipt({
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-surface p-6">
-        <header className="border-b border-white/10 pb-4">
-          <h1 className="text-lg font-bold text-white">{sellerName}</h1>
+      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
+        <header className="border-b border-zinc-200 pb-4">
+          <h1 className="text-lg font-bold text-zinc-900">{sellerName}</h1>
           <p className="mt-0.5 text-sm text-muted">Receipt</p>
         </header>
 
         <dl className="mt-4 space-y-1 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted">Order</dt>
-            <dd className="font-mono text-neutral-200">{order.id.slice(0, 8)}</dd>
+            <dd className="font-mono text-zinc-700">{order.id.slice(0, 8)}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">Date</dt>
-            <dd className="text-neutral-200">{formatDate(order.paidAt)}</dd>
+            <dd className="text-zinc-700">{formatDate(order.paidAt)}</dd>
           </div>
           {order.razorpayPaymentId ? (
             <div className="flex justify-between">
               <dt className="text-muted">Payment</dt>
-              <dd className="font-mono text-neutral-200">{order.razorpayPaymentId}</dd>
+              <dd className="font-mono text-zinc-700">{order.razorpayPaymentId}</dd>
             </div>
           ) : null}
           <div className="flex justify-between">
             <dt className="text-muted">Status</dt>
-            <dd className="text-neutral-200">
+            <dd className="text-zinc-700">
               {STATUS_LABEL[order.fulfillmentStatus] ?? order.fulfillmentStatus}
             </dd>
           </div>
         </dl>
 
         {/* Items */}
-        <div className="mt-4 border-t border-white/10 pt-4">
+        <div className="mt-4 border-t border-zinc-200 pt-4">
           {order.orderItems.length > 0 ? (
             <ul className="space-y-1 text-sm">
               {order.orderItems.map((li, i) => (
                 <li key={i} className="flex justify-between">
-                  <span className="text-neutral-200">
+                  <span className="text-zinc-700">
                     {li.titleSnapshot} × {li.quantity}
                   </span>
-                  <span className="text-neutral-200">
+                  <span className="text-zinc-700">
                     {formatRupees(li.unitPricePaise * li.quantity)}
                   </span>
                 </li>
@@ -170,16 +170,16 @@ export default async function OrderReceipt({
             </ul>
           ) : (
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-200">
+              <span className="text-zinc-700">
                 {order.itemTitle ?? order.paymentPage?.title ?? "Order"}
               </span>
-              <span className="text-neutral-200">{formatRupees(subtotal)}</span>
+              <span className="text-zinc-700">{formatRupees(subtotal)}</span>
             </div>
           )}
         </div>
 
         {/* Totals */}
-        <div className="mt-4 space-y-1 border-t border-white/10 pt-4 text-sm">
+        <div className="mt-4 space-y-1 border-t border-zinc-200 pt-4 text-sm">
           {order.discountPaise > 0 ? (
             <>
               <div className="flex justify-between text-muted">
@@ -192,7 +192,7 @@ export default async function OrderReceipt({
               </div>
             </>
           ) : null}
-          <div className="flex justify-between border-t border-white/10 pt-1 font-semibold text-white">
+          <div className="flex justify-between border-t border-zinc-200 pt-1 font-semibold text-zinc-900">
             <span>Total paid</span>
             <span>{formatRupees(order.amountPaise)}</span>
           </div>
@@ -205,15 +205,15 @@ export default async function OrderReceipt({
         </div>
 
         {order.trackingNote ? (
-          <p className="mt-4 border-t border-white/10 pt-4 text-xs text-muted">
+          <p className="mt-4 border-t border-zinc-200 pt-4 text-xs text-muted">
             <LinkifiedText text={order.trackingNote} />
           </p>
         ) : null}
       </div>
 
       {accessLinks.length > 0 ? (
-        <div className="mt-4 rounded-xl border border-success/30 bg-success/10 p-5">
-          <h2 className="text-sm font-semibold text-white">Your access</h2>
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+          <h2 className="text-sm font-semibold text-zinc-900">Your access</h2>
           <p className="mt-1 text-xs text-muted">
             Thanks for your purchase — here’s your access link.
           </p>

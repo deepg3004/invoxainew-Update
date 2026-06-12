@@ -50,7 +50,7 @@ export default async function FormDetailPage({
         <div className="flex flex-wrap gap-2">
           {isPublished ? (
             <form action={setLeadFormStatusAction.bind(null, form.id, "DRAFT")}>
-              <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5">
+              <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-100">
                 Unpublish
               </button>
             </form>
@@ -63,7 +63,7 @@ export default async function FormDetailPage({
           )}
           {form.status !== "ARCHIVED" ? (
             <form action={setLeadFormStatusAction.bind(null, form.id, "ARCHIVED")}>
-              <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-muted hover:bg-white/5">
+              <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-muted hover:bg-zinc-100">
                 Archive
               </button>
             </form>
@@ -98,10 +98,10 @@ export default async function FormDetailPage({
       ) : (
         <div className="mt-4 space-y-3">
           {submissions.map((s) => (
-            <div key={s.id} className="rounded-xl border border-white/10 bg-surface p-4">
+            <div key={s.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-medium text-white">{s.name ?? "—"}</div>
+                  <div className="font-medium text-zinc-900">{s.name ?? "—"}</div>
                   <div className="mt-0.5 space-x-2 text-sm">
                     {s.email ? (
                       <a href={`mailto:${s.email}`} className="text-cyan underline">
@@ -113,7 +113,7 @@ export default async function FormDetailPage({
                         href={`https://wa.me/${s.phone.replace(/[^0-9]/g, "")}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-muted underline hover:text-white"
+                        className="text-muted underline hover:text-zinc-900"
                       >
                         {s.phone}
                       </a>

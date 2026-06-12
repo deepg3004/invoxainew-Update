@@ -61,7 +61,7 @@ export default async function BuyerCorner() {
           <p className="mt-1 text-sm text-muted">Signed in as {user.email}</p>
         </div>
         <form action="/account/auth/signout" method="post">
-          <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5">
+          <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-50">
             Sign out
           </button>
         </form>
@@ -77,17 +77,17 @@ export default async function BuyerCorner() {
               <Link
                 key={c.id}
                 href={`/account/learn/${c.slug}`}
-                className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface p-3 transition hover:border-brand/40"
+                className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-surface p-3 transition hover:border-brand/40"
               >
                 {c.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={c.imageUrl}
                     alt={c.title}
-                    className="h-12 w-12 rounded-lg border border-white/10 object-cover"
+                    className="h-12 w-12 rounded-lg border border-zinc-200 object-cover"
                   />
                 ) : (
-                  <div className="h-12 w-12 rounded-lg bg-white/5" />
+                  <div className="h-12 w-12 rounded-lg bg-zinc-50" />
                 )}
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.title}</span>
                 <span className="text-xs text-cyan">Open →</span>
@@ -105,9 +105,9 @@ export default async function BuyerCorner() {
             </p>
           </GlassCard>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-surface">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-surface">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-white/10 text-muted">
+              <thead className="border-b border-zinc-200 text-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Item</th>
                   <th className="px-4 py-3 font-medium">Date</th>
@@ -117,8 +117,8 @@ export default async function BuyerCorner() {
               </thead>
               <tbody>
                 {orders.map((o) => (
-                  <tr key={o.id} className="border-b border-white/10 last:border-0">
-                    <td className="px-4 py-3 font-medium text-white">
+                  <tr key={o.id} className="border-b border-zinc-200 last:border-0">
+                    <td className="px-4 py-3 font-medium text-zinc-900">
                       {o.itemTitle ?? o.paymentPage?.title ?? "Order"}
                       {o.quantity > 1 ? ` ×${o.quantity}` : ""}
                       {o.orderItems.length > 0 ? (
@@ -139,7 +139,7 @@ export default async function BuyerCorner() {
                     </td>
                     <td className="px-4 py-3 text-muted">{formatDate(o.paidAt)}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-neutral-200">
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700">
                         {o.fulfillmentStatus.charAt(0) +
                           o.fulfillmentStatus.slice(1).toLowerCase()}
                       </span>

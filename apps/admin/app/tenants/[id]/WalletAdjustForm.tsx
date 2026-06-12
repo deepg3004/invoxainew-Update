@@ -18,7 +18,7 @@ export function WalletAdjustForm({ tenantId }: { tenantId: string }) {
         <select
           name="direction"
           defaultValue="CREDIT"
-          className="rounded-lg border border-white/10 px-2 py-1.5 text-sm"
+          className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 focus:border-brand"
         >
           <option value="CREDIT">Credit (+)</option>
           <option value="DEBIT">Debit (−)</option>
@@ -29,13 +29,13 @@ export function WalletAdjustForm({ tenantId }: { tenantId: string }) {
             name="amount"
             inputMode="decimal"
             placeholder="0.00"
-            className="w-28 rounded-lg border border-white/10 px-2 py-1.5 text-sm"
+            className="w-28 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand"
           />
         </div>
         <input
           name="reason"
           placeholder="Reason (logged)"
-          className="min-w-48 flex-1 rounded-lg border border-white/10 px-2 py-1.5 text-sm"
+          className="min-w-48 flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand"
         />
         <button
           disabled={pending}

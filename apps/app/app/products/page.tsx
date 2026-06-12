@@ -17,7 +17,7 @@ function buyerBase(username: string): string {
 const STATUS_BADGE: Record<string, string> = {
   PUBLISHED: "bg-green-50 text-green-700",
   DRAFT: "bg-amber-50 text-amber-700",
-  ARCHIVED: "bg-white/10 text-muted",
+  ARCHIVED: "bg-zinc-100 text-muted",
 };
 
 export default async function ProductsPage() {
@@ -73,15 +73,15 @@ export default async function ProductsPage() {
             return (
               <div
                 key={p.id}
-                className="rounded-xl border border-white/10 bg-surface p-4"
+                className="rounded-xl border border-zinc-200 bg-surface p-4"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{p.title}</span>
+                      <span className="font-medium text-zinc-900">{p.title}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          STATUS_BADGE[p.status] ?? "bg-white/10 text-muted"
+                          STATUS_BADGE[p.status] ?? "bg-zinc-100 text-muted"
                         }`}
                       >
                         {p.status.charAt(0) + p.status.slice(1).toLowerCase()}
@@ -115,19 +115,19 @@ export default async function ProductsPage() {
                       </Link>
                       {p.status === "PUBLISHED" ? (
                         <form action={setProductStatusAction.bind(null, p.id, "DRAFT")}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Unpublish
                           </button>
                         </form>
                       ) : p.status === "DRAFT" ? (
                         <form action={setProductStatusAction.bind(null, p.id, "PUBLISHED")}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Publish
                           </button>
                         </form>
                       ) : (
                         <form action={setProductStatusAction.bind(null, p.id, "DRAFT")}>
-                          <button className="text-muted underline hover:text-white">
+                          <button className="text-muted underline hover:text-zinc-900">
                             Restore
                           </button>
                         </form>

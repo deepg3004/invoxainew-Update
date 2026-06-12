@@ -69,12 +69,12 @@ export default async function LearnPage({
       ) : (
         <div className="mt-8 space-y-8">
           {lessons.map((l, idx) => (
-            <article key={l.id} className="border-t border-white/10 pt-6">
+            <article key={l.id} className="border-t border-zinc-200 pt-6">
               <h2 className="text-lg font-semibold">
                 <span className="text-muted">{idx + 1}.</span> {l.title}
               </h2>
               {l.content ? (
-                <p className="mt-3 whitespace-pre-line leading-relaxed text-neutral-200">
+                <p className="mt-3 whitespace-pre-line leading-relaxed text-zinc-700">
                   {l.content}
                 </p>
               ) : (

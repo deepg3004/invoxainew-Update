@@ -35,7 +35,7 @@ export default async function WalletPage() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <GlassCard title="Balance">
-          <p className="text-3xl font-bold text-white">
+          <p className="text-3xl font-bold text-zinc-900">
             {formatRupees(balance)}
           </p>
         </GlassCard>
@@ -48,9 +48,9 @@ export default async function WalletPage() {
       {txns.length === 0 ? (
         <p className="mt-3 text-sm text-muted">No transactions yet.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-surface">
+        <div className="mt-4 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-white/10 text-muted">
+            <thead className="border-b border-zinc-200 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">When</th>
                 <th className="px-4 py-3 font-medium">Reason</th>
@@ -62,14 +62,14 @@ export default async function WalletPage() {
               {txns.map((t) => {
                 const credit = t.direction === "CREDIT";
                 return (
-                  <tr key={t.id} className="border-b border-neutral-100 last:border-0">
+                  <tr key={t.id} className="border-b border-zinc-200 last:border-0">
                     <td className="px-4 py-3 text-muted">
                       {formatDateTime(t.createdAt)}
                     </td>
                     <td className="px-4 py-3">{t.reason}</td>
                     <td
                       className={`px-4 py-3 text-right font-medium ${
-                        credit ? "text-green-700" : "text-white"
+                        credit ? "text-green-700" : "text-zinc-900"
                       }`}
                     >
                       {credit ? "+" : "−"}

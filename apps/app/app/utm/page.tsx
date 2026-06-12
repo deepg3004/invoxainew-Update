@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 bg-surface px-3 py-2 text-sm outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 const FIELDS = [
   { key: "utm_source", label: "Source", placeholder: "instagram, newsletter, google" },
@@ -83,7 +83,7 @@ export default function UtmBuilderPage() {
       ) : null}
 
       {result ? (
-        <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
             Your tagged link
           </p>

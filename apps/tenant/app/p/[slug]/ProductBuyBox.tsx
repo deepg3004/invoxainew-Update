@@ -130,7 +130,7 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
     <div className="mt-5">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       {cap === 0 ? (
-        <p className="rounded-md bg-white/10 px-3 py-2 text-sm font-medium text-muted">
+        <p className="rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-muted">
           Sold out
         </p>
       ) : (
@@ -141,7 +141,7 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
               <select
                 value={qty}
                 onChange={(e) => setQty(Number(e.target.value))}
-                className="rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-brand"
               >
                 {Array.from({ length: cap }, (_, i) => i + 1).map((n) => (
                   <option key={n} value={n}>
@@ -155,14 +155,14 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email (for your receipt)"
-              className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
             <input
               inputMode="tel"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
               placeholder="Phone (optional)"
-              className="w-full rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
           </div>
           {/* Promo code */}
@@ -171,13 +171,13 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="Promo code"
-              className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-sm uppercase outline-none focus:border-brand"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm uppercase text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
             <button
               type="button"
               onClick={applyPromo}
               disabled={applying || code.trim() === ""}
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-neutral-200 hover:border-brand/40 disabled:opacity-50"
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:border-brand/40 disabled:opacity-50"
             >
               {applying ? "…" : "Apply"}
             </button>

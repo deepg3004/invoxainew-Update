@@ -34,7 +34,7 @@ export default async function BillingPage() {
         <GlassCard title="Current plan">
           {subscription ? (
             <div className="text-sm">
-              <p className="text-lg font-semibold text-white">
+              <p className="text-lg font-semibold text-zinc-900">
                 {subscription.plan.name}
               </p>
               <p className="mt-1 text-muted">

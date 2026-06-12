@@ -75,7 +75,7 @@ export default async function StorePage({
               name="q"
               defaultValue={q}
               placeholder="Search products"
-              className="flex-1 rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
             <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
               Search

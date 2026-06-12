@@ -22,7 +22,7 @@ export function TemplateCard({
   const t = THEME_PRESETS[preset];
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/10 bg-surface">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-surface">
       {/* Mini preview using the template's theme tokens */}
       <div className="px-4 py-6" style={{ background: t.bg }}>
         <div className="text-base font-bold" style={{ color: t.text }}>
@@ -34,7 +34,7 @@ export function TemplateCard({
       </div>
 
       <div className="p-4">
-        <div className="font-medium text-white">{name}</div>
+        <div className="font-medium text-zinc-900">{name}</div>
         <p className="mt-0.5 text-sm text-muted">{description}</p>
 
         <form action={formAction} className="mt-3 space-y-2">
@@ -44,7 +44,7 @@ export function TemplateCard({
               name="slug"
               required
               placeholder="my-page"
-              className="flex-1 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
           </div>
           {state.error ? (

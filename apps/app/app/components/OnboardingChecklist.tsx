@@ -37,14 +37,14 @@ export function OnboardingChecklist({ status }: { status: OnboardingStatus }) {
   if (doneCount === steps.length) return null;
 
   return (
-    <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-xl">
+    <div className="mb-8 rounded-2xl border border-zinc-200 bg-white p-5 backdrop-blur-xl">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-white">Finish setting up</h2>
+        <h2 className="font-semibold text-zinc-900">Finish setting up</h2>
         <span className="text-sm font-medium text-cyan">
           {doneCount}/{steps.length} done
         </span>
       </div>
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100">
         <div
           className="h-full bg-brand"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
@@ -55,13 +55,13 @@ export function OnboardingChecklist({ status }: { status: OnboardingStatus }) {
           <li key={s.label} className="flex items-start gap-3 text-sm">
             <span
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${
-                s.done ? "bg-success text-white" : "border border-white/10 text-transparent"
+                s.done ? "bg-success text-white" : "border border-zinc-200 text-transparent"
               }`}
             >
               ✓
             </span>
             <div className="min-w-0 flex-1">
-              <span className={s.done ? "text-muted line-through" : "font-medium text-white"}>
+              <span className={s.done ? "text-muted line-through" : "font-medium text-zinc-900"}>
                 {s.label}
               </span>
               {!s.done ? (

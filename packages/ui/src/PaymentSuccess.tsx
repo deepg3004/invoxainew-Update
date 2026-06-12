@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import confetti from "canvas-confetti";
 
-const BRAND_COLORS = ["#7C3AED", "#06B6D4", "#A855F7", "#FACC15", "#10B981"];
+const BRAND_COLORS = ["#F97316", "#EC4899", "#8B5CF6", "#F59E0B", "#10B981"];
 
 /**
  * Celebratory payment-success panel: fires a confetti burst on mount, pops an
@@ -45,13 +45,13 @@ export function PaymentSuccess({
   }, []);
 
   return (
-    <div className="mt-5 rounded-2xl border border-success/30 bg-success/10 px-5 py-6 text-center backdrop-blur-xl">
-      <div className="mx-auto flex h-14 w-14 animate-pop items-center justify-center rounded-full bg-success text-white shadow-[0_0_30px_-4px_rgba(16,185,129,0.7)]">
+    <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-6 text-center">
+      <div className="mx-auto flex h-14 w-14 animate-pop items-center justify-center rounded-full bg-success text-white shadow-[0_0_30px_-4px_rgba(16,185,129,0.5)]">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M20 6 9 17l-5-5" />
         </svg>
       </div>
-      <p className="mt-4 font-display text-lg font-semibold text-white">{title}</p>
+      <p className="mt-4 font-display text-lg font-semibold text-zinc-900">{title}</p>
       {subtitle ? <p className="mt-1 text-sm text-muted">{subtitle}</p> : null}
       {ctaHref && ctaLabel ? (
         <a

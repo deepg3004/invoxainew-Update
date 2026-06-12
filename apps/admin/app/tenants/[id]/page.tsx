@@ -113,7 +113,7 @@ export default async function TenantDetail({
         <h2 className="text-lg font-bold">Admin actions</h2>
 
         <div className="mt-4">
-          <p className="text-sm font-medium text-neutral-200">
+          <p className="text-sm font-medium text-muted">
             {suspended ? "This store is suspended." : "Store is active."}
           </p>
           <form
@@ -124,7 +124,7 @@ export default async function TenantDetail({
               <input
                 name="reason"
                 placeholder="Reason for suspension (logged)"
-                className="min-w-64 flex-1 rounded-lg border border-white/10 px-2 py-1.5 text-sm"
+                className="min-w-64 flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand"
               />
             ) : null}
             <button
@@ -138,7 +138,7 @@ export default async function TenantDetail({
         </div>
 
         <div className="mt-5 border-t border-amber-200 pt-4">
-          <p className="text-sm font-medium text-neutral-200">Manual wallet adjustment</p>
+          <p className="text-sm font-medium text-muted">Manual wallet adjustment</p>
           <p className="mb-2 text-xs text-muted">
             Moves the seller’s own wallet money only (refunds, corrections). Never
             buyer money. Every change is logged below.
@@ -151,11 +151,11 @@ export default async function TenantDetail({
       {audit.length > 0 ? (
         <div className="mt-6">
           <h2 className="text-lg font-bold">Admin audit log</h2>
-          <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
+          <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
             <table className="w-full text-left text-sm">
               <tbody>
                 {audit.map((a) => (
-                  <tr key={a.id} className="border-b border-white/10 last:border-0">
+                  <tr key={a.id} className="border-b border-zinc-200 last:border-0">
                     <td className="px-4 py-2 text-muted">{fmtDate(a.createdAt)}</td>
                     <td className="px-4 py-2 font-medium">{a.action}</td>
                     <td className="px-4 py-2 text-muted">
@@ -176,16 +176,16 @@ export default async function TenantDetail({
       {/* Recent wallet ledger */}
       <h2 className="mt-8 text-lg font-bold">Wallet ledger (recent)</h2>
       {t.wallet && t.wallet.transactions.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
+        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
           <table className="w-full text-left text-sm">
             <tbody>
               {t.wallet.transactions.map((tx) => (
-                <tr key={tx.id} className="border-b border-white/10 last:border-0">
+                <tr key={tx.id} className="border-b border-zinc-200 last:border-0">
                   <td className="px-4 py-2 text-muted">{fmtDate(tx.createdAt)}</td>
                   <td className="px-4 py-2">{tx.reason}</td>
                   <td
                     className={`px-4 py-2 text-right font-medium ${
-                      tx.direction === "CREDIT" ? "text-green-700" : "text-white"
+                      tx.direction === "CREDIT" ? "text-green-700" : "text-zinc-900"
                     }`}
                   >
                     {tx.direction === "CREDIT" ? "+" : "−"}
@@ -206,12 +206,12 @@ export default async function TenantDetail({
       {/* Recent orders */}
       <h2 className="mt-8 text-lg font-bold">Recent orders</h2>
       {t.buyerPayments.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
+        <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
           <table className="w-full text-left text-sm">
             <tbody>
               {t.buyerPayments.map((o) => (
-                <tr key={o.id} className="border-b border-white/10 last:border-0">
-                  <td className="px-4 py-2 font-medium text-white">
+                <tr key={o.id} className="border-b border-zinc-200 last:border-0">
+                  <td className="px-4 py-2 font-medium text-zinc-900">
                     {o.itemTitle ?? o.paymentPage?.title ?? "—"}
                     {o.refundedPaise > 0 && !o.chargebackAt ? (
                       <span className="ml-2 text-xs text-warning">

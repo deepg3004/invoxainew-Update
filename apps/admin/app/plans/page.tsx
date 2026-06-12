@@ -35,9 +35,9 @@ export default async function PlansPage() {
           No plans yet. Create the first one.
         </p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-white/10 bg-surface">
+        <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200 bg-surface">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-white/10 text-muted">
+            <thead className="border-b border-zinc-200 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Plan</th>
                 <th className="px-4 py-3 font-medium">Monthly</th>
@@ -51,9 +51,9 @@ export default async function PlansPage() {
             </thead>
             <tbody>
               {plans.map((p) => (
-                <tr key={p.id} className="border-b border-white/10 last:border-0">
+                <tr key={p.id} className="border-b border-zinc-200 last:border-0">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-white">{p.name}</div>
+                    <div className="font-medium text-zinc-900">{p.name}</div>
                     <div className="text-xs text-muted">{p.key}</div>
                   </td>
                   <td className="px-4 py-3">{formatRupees(p.priceMonthly)}</td>
@@ -67,7 +67,7 @@ export default async function PlansPage() {
                         Active
                       </span>
                     ) : (
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-muted">
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-muted">
                         Retired
                       </span>
                     )}
@@ -81,7 +81,7 @@ export default async function PlansPage() {
                         Edit
                       </Link>
                       <form action={setPlanActiveAction.bind(null, p.id, !p.isActive)}>
-                        <button className="text-muted underline hover:text-white">
+                        <button className="text-muted underline hover:text-zinc-900">
                           {p.isActive ? "Retire" : "Restore"}
                         </button>
                       </form>

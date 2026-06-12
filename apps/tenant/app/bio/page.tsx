@@ -61,10 +61,10 @@ export default async function BioPage() {
         <img
           src={bio.avatarUrl}
           alt={name}
-          className="h-24 w-24 rounded-full border border-white/10 object-cover"
+          className="h-24 w-24 rounded-full border border-zinc-200 object-cover"
         />
       ) : (
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-gradient text-3xl font-bold">
+        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-gradient text-3xl font-bold text-white">
           {name.charAt(0).toUpperCase()}
         </div>
       )}
@@ -80,7 +80,7 @@ export default async function BioPage() {
               href={trackHref(s.href)}
               target="_blank"
               rel="noreferrer nofollow"
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition hover:text-white"
+              className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-muted transition hover:text-zinc-900"
             >
               {s.label}
             </a>
@@ -95,7 +95,7 @@ export default async function BioPage() {
               key={i}
               href={trackHref(l.href)}
               {...(l.href.startsWith("/") ? {} : { target: "_blank", rel: "noreferrer nofollow" })}
-              className="block w-full rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3.5 font-medium backdrop-blur-xl transition hover:border-brand/40 hover:bg-white/10"
+              className="block w-full rounded-2xl border border-zinc-200 bg-white px-5 py-3.5 font-medium backdrop-blur-xl transition hover:border-brand/40 hover:bg-zinc-100"
             >
               {l.label}
             </a>

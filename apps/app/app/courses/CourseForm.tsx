@@ -17,7 +17,7 @@ export interface CourseValues {
 type Action = (prev: CourseFormState, form: FormData) => Promise<CourseFormState>;
 
 const inputCls =
-  "mt-1 w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
+  "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand";
 
 export function CourseForm({
   action,
@@ -41,7 +41,7 @@ export function CourseForm({
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Link</span>
+        <span className="text-sm font-medium text-zinc-700">Link</span>
         <div className="mt-1 flex items-center gap-1 text-sm">
           <span className="text-muted">/c/</span>
           <input
@@ -50,8 +50,8 @@ export function CourseForm({
             readOnly={isEdit}
             required={!isEdit}
             placeholder="react-basics"
-            className={`flex-1 rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand ${
-              isEdit ? "bg-white/10 text-muted" : ""
+            className={`flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand ${
+              isEdit ? "bg-zinc-100 text-muted" : ""
             }`}
           />
         </div>
@@ -61,7 +61,7 @@ export function CourseForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Title</span>
+        <span className="text-sm font-medium text-zinc-700">Title</span>
         <input
           name="title"
           defaultValue={initial?.title ?? ""}
@@ -72,7 +72,7 @@ export function CourseForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Description</span>
+        <span className="text-sm font-medium text-zinc-700">Description</span>
         <textarea
           name="description"
           defaultValue={initial?.description ?? ""}
@@ -83,7 +83,7 @@ export function CourseForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Price (₹)</span>
+          <span className="text-sm font-medium text-zinc-700">Price (₹)</span>
           <input
             name="price"
             inputMode="decimal"
@@ -94,7 +94,7 @@ export function CourseForm({
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-neutral-200">Cover image URL</span>
+          <span className="text-sm font-medium text-zinc-700">Cover image URL</span>
           <input
             name="imageUrl"
             defaultValue={initial?.imageUrl ?? ""}
@@ -105,7 +105,7 @@ export function CourseForm({
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium text-neutral-200">Display order</span>
+        <span className="text-sm font-medium text-zinc-700">Display order</span>
         <input
           name="sortOrder"
           inputMode="numeric"
@@ -118,7 +118,7 @@ export function CourseForm({
       {!isEdit ? (
         <label className="flex items-center gap-2">
           <input type="checkbox" name="publish" className="h-4 w-4" />
-          <span className="text-sm text-neutral-200">Publish now</span>
+          <span className="text-sm text-zinc-700">Publish now</span>
         </label>
       ) : null}
 

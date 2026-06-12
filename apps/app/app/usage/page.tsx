@@ -24,9 +24,9 @@ export default async function UsagePage() {
         charged from your wallet.
       </p>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-surface">
+      <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-white/10 text-muted">
+          <thead className="border-b border-zinc-200 text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Feature</th>
               <th className="px-4 py-3 font-medium">Used this month</th>
@@ -38,8 +38,8 @@ export default async function UsagePage() {
             {summary.features.map((f) => {
               const unlimited = f.freeLimit === -1;
               return (
-                <tr key={f.featureKey} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-3 font-medium text-white">{f.name}</td>
+                <tr key={f.featureKey} className="border-b border-zinc-200 last:border-0">
+                  <td className="px-4 py-3 font-medium text-zinc-900">{f.name}</td>
                   <td className="px-4 py-3">{f.used}</td>
                   <td className="px-4 py-3">
                     {unlimited ? (

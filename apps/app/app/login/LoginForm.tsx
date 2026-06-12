@@ -86,7 +86,7 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
           />
           <button
             type="submit"
@@ -108,7 +108,7 @@ export function LoginForm() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="123456"
-            className="w-full rounded-lg border border-white/10 px-3 py-2 tracking-widest outline-none focus:border-brand"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 tracking-widest text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
           />
           <button
             type="submit"
@@ -128,15 +128,15 @@ export function LoginForm() {
       )}
 
       <div className="my-6 flex items-center gap-3 text-xs text-muted">
-        <span className="h-px flex-1 bg-white/10" /> or{" "}
-        <span className="h-px flex-1 bg-white/10" />
+        <span className="h-px flex-1 bg-zinc-200" /> or{" "}
+        <span className="h-px flex-1 bg-zinc-200" />
       </div>
 
       <button
         type="button"
         onClick={signInWithGoogle}
         disabled={busy}
-        className="w-full rounded-lg border border-white/10 px-3 py-2 font-medium hover:bg-white/5 disabled:opacity-50"
+        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-50"
       >
         Continue with Google
       </button>

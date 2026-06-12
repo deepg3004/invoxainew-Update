@@ -3,35 +3,35 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  @apply bg-ink text-white antialiased;
+  @apply bg-ink text-zinc-900 antialiased;
   font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer components {
-  /* Glassmorphism surface */
+  /* Light frosted surface */
   .glass {
-    @apply rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl;
+    @apply rounded-2xl border border-zinc-200/70 bg-white/80 backdrop-blur-xl;
   }
 
-  /* Violet→cyan gradient text for headlines */
+  /* Orange→pink→violet gradient text for headlines */
   .text-gradient {
     @apply bg-brand-gradient bg-clip-text text-transparent;
   }
 }
 
-/* Subtle premium scrollbar on the dark surfaces */
+/* Soft warm scrollbar on the light surfaces */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #e7ddd5;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #d6cabf;
 }
