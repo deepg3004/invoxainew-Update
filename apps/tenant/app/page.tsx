@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Card } from "@invoxai/ui";
-import { getTenantTracking } from "@invoxai/db";
+import {
+  getTenantTracking,
+  listPublishedProducts,
+  listPublishedCourses,
+} from "@invoxai/db";
+import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../lib/resolve";
 import { StoreUnavailable } from "./StoreUnavailable";
 import { TrackingScripts } from "./TrackingScripts";
@@ -9,6 +13,18 @@ import { CartLink } from "./CartLink";
 
 // Resolved per-request from the Host header, so never cache.
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata() {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return {};
+  const name = tenant.name ?? tenant.username;
+  return {
+    title: name,
+    description: `Shop products and courses from ${name}.`,
+    openGraph: { title: name, description: `Shop products and courses from ${name}.`, type: "website" },
+  };
+}
 
 export default async function TenantHome() {
   const host = (await headers()).get("host");
@@ -39,41 +55,102 @@ export default async function TenantHome() {
   }
 
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
-  const tracking = await getTenantTracking(tenant.id);
+
+  const [tracking, products, courses] = await Promise.all([
+    getTenantTracking(tenant.id),
+    listPublishedProducts(tenant.id),
+    listPublishedCourses(tenant.id),
+  ]);
+  const name = tenant.name ?? tenant.username;
+  const featuredProducts = products.slice(0, 6);
+  const featuredCourses = courses.slice(0, 4);
+  const hasContent = products.length > 0 || courses.length > 0;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
+    <main className="mx-auto max-w-4xl px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
-      <div className="flex items-start justify-between">
-        <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
-          {tenant.username}.invoxai.io
-        </p>
-        <div className="flex gap-4">
+      <header className="flex items-center justify-between border-b border-neutral-200 pb-5">
+        <h1 className="text-2xl font-bold text-neutral-900">{name}</h1>
+        <div className="flex items-center gap-4 text-sm">
           <CartLink />
-          <Link href="/account" className="text-sm text-blue-600 underline">
+          <Link href="/account" className="text-blue-600 underline">
             Your orders
           </Link>
         </div>
-      </div>
-      <h1 className="mt-1 text-3xl font-bold">{tenant.name ?? tenant.username}</h1>
+      </header>
 
-      <div className="mt-8">
-        <Card title="This site is live">
-          <p>
-            Host-based tenant resolution worked: the request to{" "}
-            <strong>{host}</strong> resolved to tenant{" "}
-            <strong>{tenant.username}</strong>.
-          </p>
-          <p className="mt-3 flex gap-4">
-            <Link href="/store" className="font-medium text-blue-600 underline">
-              Visit the store →
-            </Link>
-            <Link href="/courses" className="font-medium text-blue-600 underline">
-              Browse courses →
-            </Link>
-          </p>
-        </Card>
-      </div>
+      {!hasContent ? (
+        <div className="mt-16 text-center">
+          <h2 className="text-xl font-semibold text-neutral-900">Welcome to {name}</h2>
+          <p className="mt-2 text-neutral-500">New items are on the way — check back soon.</p>
+          <Link
+            href="/store"
+            className="mt-5 inline-block rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white"
+          >
+            Browse the store
+          </Link>
+        </div>
+      ) : (
+        <>
+          {featuredProducts.length > 0 ? (
+            <section className="mt-10">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-lg font-semibold text-neutral-900">Shop</h2>
+                <Link href="/store" className="text-sm text-blue-600 underline">
+                  View all →
+                </Link>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {featuredProducts.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/p/${p.slug}`}
+                    className="rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-neutral-900"
+                  >
+                    {p.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.imageUrl} alt={p.title} className="aspect-square w-full rounded-lg border border-neutral-100 object-cover" />
+                    ) : (
+                      <div className="aspect-square w-full rounded-lg bg-neutral-50" />
+                    )}
+                    <div className="mt-2 truncate text-sm font-medium text-neutral-900">{p.title}</div>
+                    <div className="mt-0.5 font-semibold">{formatRupees(p.pricePaise)}</div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {featuredCourses.length > 0 ? (
+            <section className="mt-12">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-lg font-semibold text-neutral-900">Courses</h2>
+                <Link href="/courses" className="text-sm text-blue-600 underline">
+                  View all →
+                </Link>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {featuredCourses.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/c/${c.slug}`}
+                    className="rounded-xl border border-neutral-200 bg-white p-3 transition hover:border-neutral-900"
+                  >
+                    {c.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={c.imageUrl} alt={c.title} className="aspect-video w-full rounded-lg border border-neutral-100 object-cover" />
+                    ) : (
+                      <div className="aspect-video w-full rounded-lg bg-neutral-50" />
+                    )}
+                    <div className="mt-2 truncate text-sm font-medium text-neutral-900">{c.title}</div>
+                    <div className="mt-0.5 font-semibold">{formatRupees(c.pricePaise)}</div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </>
+      )}
     </main>
   );
 }
