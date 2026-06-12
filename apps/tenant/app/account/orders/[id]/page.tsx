@@ -6,6 +6,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../../../../lib/resolve";
 import { getSessionUser } from "../../../../lib/auth";
 import { PrintButton } from "./PrintButton";
+import { LinkifiedText } from "../../../LinkifiedText";
 
 export const dynamic = "force-dynamic";
 
@@ -145,7 +146,7 @@ export default async function OrderReceipt({
 
         {order.trackingNote ? (
           <p className="mt-4 border-t border-neutral-200 pt-4 text-xs text-neutral-500">
-            {order.trackingNote}
+            <LinkifiedText text={order.trackingNote} />
           </p>
         ) : null}
       </div>

@@ -11,6 +11,7 @@ import {
 } from "@invoxai/db";
 import { getSessionUser } from "../../lib/auth";
 import { resolveTenantByHost } from "../../lib/resolve";
+import { LinkifiedText } from "../LinkifiedText";
 
 export const dynamic = "force-dynamic";
 
@@ -146,7 +147,9 @@ export default async function BuyerCorner() {
                           o.fulfillmentStatus.slice(1).toLowerCase()}
                       </span>
                       {o.trackingNote ? (
-                        <div className="mt-1 text-xs text-neutral-400">{o.trackingNote}</div>
+                        <div className="mt-1 text-xs text-neutral-400">
+                          <LinkifiedText text={o.trackingNote} />
+                        </div>
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-right">
