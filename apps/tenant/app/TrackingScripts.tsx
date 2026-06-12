@@ -9,16 +9,41 @@ export interface TrackingIds {
   gtmId?: string | null;
 }
 
+type PixelWindow = {
+  fbq?: (...a: unknown[]) => void;
+  gtag?: (...a: unknown[]) => void;
+};
+const pixels = (): PixelWindow | null =>
+  typeof window === "undefined" ? null : (window as unknown as PixelWindow);
+
 /** Fire a Purchase/conversion event to whatever pixels are loaded on the page. */
 export function firePurchase(valuePaise: number, currency = "INR") {
-  if (typeof window === "undefined") return;
-  const w = window as unknown as {
-    fbq?: (...a: unknown[]) => void;
-    gtag?: (...a: unknown[]) => void;
-  };
+  const w = pixels();
+  if (!w) return;
   const value = valuePaise / 100;
   w.fbq?.("track", "Purchase", { value, currency });
   w.gtag?.("event", "purchase", { value, currency });
+}
+
+/** Fire a Lead event (form submitted). */
+export function fireLead() {
+  const w = pixels();
+  if (!w) return;
+  w.fbq?.("track", "Lead");
+  w.gtag?.("event", "generate_lead");
+}
+
+/** Fire a ViewContent event (buyer viewed a product/course). */
+export function fireViewContent(name: string, valuePaise?: number, currency = "INR") {
+  const w = pixels();
+  if (!w) return;
+  const value = valuePaise != null ? valuePaise / 100 : undefined;
+  w.fbq?.("track", "ViewContent", { content_name: name, value, currency });
+  w.gtag?.("event", "view_item", {
+    value,
+    currency,
+    items: [{ item_name: name }],
+  });
 }
 
 /**

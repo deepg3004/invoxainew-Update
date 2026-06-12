@@ -12,6 +12,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { ProductBuyBox } from "./ProductBuyBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
+import { TrackView } from "../../TrackView";
 import { CartLink } from "../../CartLink";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,7 @@ export default async function ProductPage({
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
+      <TrackView name={product.title} valuePaise={product.pricePaise} />
       <div className="flex items-center justify-between">
         <Link href="/store" className="text-sm text-cyan underline">
           ← {tenant.name ?? tenant.username} store

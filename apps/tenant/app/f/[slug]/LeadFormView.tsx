@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { submitLeadAction } from "./actions";
+import { fireLead } from "../../TrackingScripts";
 
 export interface LeadFormConfig {
   id: string;
@@ -28,7 +29,10 @@ export function LeadFormView({ form }: { form: LeadFormConfig }) {
     setStatus("sending");
     try {
       const res = await submitLeadAction({ formId: form.id, name, email, phone, message });
-      if (res.ok) setStatus("done");
+      if (res.ok) {
+        fireLead();
+        setStatus("done");
+      }
       else {
         setError("Couldn’t submit. Please try again.");
         setStatus("idle");

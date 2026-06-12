@@ -13,6 +13,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { CourseBuyBox } from "./CourseBuyBox";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
+import { TrackView } from "../../TrackView";
 import { CartLink } from "../../CartLink";
 import { getSessionUser } from "../../../lib/auth";
 
@@ -78,6 +79,7 @@ export default async function CoursePage({
   return (
     <main className="mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
+      <TrackView name={course.title} valuePaise={course.pricePaise} />
       <div className="flex items-center justify-between">
         <Link href="/courses" className="text-sm text-cyan underline">
           ← {tenant.name ?? tenant.username} courses
