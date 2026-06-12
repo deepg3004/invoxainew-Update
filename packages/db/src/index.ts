@@ -67,6 +67,7 @@ export {
   markBuyerPaymentPaid,
   settleDueCommissions,
   listTenantOrders,
+  countTenantOrders,
   listAbandonedCheckouts,
   countAbandonedCheckouts,
   listSoldOutProductsForOrder,
@@ -79,6 +80,8 @@ export {
   type BuyerPaidResult,
   type SalesSummary,
   type RefundResult,
+  type OrderListOpts,
+  type FulfillmentStatusFilter,
 } from "./payments";
 export {
   ensureBuyerAccount,

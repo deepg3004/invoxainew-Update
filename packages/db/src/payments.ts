@@ -289,17 +289,60 @@ export async function listSoldOutProductsForOrder(buyerPaymentId: string) {
 
 // ── Order tracking (C10) ──────────────────────────────────────────────────────
 
-/** A seller's paid orders, newest first, with item + commission. Scoped. An
- *  optional fulfillmentStatus narrows the list (for the seller's status filter). */
-export function listTenantOrders(
+export type FulfillmentStatusFilter =
+  | "NEW"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED";
+
+export interface OrderListOpts {
+  /** Narrow to a single fulfillment status (the seller's status tabs). */
+  status?: FulfillmentStatusFilter;
+  /** Free-text search over buyer email/phone, item title, payment id, page title. */
+  search?: string;
+  /** Pagination offset and page size. */
+  skip?: number;
+  take?: number;
+}
+
+/**
+ * Shared WHERE for a seller's PAID orders. `tenantId` and `status:"PAID"` are
+ * always AND-ed at the TOP level, so the optional search `OR`-clause can never
+ * widen the result beyond THIS tenant's own paid orders — a search/filter can't
+ * cross tenants. Search is case-insensitive across the buyer-identifying fields.
+ */
+function tenantOrdersWhere(
   tenantId: string,
-  fulfillmentStatus?: "NEW" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED",
-  take = 100,
-) {
+  opts: OrderListOpts = {},
+): Prisma.BuyerPaymentWhereInput {
+  const q = opts.search?.trim();
+  return {
+    tenantId,
+    status: "PAID",
+    ...(opts.status ? { fulfillmentStatus: opts.status } : {}),
+    ...(q
+      ? {
+          OR: [
+            { buyerEmail: { contains: q, mode: "insensitive" } },
+            { buyerContact: { contains: q, mode: "insensitive" } },
+            { itemTitle: { contains: q, mode: "insensitive" } },
+            { razorpayPaymentId: { contains: q, mode: "insensitive" } },
+            { paymentPage: { is: { title: { contains: q, mode: "insensitive" } } } },
+          ],
+        }
+      : {}),
+  };
+}
+
+/** A seller's paid orders, newest first, with item + commission. Scoped.
+ *  Optional status / search filters + skip/take pagination (default take 100). */
+export function listTenantOrders(tenantId: string, opts: OrderListOpts = {}) {
   return prisma.buyerPayment.findMany({
-    where: { tenantId, status: "PAID", ...(fulfillmentStatus ? { fulfillmentStatus } : {}) },
+    where: tenantOrdersWhere(tenantId, opts),
     orderBy: { paidAt: "desc" },
-    take,
+    skip: opts.skip,
+    take: opts.take ?? 100,
     include: {
       paymentPage: { select: { title: true, slug: true } },
       commission: { select: { status: true, amountPaise: true } },
@@ -308,6 +351,12 @@ export function listTenantOrders(
       },
     },
   });
+}
+
+/** Total paid orders matching the same status/search filter (drives pagination).
+ *  Scoped — identical WHERE to listTenantOrders. */
+export function countTenantOrders(tenantId: string, opts: OrderListOpts = {}) {
+  return prisma.buyerPayment.count({ where: tenantOrdersWhere(tenantId, opts) });
 }
 
 /**

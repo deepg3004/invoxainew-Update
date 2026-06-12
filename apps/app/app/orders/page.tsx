@@ -1,6 +1,6 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import { GlassCard } from "@invoxai/ui";
-import { listTenantOrders, getTenantSalesSummary } from "@invoxai/db";
+import { listTenantOrders, countTenantOrders, getTenantSalesSummary } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { updateOrderFulfillmentAction, advanceOrderAction } from "./actions";
@@ -31,21 +31,56 @@ function formatDate(d: Date | null): string {
   return formatDateIST(d);
 }
 
+const PAGE_SIZE = 20;
+
+/** Build an /orders URL preserving status + search + page (page omitted when 1). */
+function buildHref(params: { status?: string; q?: string; page?: number }): string {
+  const sp = new URLSearchParams();
+  if (params.status) sp.set("status", params.status);
+  if (params.q) sp.set("q", params.q);
+  if (params.page && params.page > 1) sp.set("page", String(params.page));
+  const qs = sp.toString();
+  return qs ? `/orders?${qs}` : "/orders";
+}
+
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const { status: rawStatus } = await searchParams;
+  const { status: rawStatus, q: rawQ, page: rawPage } = await searchParams;
   const activeStatus = STATUSES.includes(rawStatus as (typeof STATUSES)[number])
     ? (rawStatus as (typeof STATUSES)[number])
     : undefined;
+  const search = (rawQ ?? "").trim();
+  const filter = { status: activeStatus, search: search || undefined };
 
-  const [orders, summary] = await Promise.all([
-    listTenantOrders(tenant.id, activeStatus),
+  // Count first so the requested page can be clamped into range, then fetch the
+  // page slice. Summary stays GLOBAL (full totals, unaffected by the filter).
+  const [total, summary] = await Promise.all([
+    countTenantOrders(tenant.id, filter),
     getTenantSalesSummary(tenant.id),
   ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(
+    Math.max(1, Number.parseInt(rawPage ?? "1", 10) || 1),
+    totalPages,
+  );
+  const orders = await listTenantOrders(tenant.id, {
+    ...filter,
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
+  const firstOnPage = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const lastOnPage = (page - 1) * PAGE_SIZE + orders.length;
+
+  const exportHref = `/orders/export${(() => {
+    const sp = new URLSearchParams();
+    if (activeStatus) sp.set("status", activeStatus);
+    if (search) sp.set("q", search);
+    return sp.toString() ? `?${sp}` : "";
+  })()}`;
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
@@ -81,9 +116,9 @@ export default async function OrdersPage({
 
       <div className="mt-10 flex items-center justify-between">
         <h2 className="text-xl font-bold">Orders</h2>
-        {orders.length > 0 ? (
+        {total > 0 ? (
           <a
-            href="/orders/export"
+            href={exportHref}
             className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/5"
           >
             Export CSV
@@ -91,22 +126,56 @@ export default async function OrdersPage({
         ) : null}
       </div>
 
+      <form method="get" className="mt-4 flex flex-wrap items-center gap-2">
+        {activeStatus ? (
+          <input type="hidden" name="status" value={activeStatus} />
+        ) : null}
+        <input
+          name="q"
+          defaultValue={search}
+          placeholder="Search buyer email, phone, item, payment id…"
+          className="w-full max-w-xs rounded-lg border border-white/10 bg-surface px-3 py-1.5 text-sm outline-none focus:border-brand"
+        />
+        <button className="rounded-lg border border-white/10 px-3 py-1.5 text-sm font-medium hover:bg-white/5">
+          Search
+        </button>
+        {search ? (
+          <a
+            href={buildHref({ status: activeStatus })}
+            className="px-2 py-1.5 text-sm text-muted hover:text-white"
+          >
+            Clear
+          </a>
+        ) : null}
+      </form>
+
       <div className="mt-4 flex flex-wrap gap-2">
-        <a href="/orders" className={tabCls(!activeStatus)}>
+        <a href={buildHref({ q: search })} className={tabCls(!activeStatus)}>
           All
         </a>
         {STATUSES.map((s) => (
-          <a key={s} href={`/orders?status=${s}`} className={tabCls(activeStatus === s)}>
-            {s.charAt(0) + s.slice(1).toLowerCase()}
+          <a
+            key={s}
+            href={buildHref({ status: s, q: search })}
+            className={tabCls(activeStatus === s)}
+          >
+            {titleCase(s)}
           </a>
         ))}
       </div>
 
       {orders.length === 0 ? (
         <p className="mt-4 text-muted">
-          {activeStatus ? `No ${activeStatus.toLowerCase()} orders.` : "No orders yet."}
+          {search
+            ? `No orders match “${search}”${
+                activeStatus ? ` in ${activeStatus.toLowerCase()}` : ""
+              }.`
+            : activeStatus
+              ? `No ${activeStatus.toLowerCase()} orders.`
+              : "No orders yet."}
         </p>
       ) : (
+        <>
         <div className="mt-4 space-y-3">
           {orders.map((o) => (
             <div key={o.id} className="rounded-xl border border-white/10 bg-surface p-4">
@@ -196,6 +265,44 @@ export default async function OrdersPage({
             </div>
           ))}
         </div>
+
+        <div className="mt-6 flex items-center justify-between text-sm text-muted">
+          <span>
+            Showing {firstOnPage}–{lastOnPage} of {total}
+          </span>
+          {totalPages > 1 ? (
+            <div className="flex items-center gap-2">
+              {page > 1 ? (
+                <a
+                  href={buildHref({ status: activeStatus, q: search, page: page - 1 })}
+                  className="rounded-lg border border-white/10 px-3 py-1.5 font-medium hover:bg-white/5"
+                >
+                  ← Prev
+                </a>
+              ) : (
+                <span className="rounded-lg border border-white/5 px-3 py-1.5 text-muted/40">
+                  ← Prev
+                </span>
+              )}
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              {page < totalPages ? (
+                <a
+                  href={buildHref({ status: activeStatus, q: search, page: page + 1 })}
+                  className="rounded-lg border border-white/10 px-3 py-1.5 font-medium hover:bg-white/5"
+                >
+                  Next →
+                </a>
+              ) : (
+                <span className="rounded-lg border border-white/5 px-3 py-1.5 text-muted/40">
+                  Next →
+                </span>
+              )}
+            </div>
+          ) : null}
+        </div>
+        </>
       )}
     </div>
   );
