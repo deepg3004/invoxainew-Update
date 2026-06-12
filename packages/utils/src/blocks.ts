@@ -70,8 +70,11 @@ export function safeUrl(v: unknown): string {
   const s = str(v, 2000).trim();
   if (!s) return "";
   // Site-relative ("/path") only — NOT protocol-relative ("//evil.com"), which
-  // the browser resolves to an off-site absolute URL.
-  if (s.startsWith("/") && !s.startsWith("//")) return s;
+  // the browser resolves to an off-site absolute URL. Browsers also normalize
+  // backslashes to forward slashes ("/\evil.com" === "//evil.com") and strip
+  // ASCII tab/newline BEFORE parsing ("/<tab>/evil.com" === "//evil.com"), so
+  // reject any backslash, tab, CR or LF in a relative path outright.
+  if (s.startsWith("/") && !s.startsWith("//") && !/[\\\t\r\n]/.test(s)) return s;
   if (/^https?:\/\//i.test(s)) return s;
   return ""; // blocks javascript:, data:, protocol-relative, etc.
 }

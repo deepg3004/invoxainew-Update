@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { GripVertical, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import {
   type Block,
   type Theme,
   type ThemePreset,
   THEME_PRESETS,
+  safeUrl,
+  toEmbedUrl,
 } from "@invoxai/utils/blocks";
 import { saveAiPageAction } from "../../actions";
 
@@ -32,6 +35,66 @@ function newBlock(type: AddType): Block {
   }
 }
 
+/**
+ * Live preview of one block, mirroring the tenant renderer's markup. The editor
+ * state holds RAW input (sanitization happens server-side on save), so the
+ * preview runs every URL through the same safeUrl/toEmbedUrl boundaries before
+ * rendering — a javascript:/data: URL never reaches preview markup either.
+ * Buttons render as non-navigating <span>s: it's a preview, not a live link.
+ */
+function PreviewBlock({ block, t }: { block: Block; t: (typeof THEME_PRESETS)[ThemePreset] & { accent: string } }) {
+  switch (block.type) {
+    case "heading": {
+      const cls =
+        block.level === 1
+          ? "text-3xl font-bold tracking-tight"
+          : block.level === 2
+            ? "mt-8 text-xl font-semibold"
+            : "mt-5 text-base font-semibold";
+      return <div className={cls} style={{ color: t.text }}>{block.text || "…"}</div>;
+    }
+    case "text":
+      return (
+        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed" style={{ color: t.muted }}>
+          {block.text || "…"}
+        </p>
+      );
+    case "image": {
+      const url = safeUrl(block.url);
+      return url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={block.alt} className="mt-4 w-full rounded-lg object-cover" style={{ border: `1px solid ${t.border}` }} />
+      ) : (
+        <div className="mt-4 grid h-28 place-items-center rounded-lg text-xs" style={{ border: `1px dashed ${t.border}`, color: t.muted }}>
+          image — paste a URL
+        </div>
+      );
+    }
+    case "button":
+      return (
+        <div className="mt-4">
+          <span className="inline-block rounded-lg px-5 py-2.5 text-sm font-medium text-white" style={{ background: t.accent }}>
+            {block.label || "Button"}
+          </span>
+        </div>
+      );
+    case "video": {
+      const url = toEmbedUrl(block.url);
+      return url ? (
+        <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg" style={{ border: `1px solid ${t.border}` }}>
+          <iframe src={url} className="h-full w-full" title="Video preview" allowFullScreen />
+        </div>
+      ) : (
+        <div className="mt-4 grid aspect-video place-items-center rounded-lg text-xs" style={{ border: `1px dashed ${t.border}`, color: t.muted }}>
+          video — paste a YouTube or Vimeo link
+        </div>
+      );
+    }
+    case "divider":
+      return <hr className="mt-8" style={{ borderColor: t.border }} />;
+  }
+}
+
 export function PageEditor({
   pageId,
   slug,
@@ -52,8 +115,11 @@ export function PageEditor({
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const presetIds = Object.keys(THEME_PRESETS) as ThemePreset[];
+  const previewTokens = { ...THEME_PRESETS[theme.preset], accent: theme.accent };
 
   function update(i: number, patch: Partial<Block>) {
     setStatus("idle");
@@ -76,6 +142,18 @@ export function PageEditor({
   function add(type: AddType) {
     setStatus("idle");
     setBlocks((bs) => [...bs, newBlock(type)]);
+  }
+
+  /** Drop the dragged block at `to`, shifting the rest. */
+  function reorder(from: number, to: number) {
+    setStatus("idle");
+    setBlocks((bs) => {
+      if (from === to || from < 0 || from >= bs.length || to < 0 || to >= bs.length) return bs;
+      const next = bs.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved!);
+      return next;
+    });
   }
 
   async function save() {
@@ -108,166 +186,240 @@ export function PageEditor({
         </a>
       </div>
 
-      <label className="mt-6 block">
-        <span className="text-sm font-medium text-zinc-900">Page title</span>
-        <input
-          value={title}
-          onChange={(e) => {
-            setStatus("idle");
-            setTitle(e.target.value);
-          }}
-          className={`mt-1 ${inputCls}`}
-        />
-        <span className="mt-1 block text-xs text-muted">
-          Lives at /{slug} on your site. Shown as the browser tab title.
-        </span>
-      </label>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* ── Left: controls ─────────────────────────────────────────── */}
+        <div>
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-900">Page title</span>
+            <input
+              value={title}
+              onChange={(e) => {
+                setStatus("idle");
+                setTitle(e.target.value);
+              }}
+              className={`mt-1 ${inputCls}`}
+            />
+            <span className="mt-1 block text-xs text-muted">
+              Lives at /{slug} on your site. Shown as the browser tab title.
+            </span>
+          </label>
 
-      {/* Theme */}
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-4">
-        <span className="text-sm font-medium text-zinc-900">Theme</span>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {presetIds.map((id) => {
-            const p = THEME_PRESETS[id];
-            const selected = theme.preset === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => {
-                  setStatus("idle");
-                  setTheme({ preset: id, accent: p.accent });
-                }}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-                  selected ? "border-brand" : "border-zinc-200"
-                }`}
-              >
-                <span
-                  className="h-4 w-4 rounded-full border border-black/10"
-                  style={{ background: p.bg }}
-                />
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
-        <label className="mt-3 flex items-center gap-2 text-sm text-muted">
-          Accent
-          <input
-            type="color"
-            value={/^#[0-9a-fA-F]{6}$/.test(theme.accent) ? theme.accent : "#7c3aed"}
-            onChange={(e) => {
-              setStatus("idle");
-              setTheme((t) => ({ ...t, accent: e.target.value }));
-            }}
-            className="h-7 w-10 cursor-pointer rounded border border-zinc-300"
-          />
-          <span className="font-mono text-xs text-muted">{theme.accent}</span>
-        </label>
-      </div>
-
-      <div className="mt-6 space-y-3">
-        {blocks.map((b, i) => (
-          <div key={i} className="rounded-xl border border-zinc-200 bg-surface p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-                {b.type}
-              </span>
-              <div className="flex items-center gap-2 text-xs">
-                <button onClick={() => move(i, -1)} disabled={i === 0} className="text-muted disabled:opacity-30" aria-label="Move up">
-                  ↑
-                </button>
-                <button onClick={() => move(i, 1)} disabled={i === blocks.length - 1} className="text-muted disabled:opacity-30" aria-label="Move down">
-                  ↓
-                </button>
-                <button onClick={() => remove(i)} className="text-muted hover:text-red-700" aria-label="Delete">
-                  Delete
-                </button>
-              </div>
+          {/* Theme */}
+          <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-4">
+            <span className="text-sm font-medium text-zinc-900">Theme</span>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {presetIds.map((id) => {
+                const p = THEME_PRESETS[id];
+                const selected = theme.preset === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setStatus("idle");
+                      setTheme({ preset: id, accent: p.accent });
+                    }}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
+                      selected ? "border-brand" : "border-zinc-200"
+                    }`}
+                  >
+                    <span
+                      className="h-4 w-4 rounded-full border border-black/10"
+                      style={{ background: p.bg }}
+                    />
+                    {p.label}
+                  </button>
+                );
+              })}
             </div>
+            <label className="mt-3 flex items-center gap-2 text-sm text-muted">
+              Accent
+              <input
+                type="color"
+                value={/^#[0-9a-fA-F]{6}$/.test(theme.accent) ? theme.accent : "#7c3aed"}
+                onChange={(e) => {
+                  setStatus("idle");
+                  setTheme((t) => ({ ...t, accent: e.target.value }));
+                }}
+                className="h-7 w-10 cursor-pointer rounded border border-zinc-300"
+              />
+              <span className="font-mono text-xs text-muted">{theme.accent}</span>
+            </label>
+          </div>
 
-            {b.type === "heading" ? (
-              <div className="flex gap-2">
-                <input value={b.text} onChange={(e) => update(i, { text: e.target.value })} className={inputCls} />
-                <select
-                  value={b.level}
-                  onChange={(e) => update(i, { level: Number(e.target.value) as 1 | 2 | 3 })}
-                  className="rounded-lg border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-900"
-                >
-                  <option value={1}>H1</option>
-                  <option value={2}>H2</option>
-                  <option value={3}>H3</option>
-                </select>
+          {blocks.length > 1 ? (
+            <p className="mt-6 text-xs text-muted">
+              Drag the <GripVertical size={12} className="inline -mt-0.5" aria-hidden /> handle to
+              reorder blocks — or use the arrows.
+            </p>
+          ) : null}
+
+          <div className="mt-2 space-y-3">
+            {blocks.map((b, i) => (
+              <div
+                key={i}
+                onDragOver={(e) => {
+                  if (dragIndex === null) return;
+                  e.preventDefault();
+                  setOverIndex(i);
+                }}
+                onDragLeave={() => setOverIndex((o) => (o === i ? null : o))}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragIndex !== null) reorder(dragIndex, i);
+                  setDragIndex(null);
+                  setOverIndex(null);
+                }}
+                className={`rounded-xl border bg-surface p-3 transition-shadow ${
+                  overIndex === i && dragIndex !== null && dragIndex !== i
+                    ? "border-brand shadow-[0_0_0_2px_rgba(236,72,153,0.25)]"
+                    : "border-zinc-200"
+                } ${dragIndex === i ? "opacity-50" : ""}`}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <div
+                    draggable
+                    onDragStart={(e) => {
+                      // Firefox refuses to start a drag unless setData is called.
+                      e.dataTransfer.setData("text/plain", String(i));
+                      e.dataTransfer.effectAllowed = "move";
+                      setDragIndex(i);
+                    }}
+                    onDragEnd={() => {
+                      setDragIndex(null);
+                      setOverIndex(null);
+                    }}
+                    className="flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
+                    title="Drag to reorder"
+                  >
+                    <GripVertical size={14} className="text-zinc-400" aria-hidden />
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      {b.type}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded p-1 text-muted hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30" aria-label="Move up">
+                      <ArrowUp size={14} />
+                    </button>
+                    <button onClick={() => move(i, 1)} disabled={i === blocks.length - 1} className="rounded p-1 text-muted hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30" aria-label="Move down">
+                      <ArrowDown size={14} />
+                    </button>
+                    <button onClick={() => remove(i)} className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-700" aria-label="Delete">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {b.type === "heading" ? (
+                  <div className="flex gap-2">
+                    <input value={b.text} onChange={(e) => update(i, { text: e.target.value })} className={inputCls} />
+                    <select
+                      value={b.level}
+                      onChange={(e) => update(i, { level: Number(e.target.value) as 1 | 2 | 3 })}
+                      className="rounded-lg border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-900"
+                    >
+                      <option value={1}>H1</option>
+                      <option value={2}>H2</option>
+                      <option value={3}>H3</option>
+                    </select>
+                  </div>
+                ) : null}
+
+                {b.type === "text" ? (
+                  <textarea value={b.text} onChange={(e) => update(i, { text: e.target.value })} rows={3} className={inputCls} />
+                ) : null}
+
+                {b.type === "image" ? (
+                  <div className="space-y-2">
+                    <input value={b.url} onChange={(e) => update(i, { url: e.target.value })} placeholder="https://…/image.jpg" className={inputCls} />
+                    <input value={b.alt} onChange={(e) => update(i, { alt: e.target.value })} placeholder="Alt text" className={inputCls} />
+                  </div>
+                ) : null}
+
+                {b.type === "button" ? (
+                  <div className="space-y-2">
+                    <input value={b.label} onChange={(e) => update(i, { label: e.target.value })} placeholder="Button label" className={inputCls} />
+                    <input value={b.href} onChange={(e) => update(i, { href: e.target.value })} placeholder="https://… or /pay/your-link" className={inputCls} />
+                  </div>
+                ) : null}
+
+                {b.type === "video" ? (
+                  <div>
+                    <input
+                      value={b.url}
+                      onChange={(e) => update(i, { url: e.target.value })}
+                      placeholder="Paste a YouTube or Vimeo link"
+                      className={inputCls}
+                    />
+                    <span className="mt-1 block text-xs text-muted">
+                      Only YouTube and Vimeo links work; others are dropped on save.
+                    </span>
+                  </div>
+                ) : null}
+
+                {b.type === "divider" ? (
+                  <div className="border-t border-dashed border-zinc-200" />
+                ) : null}
               </div>
-            ) : null}
-
-            {b.type === "text" ? (
-              <textarea value={b.text} onChange={(e) => update(i, { text: e.target.value })} rows={3} className={inputCls} />
-            ) : null}
-
-            {b.type === "image" ? (
-              <div className="space-y-2">
-                <input value={b.url} onChange={(e) => update(i, { url: e.target.value })} placeholder="https://…/image.jpg" className={inputCls} />
-                <input value={b.alt} onChange={(e) => update(i, { alt: e.target.value })} placeholder="Alt text" className={inputCls} />
-              </div>
-            ) : null}
-
-            {b.type === "button" ? (
-              <div className="space-y-2">
-                <input value={b.label} onChange={(e) => update(i, { label: e.target.value })} placeholder="Button label" className={inputCls} />
-                <input value={b.href} onChange={(e) => update(i, { href: e.target.value })} placeholder="https://… or /pay/your-link" className={inputCls} />
-              </div>
-            ) : null}
-
-            {b.type === "video" ? (
-              <div>
-                <input
-                  value={b.url}
-                  onChange={(e) => update(i, { url: e.target.value })}
-                  placeholder="Paste a YouTube or Vimeo link"
-                  className={inputCls}
-                />
-                <span className="mt-1 block text-xs text-muted">
-                  Only YouTube and Vimeo links work; others are dropped on save.
-                </span>
-              </div>
-            ) : null}
-
-            {b.type === "divider" ? (
-              <div className="border-t border-dashed border-zinc-200" />
+            ))}
+            {blocks.length === 0 ? (
+              <p className="text-sm text-muted">No blocks yet — add one below.</p>
             ) : null}
           </div>
-        ))}
-        {blocks.length === 0 ? (
-          <p className="text-sm text-muted">No blocks yet — add one below.</p>
-        ) : null}
-      </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {(["heading", "text", "image", "button", "video", "divider"] as AddType[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => add(t)}
-            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
-          >
-            + {t}
-          </button>
-        ))}
-      </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(["heading", "text", "image", "button", "video", "divider"] as AddType[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => add(t)}
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+              >
+                + {t}
+              </button>
+            ))}
+          </div>
 
-      {error ? <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+          {error ? <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
 
-      <div className="mt-6 flex items-center gap-3">
-        <button
-          onClick={save}
-          disabled={status === "saving"}
-          className="rounded-lg bg-brand px-5 py-2.5 font-medium text-white disabled:opacity-50"
-        >
-          {status === "saving" ? "Saving…" : status === "saved" ? "Saved ✓" : "Save changes"}
-        </button>
-        <Link href="/ai-pages" className="text-sm text-muted underline">
-          Back to pages
-        </Link>
+          <div className="mt-6 flex items-center gap-3">
+            <button
+              onClick={save}
+              disabled={status === "saving"}
+              className="rounded-lg bg-brand px-5 py-2.5 font-medium text-white disabled:opacity-50"
+            >
+              {status === "saving" ? "Saving…" : status === "saved" ? "Saved ✓" : "Save changes"}
+            </button>
+            <Link href="/ai-pages" className="text-sm text-muted underline">
+              Back to pages
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Right: live preview ────────────────────────────────────── */}
+        <div className="hidden lg:block">
+          <div className="sticky top-20">
+            <div className="overflow-hidden rounded-xl border border-zinc-200 shadow-card">
+              <div className="flex items-center gap-1.5 border-b border-zinc-200 bg-zinc-50 px-3 py-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-flame/70" />
+                <span className="h-2.5 w-2.5 rounded-full bg-brand/70" />
+                <span className="h-2.5 w-2.5 rounded-full bg-accent/70" />
+                <span className="ml-2 truncate text-xs text-muted">/{slug} — live preview</span>
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto px-6 py-8" style={{ background: previewTokens.bg }}>
+                {blocks.length === 0 ? (
+                  <p className="text-center text-sm" style={{ color: previewTokens.muted }}>
+                    Your page preview appears here.
+                  </p>
+                ) : (
+                  blocks.map((b, i) => <PreviewBlock key={i} block={b} t={previewTokens} />)
+                )}
+                <div className="mt-12 pt-4 text-center text-xs" style={{ borderTop: `1px solid ${previewTokens.border}`, color: previewTokens.muted }}>
+                  Updates as you type — save to publish changes.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
