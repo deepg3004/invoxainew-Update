@@ -9,6 +9,14 @@ export const dynamic = "force-dynamic";
 
 const STATUSES = ["NEW", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
 
+function tabCls(active: boolean): string {
+  return `rounded-full px-3 py-1 text-xs font-medium ${
+    active
+      ? "bg-neutral-900 text-white"
+      : "border border-neutral-300 text-neutral-600 hover:border-neutral-900"
+  }`;
+}
+
 function formatDate(d: Date | null): string {
   if (!d) return "—";
   return new Intl.DateTimeFormat("en-IN", {
@@ -18,10 +26,19 @@ function formatDate(d: Date | null): string {
   }).format(d);
 }
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   const { tenant } = await requireTenant();
+  const { status: rawStatus } = await searchParams;
+  const activeStatus = STATUSES.includes(rawStatus as (typeof STATUSES)[number])
+    ? (rawStatus as (typeof STATUSES)[number])
+    : undefined;
+
   const [orders, summary] = await Promise.all([
-    listTenantOrders(tenant.id),
+    listTenantOrders(tenant.id, activeStatus),
     getTenantSalesSummary(tenant.id),
   ]);
 
@@ -58,7 +75,7 @@ export default async function OrdersPage() {
       </div>
 
       <div className="mt-10 flex items-center justify-between">
-        <h2 className="text-xl font-bold">All orders</h2>
+        <h2 className="text-xl font-bold">Orders</h2>
         {orders.length > 0 ? (
           <a
             href="/orders/export"
@@ -68,8 +85,22 @@ export default async function OrdersPage() {
           </a>
         ) : null}
       </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a href="/orders" className={tabCls(!activeStatus)}>
+          All
+        </a>
+        {STATUSES.map((s) => (
+          <a key={s} href={`/orders?status=${s}`} className={tabCls(activeStatus === s)}>
+            {s.charAt(0) + s.slice(1).toLowerCase()}
+          </a>
+        ))}
+      </div>
+
       {orders.length === 0 ? (
-        <p className="mt-3 text-neutral-500">No orders yet.</p>
+        <p className="mt-4 text-neutral-500">
+          {activeStatus ? `No ${activeStatus.toLowerCase()} orders.` : "No orders yet."}
+        </p>
       ) : (
         <div className="mt-4 space-y-3">
           {orders.map((o) => (

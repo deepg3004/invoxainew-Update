@@ -238,10 +238,15 @@ export function createCartOrder(input: {
 
 // ── Order tracking (C10) ──────────────────────────────────────────────────────
 
-/** A seller's paid orders, newest first, with item + commission. Scoped. */
-export function listTenantOrders(tenantId: string, take = 100) {
+/** A seller's paid orders, newest first, with item + commission. Scoped. An
+ *  optional fulfillmentStatus narrows the list (for the seller's status filter). */
+export function listTenantOrders(
+  tenantId: string,
+  fulfillmentStatus?: "NEW" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED",
+  take = 100,
+) {
   return prisma.buyerPayment.findMany({
-    where: { tenantId, status: "PAID" },
+    where: { tenantId, status: "PAID", ...(fulfillmentStatus ? { fulfillmentStatus } : {}) },
     orderBy: { paidAt: "desc" },
     take,
     include: {

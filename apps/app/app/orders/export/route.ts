@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 /** Seller orders export (CSV download). Tenant-scoped via the session. */
 export async function GET() {
   const { tenant } = await requireTenant();
-  const orders = await listTenantOrders(tenant.id, 10000);
+  const orders = await listTenantOrders(tenant.id, undefined, 10000);
 
   const csv = toCsv(
     [
