@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
+import { AuroraBackground, Button } from "@invoxai/ui";
 
 export default function SiteError({
   error,
@@ -15,20 +15,18 @@ export default function SiteError({
   }, [error]);
 
   return (
-    <main className="mx-auto max-w-md px-6 py-24 text-center">
-      <h1 className="text-2xl font-bold text-neutral-900">Something went wrong</h1>
-      <p className="mt-2 text-neutral-500">Please try again in a moment.</p>
-      <button
-        onClick={reset}
-        className="mt-6 rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white"
-      >
-        Try again
-      </button>
-      <div className="mt-3">
-        <Link href="/" className="text-sm text-blue-600 underline">
-          Back to home
-        </Link>
-      </div>
-    </main>
+    <>
+      <AuroraBackground />
+      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
+        <h1 className="font-display text-3xl font-bold">Something went wrong</h1>
+        <p className="mt-2 text-muted">Please try again in a moment.</p>
+        <div className="mt-7 flex items-center gap-3">
+          <Button onClick={reset}>Try again</Button>
+          <Button href="/" variant="ghost">
+            Back to home
+          </Button>
+        </div>
+      </main>
+    </>
   );
 }

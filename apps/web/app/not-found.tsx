@@ -1,17 +1,17 @@
-import Link from "next/link";
+import { AuroraBackground, Button } from "@invoxai/ui";
 
 export default function NotFound() {
   return (
-    <main className="mx-auto max-w-md px-6 py-24 text-center">
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">404</p>
-      <h1 className="mt-2 text-2xl font-bold text-neutral-900">Page not found</h1>
-      <p className="mt-2 text-neutral-500">The page you’re looking for isn’t here.</p>
-      <Link
-        href="/"
-        className="mt-6 inline-block rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white"
-      >
-        Back to home
-      </Link>
-    </main>
+    <>
+      <AuroraBackground />
+      <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
+        <p className="text-sm font-medium uppercase tracking-wide text-accent">404</p>
+        <h1 className="mt-2 font-display text-3xl font-bold">Page not found</h1>
+        <p className="mt-2 text-muted">The page you’re looking for isn’t here.</p>
+        <Button href="/" className="mt-7">
+          Back to home
+        </Button>
+      </main>
+    </>
   );
 }
