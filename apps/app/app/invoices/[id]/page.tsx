@@ -2,6 +2,7 @@ import { formatDateIST } from "@invoxai/utils/date";
 import { notFound } from "next/navigation";
 import { getInvoice } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
+import { gstStateName } from "@invoxai/utils/states";
 import { Button, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../../lib/tenant";
 import { getInvoiceConfig } from "../../../lib/invoice-config";
@@ -24,6 +25,19 @@ export default async function InvoiceDetail({
   if (!inv) notFound();
   const cfg = await getInvoiceConfig();
   const isTax = Boolean(cfg.gstin);
+
+  // Place of supply = the seller's (recipient's) state. IGST when it differs
+  // from InvoxAI's home state (first 2 digits of our GSTIN), else CGST+SGST.
+  // If either state is unknown, fall back to the admin's global GST-mode setting.
+  const homeStateCode = cfg.gstin ? cfg.gstin.slice(0, 2) : null;
+  const sellerStateCode = tenant.stateCode;
+  const placeOfSupply = gstStateName(sellerStateCode);
+  const gstMode =
+    homeStateCode && sellerStateCode
+      ? homeStateCode === sellerStateCode
+        ? "CGST_SGST"
+        : "IGST"
+      : cfg.gstMode;
 
   // GST presentation: a single IGST line, or a CGST + SGST split (display only —
   // the stored tax amount is unchanged).
@@ -106,6 +120,12 @@ export default async function InvoiceDetail({
           <div className="mt-1 font-semibold text-zinc-900">{tenant.name ?? tenant.username}</div>
           <div className="text-zinc-600">{tenant.username}.invoxai.io</div>
           {user.email ? <div className="text-zinc-600">{user.email}</div> : null}
+          {placeOfSupply ? (
+            <div className="mt-2 text-zinc-600">
+              <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Place of supply: </span>
+              {placeOfSupply}
+            </div>
+          ) : null}
         </div>
 
         {/* Line items */}
@@ -143,7 +163,7 @@ export default async function InvoiceDetail({
             <span className="text-zinc-500">Discount</span>
             <span>{formatRupees(0)}</span>
           </div>
-          {cfg.gstMode === "CGST_SGST" ? (
+          {gstMode === "CGST_SGST" ? (
             <>
               <div className="flex justify-between">
                 <span className="text-zinc-500">CGST @ {halfRate}%</span>

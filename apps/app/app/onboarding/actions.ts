@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { validateUsername } from "@invoxai/utils/username";
+import { isGstStateCode } from "@invoxai/utils/states";
 import {
   createTenantForOwner,
   getTenantByOwnerId,
@@ -54,10 +55,13 @@ export async function createTenantAction(
   await upsertProfile({ id: user.id, email: user.email ?? null, fullName });
 
   const name = String(formData.get("name") ?? "").trim() || null;
+  const rawState = String(formData.get("stateCode") ?? "").trim();
+  const stateCode = isGstStateCode(rawState) ? rawState : null;
   const result = await createTenantForOwner({
     ownerId: user.id,
     username: v.value,
     name,
+    stateCode,
   });
 
   if (!result.ok) {

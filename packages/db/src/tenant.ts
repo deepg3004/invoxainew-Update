@@ -35,6 +35,14 @@ export function getTenantByOwnerId(ownerId: string) {
   return prisma.tenant.findUnique({ where: { ownerId } });
 }
 
+/** Set the seller's GST state code (for invoice place-of-supply). Tenant-scoped. */
+export function setTenantStateCode(tenantId: string, stateCode: string | null) {
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: { stateCode },
+  });
+}
+
 /** Public lookup by username (used to render a tenant's public site). */
 export function getTenantByUsername(username: string) {
   return prisma.tenant.findUnique({ where: { username } });
@@ -106,6 +114,7 @@ export async function createTenantForOwner(params: {
   ownerId: string;
   username: string;
   name?: string | null;
+  stateCode?: string | null;
 }): Promise<CreateTenantResult> {
   try {
     const tenant = await prisma.tenant.create({
@@ -113,6 +122,7 @@ export async function createTenantForOwner(params: {
         ownerId: params.ownerId,
         username: params.username,
         name: params.name ?? null,
+        stateCode: params.stateCode ?? null,
       },
       select: { id: true, username: true },
     });

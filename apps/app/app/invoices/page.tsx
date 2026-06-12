@@ -2,9 +2,11 @@ import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { issuePlatformInvoices, listInvoices } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
+import { GST_STATES, gstStateName } from "@invoxai/utils/states";
 import { Button, GlassCard, PageHeader } from "@invoxai/ui";
 import { requireTenant } from "../../lib/tenant";
 import { getInvoiceConfig } from "../../lib/invoice-config";
+import { saveTenantStateAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,31 @@ export default async function InvoicesPage() {
           show as DRAFT (not valid tax invoices).
         </p>
       ) : null}
+
+      <GlassCard className="mt-6" title="Your tax details">
+        <p className="text-sm text-muted">
+          Your state sets the “place of supply” on these invoices and whether GST shows as
+          IGST (interstate) or CGST + SGST (same state).
+        </p>
+        <form action={saveTenantStateAction} className="mt-3 flex flex-wrap items-center gap-2">
+          <select
+            name="stateCode"
+            defaultValue={tenant.stateCode ?? ""}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand"
+          >
+            <option value="">Select your state</option>
+            {GST_STATES.map((s) => (
+              <option key={s.code} value={s.code}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">Save</button>
+          {tenant.stateCode ? (
+            <span className="text-sm text-muted">Current: {gstStateName(tenant.stateCode)}</span>
+          ) : null}
+        </form>
+      </GlassCard>
 
       {invoices.length === 0 ? (
         <GlassCard className="mt-6">

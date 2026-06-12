@@ -6,7 +6,7 @@ import { getSessionUser } from "./auth";
 
 export interface AuthedTenant {
   user: User;
-  tenant: { id: string; username: string; name: string | null };
+  tenant: { id: string; username: string; name: string | null; stateCode: string | null };
 }
 
 /**
@@ -23,6 +23,11 @@ export async function requireTenant(): Promise<AuthedTenant> {
   if (!tenant) redirect("/onboarding");
   return {
     user,
-    tenant: { id: tenant.id, username: tenant.username, name: tenant.name },
+    tenant: {
+      id: tenant.id,
+      username: tenant.username,
+      name: tenant.name,
+      stateCode: tenant.stateCode,
+    },
   };
 }

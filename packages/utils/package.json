@@ -11,7 +11,8 @@
     "./date": "./src/date.ts",
     "./crypto": "./src/crypto.ts",
     "./redis": "./src/redis.ts",
-    "./blocks": "./src/blocks.ts"
+    "./blocks": "./src/blocks.ts",
+    "./states": "./src/states.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

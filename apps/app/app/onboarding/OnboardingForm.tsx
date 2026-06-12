@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { validateUsername } from "@invoxai/utils/username";
+import { GST_STATES } from "@invoxai/utils/states";
 import {
   checkUsernameAction,
   createTenantAction,
@@ -92,6 +93,25 @@ export function OnboardingForm() {
             {status.message}
           </p>
         ) : null}
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">State (for GST invoices)</label>
+        <select
+          name="stateCode"
+          defaultValue=""
+          className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-brand"
+        >
+          <option value="">Select your state (optional)</option>
+          {GST_STATES.map((s) => (
+            <option key={s.code} value={s.code}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-muted">
+          Sets the place of supply on InvoxAI&apos;s GST invoices to you. You can change it later.
+        </p>
       </div>
 
       {state.error ? (

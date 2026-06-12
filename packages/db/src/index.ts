@@ -4,6 +4,7 @@ export type { ProductKind, ProductStatus, DiscountType, CourseStatus, LeadFormSt
 export {
   upsertProfile,
   getTenantByOwnerId,
+  setTenantStateCode,
   getTenantByUsername,
   isUsernameTaken,
   createTenantForOwner,
