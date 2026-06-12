@@ -54,6 +54,12 @@ export {
   disconnectSellerGateway,
 } from "./gateway";
 export {
+  getSellerUpi,
+  getEnabledSellerUpi,
+  upsertSellerUpi,
+  deleteSellerUpi,
+} from "./upi";
+export {
   createPaymentPage,
   listPaymentPages,
   getPaymentPageById,

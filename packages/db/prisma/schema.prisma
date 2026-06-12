@@ -422,8 +422,17 @@ enum GatewayStatus {
 /// gateway, not yet paid; PAID = signature-verified success; FAILED = abandoned.
 enum BuyerPaymentStatus {
   CREATED
+  PENDING // manual UPI: buyer submitted a reference, awaiting seller confirmation
   PAID
   FAILED
+}
+
+/// How a buyer paid. RAZORPAY = seller's connected gateway (auto-verified via
+/// signature). UPI_MANUAL = seller's UPI ID, buyer-submitted reference confirmed
+/// by the seller. Either way the money goes buyer→seller direct (never InvoxAI).
+enum PaymentMethod {
+  RAZORPAY
+  UPI_MANUAL
 }
 
 /// InvoxAI commission on a buyer payment (C7). PAID = debited from the seller's
@@ -707,6 +716,21 @@ model SellerGateway {
   @@map("seller_gateways")
 }
 
+/// A seller's manual UPI payment method (alt rail to Razorpay). Buyers pay this
+/// UPI ID directly and submit the transaction reference; the seller confirms.
+/// One per tenant. deny-anon RLS; owner-scoped via Prisma (FK in migration).
+model SellerUpi {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @unique @map("tenant_id") @db.Uuid
+  upiId       String   @map("upi_id") // e.g. name@okhdfc
+  displayName String?  @map("display_name") // optional payee name shown to buyers
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("seller_upi")
+}
+
 /// A seller-created payment page/link (C7). A buyer pays a fixed amount at
 /// `username.invoxai.io/pay/<slug>`. `slug` is unique PER TENANT (each seller has
 /// their own namespace). Amount is integer paise. RLS: deny-anon lockdown (the
@@ -765,6 +789,10 @@ model BuyerPayment {
   couponCode        String?            @map("coupon_code")
   discountPaise     Int                @default(0) @map("discount_paise")
   status            BuyerPaymentStatus @default(CREATED)
+  // Manual UPI (alt rail): method + the buyer-submitted UPI transaction ref. For
+  // RAZORPAY orders these stay default/null; the auto-verify path is unchanged.
+  paymentMethod     PaymentMethod      @default(RAZORPAY) @map("payment_method")
+  upiRef            String?            @map("upi_ref")
   // C8: set when the buyer was logged in at checkout, to attribute the order.
   buyerProfileId    String?            @map("buyer_profile_id") @db.Uuid
   buyerEmail        String?            @map("buyer_email")

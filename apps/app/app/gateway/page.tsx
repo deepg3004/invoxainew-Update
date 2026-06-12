@@ -1,16 +1,20 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { getSellerGateway } from "@invoxai/db";
+import { getSellerGateway, getSellerUpi } from "@invoxai/db";
 import { maskKeyId } from "@invoxai/utils/crypto";
 import { requireTenant } from "../../lib/tenant";
 import { GatewayForm } from "./GatewayForm";
-import { disconnectGateway } from "./actions";
+import { UpiForm } from "./UpiForm";
+import { disconnectGateway, removeUpiAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function GatewayPage() {
   const { tenant } = await requireTenant();
-  const gateway = await getSellerGateway(tenant.id);
+  const [gateway, upi] = await Promise.all([
+    getSellerGateway(tenant.id),
+    getSellerUpi(tenant.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -72,6 +76,53 @@ export default async function GatewayPage() {
           <GatewayForm />
         </div>
       )}
+
+      {/* Manual UPI (alternative rail) */}
+      <div className="mt-10">
+        <h2 className="text-lg font-semibold text-zinc-900">Manual UPI</h2>
+        <p className="mt-1 text-sm text-muted">
+          Accept payments via your own UPI ID — buyers pay you directly and submit the
+          transaction reference, which you confirm. Works alongside Razorpay or on its own.
+        </p>
+        <div className="mt-4 max-w-lg">
+          <GlassCard>
+            {upi ? (
+              <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="text-sm">
+                    <p className="font-mono font-medium text-zinc-900">{upi.upiId}</p>
+                    {upi.displayName ? (
+                      <p className="mt-0.5 text-muted">{upi.displayName}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs">
+                      {upi.enabled ? (
+                        <span className="font-medium text-green-700">Enabled at checkout</span>
+                      ) : (
+                        <span className="text-muted">Saved but hidden at checkout</span>
+                      )}
+                    </p>
+                  </div>
+                  <form action={removeUpiAction}>
+                    <Button type="submit" variant="secondary" size="sm">
+                      Remove
+                    </Button>
+                  </form>
+                </div>
+                <div className="mt-4 border-t border-zinc-100 pt-4">
+                  <UpiForm
+                    initial={{ upiId: upi.upiId, displayName: upi.displayName, enabled: upi.enabled }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <UpiForm />
+            )}
+          </GlassCard>
+          <p className="mt-2 text-xs text-muted">
+            Buyer UPI checkout + your confirmation step are rolling out next.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

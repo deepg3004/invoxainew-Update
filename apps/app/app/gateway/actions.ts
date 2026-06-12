@@ -2,7 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { encryptSecret } from "@invoxai/utils/crypto";
-import { connectSellerGateway, disconnectSellerGateway, logActivity } from "@invoxai/db";
+import {
+  connectSellerGateway,
+  disconnectSellerGateway,
+  upsertSellerUpi,
+  deleteSellerUpi,
+  logActivity,
+} from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 import { validateRazorpayCredentials } from "../../lib/razorpay";
 
@@ -65,5 +71,36 @@ export async function disconnectGateway(): Promise<void> {
   const { tenant } = await requireTenant();
   await disconnectSellerGateway(tenant.id);
   await logActivity(tenant.id, "gateway.disconnected").catch(() => {});
+  revalidatePath("/gateway");
+}
+
+// A UPI ID looks like handle@bank, e.g. ramesh@okhdfc / 9876543210@ybl.
+const UPI_RE = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+
+export type UpiFormState = { error?: string; ok?: boolean };
+
+/** Save the seller's manual UPI method (buyers pay this UPI ID directly). */
+export async function saveUpiAction(
+  _prev: UpiFormState,
+  form: FormData,
+): Promise<UpiFormState> {
+  const { tenant } = await requireTenant();
+  const upiId = String(form.get("upiId") ?? "").trim();
+  if (!UPI_RE.test(upiId)) {
+    return { error: "Enter a valid UPI ID, like name@okhdfc." };
+  }
+  const displayName = String(form.get("displayName") ?? "").trim() || null;
+  const enabled = form.get("enabled") === "on";
+  await upsertSellerUpi(tenant.id, { upiId, displayName, enabled });
+  await logActivity(tenant.id, "upi.saved", upiId).catch(() => {});
+  revalidatePath("/gateway");
+  return { ok: true };
+}
+
+/** Remove the seller's manual UPI method. */
+export async function removeUpiAction(): Promise<void> {
+  const { tenant } = await requireTenant();
+  await deleteSellerUpi(tenant.id);
+  await logActivity(tenant.id, "upi.removed").catch(() => {});
   revalidatePath("/gateway");
 }
