@@ -42,6 +42,7 @@ const NAV: NavGroup[] = [
     heading: "Grow",
     items: [
       { href: "/forms", label: "Forms", icon: "M5 4h14v16H5zM9 8h6M9 12h6M9 16h3" },
+      { href: "/contacts", label: "Contacts", icon: "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM3 21v-1a6 6 0 0 1 6-6h6a6 6 0 0 1 6 6v1" },
       { href: "/domains", label: "Domains", icon: "M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18" },
       { href: "/tracking", label: "Tracking", icon: "M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9" },
       { href: "/usage", label: "Usage", icon: "M12 20V10M6 20V4M18 20v-6" },

@@ -212,3 +212,5 @@ export {
   type CreateLeadFormResult,
   type LeadFormInput,
 } from "./leadforms";
+
+export { listContacts, type CrmContact } from "./crm";
