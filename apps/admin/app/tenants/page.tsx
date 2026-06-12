@@ -27,26 +27,26 @@ export default async function TenantsPage({
           name="q"
           defaultValue={q ?? ""}
           placeholder="Search by username, name, or owner email"
-          className="w-full max-w-md rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full max-w-md rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
-        <button className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white">
+        <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
           Search
         </button>
         {q ? (
-          <Link href="/tenants" className="px-3 py-2 text-sm text-neutral-500 underline">
+          <Link href="/tenants" className="px-3 py-2 text-sm text-muted underline">
             Clear
           </Link>
         ) : null}
       </form>
 
-      <p className="mt-4 text-sm text-neutral-500">
+      <p className="mt-4 text-sm text-muted">
         {tenants.length} tenant{tenants.length === 1 ? "" : "s"}
         {q ? ` matching "${q}"` : ""} (max 100)
       </p>
 
-      <div className="mt-3 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+      <div className="mt-3 overflow-x-auto rounded-xl border border-white/10 bg-surface">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-neutral-200 text-neutral-500">
+          <thead className="border-b border-white/10 text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Tenant</th>
               <th className="px-4 py-3 font-medium">Owner</th>
@@ -58,9 +58,9 @@ export default async function TenantsPage({
           </thead>
           <tbody>
             {tenants.map((t) => (
-              <tr key={t.id} className="border-b border-neutral-100 last:border-0">
+              <tr key={t.id} className="border-b border-white/10 last:border-0">
                 <td className="px-4 py-3">
-                  <Link href={`/tenants/${t.id}`} className="font-medium text-blue-600 underline">
+                  <Link href={`/tenants/${t.id}`} className="font-medium text-cyan underline">
                     {t.username}
                   </Link>
                   {t.suspendedAt ? (
@@ -68,28 +68,28 @@ export default async function TenantsPage({
                       SUSPENDED
                     </span>
                   ) : null}
-                  {t.name ? <div className="text-xs text-neutral-400">{t.name}</div> : null}
+                  {t.name ? <div className="text-xs text-muted">{t.name}</div> : null}
                 </td>
-                <td className="px-4 py-3 text-neutral-600">{t.owner.email ?? "—"}</td>
+                <td className="px-4 py-3 text-muted">{t.owner.email ?? "—"}</td>
                 <td className="px-4 py-3">
                   {t.subscription ? (
                     <span>
                       {t.subscription.plan.name}
-                      <span className="ml-1 text-xs text-neutral-400">
+                      <span className="ml-1 text-xs text-muted">
                         {t.subscription.status}
                       </span>
                     </span>
                   ) : (
-                    <span className="text-neutral-400">none</span>
+                    <span className="text-muted">none</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
                   {t.gateway ? (
-                    <span className={t.gateway.mode === "LIVE" ? "text-green-700" : "text-amber-600"}>
+                    <span className={t.gateway.mode === "LIVE" ? "text-green-700" : "text-warning"}>
                       {t.gateway.mode}
                     </span>
                   ) : (
-                    <span className="text-neutral-400">—</span>
+                    <span className="text-muted">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -100,7 +100,7 @@ export default async function TenantsPage({
             ))}
             {tenants.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-neutral-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-muted">
                   No tenants found.
                 </td>
               </tr>

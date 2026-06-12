@@ -5,7 +5,7 @@ import { paiseToRupeeString } from "@invoxai/utils/money";
 import { savePricingSettingAction } from "./actions";
 
 const inputCls =
-  "rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+  "rounded-lg border border-white/10 px-3 py-2 outline-none focus:border-brand";
 
 /** Inline editor for one existing pricing knob — key & label fixed, value editable. */
 export function PricingRow({
@@ -22,16 +22,16 @@ export function PricingRow({
   return (
     <form
       action={formAction}
-      className="flex flex-wrap items-center gap-3 border-b border-neutral-100 px-4 py-3 last:border-0"
+      className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3 last:border-0"
     >
       <input type="hidden" name="key" value={settingKey} />
       <input type="hidden" name="label" value={label} />
       <div className="min-w-0 flex-1">
-        <div className="font-medium text-neutral-900">{label}</div>
-        <div className="text-xs text-neutral-400">{settingKey}</div>
+        <div className="font-medium text-white">{label}</div>
+        <div className="text-xs text-muted">{settingKey}</div>
       </div>
       <div className="flex items-center gap-1">
-        <span className="text-neutral-400">₹</span>
+        <span className="text-muted">₹</span>
         <input
           name="value"
           inputMode="decimal"
@@ -42,7 +42,7 @@ export function PricingRow({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save"}
       </button>
@@ -74,14 +74,14 @@ export function NewSettingForm() {
         <input name="key" placeholder="key (e.g. ai_page_price)" className={inputCls} />
         <input name="label" placeholder="Label" className={inputCls} />
         <div className="flex items-center gap-1">
-          <span className="text-neutral-400">₹</span>
+          <span className="text-muted">₹</span>
           <input name="value" inputMode="decimal" placeholder="0.00" className={`${inputCls} w-full`} />
         </div>
       </div>
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50 disabled:opacity-50"
+        className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Add setting"}
       </button>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import {
   getRevenueReport,
   getWalletAttention,
@@ -36,51 +36,51 @@ export default async function ReportsPage() {
       <h1 className="text-2xl font-bold">Reports</h1>
 
       <h2 className="mt-6 text-lg font-bold">InvoxAI revenue</h2>
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-muted">
         InvoxAI’s own income only — buyer payments settle to sellers and are never
         counted here.
       </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card title="Total earned">
+        <GlassCard title="Total earned">
           <p className="text-2xl font-bold">{formatRupees(rev.totalEarnedPaise)}</p>
-          <p className="mt-1 text-xs text-neutral-400">commission + AI pages + subs</p>
-        </Card>
-        <Card title="Commission">
+          <p className="mt-1 text-xs text-muted">commission + AI pages + subs</p>
+        </GlassCard>
+        <GlassCard title="Commission">
           <p className="text-2xl font-bold">{formatRupees(rev.commissionCollectedPaise)}</p>
-          <p className="mt-1 text-xs text-amber-600">
+          <p className="mt-1 text-xs text-warning">
             {rev.commissionDuePaise > 0 ? `${formatRupees(rev.commissionDuePaise)} due` : "all collected"}
           </p>
-        </Card>
-        <Card title="AI page fees">
+        </GlassCard>
+        <GlassCard title="AI page fees">
           <p className="text-2xl font-bold">{formatRupees(rev.aiPageFeesPaise)}</p>
-          <p className="mt-1 text-xs text-neutral-400">{rev.aiPageCount} pages</p>
-        </Card>
-        <Card title="Subscriptions">
+          <p className="mt-1 text-xs text-muted">{rev.aiPageCount} pages</p>
+        </GlassCard>
+        <GlassCard title="Subscriptions">
           <p className="text-2xl font-bold">{formatRupees(rev.subscriptionRevenuePaise)}</p>
-          <p className="mt-1 text-xs text-neutral-400">{rev.subscriptionCount} payments</p>
-        </Card>
+          <p className="mt-1 text-xs text-muted">{rev.subscriptionCount} payments</p>
+        </GlassCard>
       </div>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <Card title="Wallet top-ups received">
+        <GlassCard title="Wallet top-ups received">
           <p className="text-xl font-bold">{formatRupees(rev.walletTopupsPaise)}</p>
-        </Card>
-        <Card title="Wallet liability (held seller funds)">
+        </GlassCard>
+        <GlassCard title="Wallet liability (held seller funds)">
           <p className="text-xl font-bold">{formatRupees(rev.walletLiabilityPaise)}</p>
-          <p className="mt-1 text-xs text-neutral-400">Prepaid balances InvoxAI holds</p>
-        </Card>
+          <p className="mt-1 text-xs text-muted">Prepaid balances InvoxAI holds</p>
+        </GlassCard>
       </div>
 
       <h2 className="mt-8 text-lg font-bold">Needs attention</h2>
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-muted">
         Sellers with outstanding commission or a low wallet (commission pauses /
         AI pages blocked until topped up).
       </p>
       {attention.length === 0 ? (
         <p className="mt-2 text-sm text-green-700">All sellers healthy ✓</p>
       ) : (
-        <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-neutral-200 text-neutral-500">
+            <thead className="border-b border-white/10 text-muted">
               <tr>
                 <th className="px-4 py-2 font-medium">Tenant</th>
                 <th className="px-4 py-2 font-medium text-right">Wallet</th>
@@ -89,14 +89,14 @@ export default async function ReportsPage() {
             </thead>
             <tbody>
               {attention.map((a) => (
-                <tr key={a.id} className="border-b border-neutral-100 last:border-0">
+                <tr key={a.id} className="border-b border-white/10 last:border-0">
                   <td className="px-4 py-2">
-                    <Link href={`/tenants/${a.id}`} className="text-blue-600 underline">
+                    <Link href={`/tenants/${a.id}`} className="text-cyan underline">
                       {a.username}
                     </Link>
                   </td>
                   <td className="px-4 py-2 text-right">{formatRupees(a.balancePaise)}</td>
-                  <td className={`px-4 py-2 text-right ${a.commissionDuePaise > 0 ? "font-medium text-amber-600" : "text-neutral-400"}`}>
+                  <td className={`px-4 py-2 text-right ${a.commissionDuePaise > 0 ? "font-medium text-warning" : "text-muted"}`}>
                     {a.commissionDuePaise > 0 ? formatRupees(a.commissionDuePaise) : "—"}
                   </td>
                 </tr>
@@ -107,19 +107,19 @@ export default async function ReportsPage() {
       )}
 
       <h2 className="mt-8 text-lg font-bold">Recent webhook events</h2>
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-muted">
         Accepted Razorpay events (signature-verified). Failed/unsigned deliveries
         are rejected at the edge and not stored.
       </p>
       {events.length === 0 ? (
-        <p className="mt-2 text-sm text-neutral-400">No events yet.</p>
+        <p className="mt-2 text-sm text-muted">No events yet.</p>
       ) : (
-        <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
           <table className="w-full text-left text-sm">
             <tbody>
               {events.map((e) => (
-                <tr key={e.id} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-2 text-neutral-500">{fmtDateTime(e.createdAt)}</td>
+                <tr key={e.id} className="border-b border-white/10 last:border-0">
+                  <td className="px-4 py-2 text-muted">{fmtDateTime(e.createdAt)}</td>
                   <td className="px-4 py-2 font-medium">{e.type}</td>
                   <td className="px-4 py-2">
                     {e.processedAt ? (
@@ -130,7 +130,7 @@ export default async function ReportsPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-right text-xs text-neutral-400">{e.eventId}</td>
+                  <td className="px-4 py-2 text-right text-xs text-muted">{e.eventId}</td>
                 </tr>
               ))}
             </tbody>

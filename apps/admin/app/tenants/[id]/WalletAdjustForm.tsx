@@ -18,28 +18,28 @@ export function WalletAdjustForm({ tenantId }: { tenantId: string }) {
         <select
           name="direction"
           defaultValue="CREDIT"
-          className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+          className="rounded-lg border border-white/10 px-2 py-1.5 text-sm"
         >
           <option value="CREDIT">Credit (+)</option>
           <option value="DEBIT">Debit (−)</option>
         </select>
         <div className="flex items-center gap-1">
-          <span className="text-neutral-400">₹</span>
+          <span className="text-muted">₹</span>
           <input
             name="amount"
             inputMode="decimal"
             placeholder="0.00"
-            className="w-28 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+            className="w-28 rounded-lg border border-white/10 px-2 py-1.5 text-sm"
           />
         </div>
         <input
           name="reason"
           placeholder="Reason (logged)"
-          className="min-w-48 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+          className="min-w-48 flex-1 rounded-lg border border-white/10 px-2 py-1.5 text-sm"
         />
         <button
           disabled={pending}
-          className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
         >
           {pending ? "Applying…" : "Apply"}
         </button>

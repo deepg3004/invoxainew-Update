@@ -1,4 +1,4 @@
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { listPricingSettings } from "@invoxai/db";
 import { requireAdmin } from "../../lib/auth";
 import { AdminShell } from "../components/AdminShell";
@@ -16,13 +16,13 @@ export default async function PricingPage() {
   return (
     <AdminShell email={gate.user.email}>
       <h1 className="text-2xl font-bold">Pricing settings</h1>
-      <p className="mt-1 text-neutral-500">
+      <p className="mt-1 text-muted">
         Global platform fees (e.g. the AI-page fee). All values are in rupees.
       </p>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+      <div className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-surface">
         {settings.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-neutral-500">
+          <p className="px-4 py-6 text-sm text-muted">
             No settings yet. Add one below.
           </p>
         ) : (
@@ -38,9 +38,9 @@ export default async function PricingPage() {
       </div>
 
       <div className="mt-8">
-        <Card title="Add a setting">
+        <GlassCard title="Add a setting">
           <NewSettingForm />
-        </Card>
+        </GlassCard>
       </div>
     </AdminShell>
   );

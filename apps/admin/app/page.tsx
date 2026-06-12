@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import { getPlatformOverview, listPlans, listPricingSettings } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../lib/auth";
@@ -11,12 +11,12 @@ export const dynamic = "force-dynamic";
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+    <div className="rounded-xl border border-white/10 bg-surface p-4">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted">
         {label}
       </div>
-      <div className="mt-1 text-2xl font-bold text-neutral-900">{value}</div>
-      {hint ? <div className="mt-0.5 text-xs text-neutral-400">{hint}</div> : null}
+      <div className="mt-1 text-2xl font-bold text-white">{value}</div>
+      {hint ? <div className="mt-0.5 text-xs text-muted">{hint}</div> : null}
     </div>
   );
 }
@@ -34,7 +34,7 @@ export default async function Home() {
 
   return (
     <AdminShell email={gate.user.email}>
-      <p className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+      <p className="text-sm font-medium uppercase tracking-wide text-muted">
         InvoxAI · admin
       </p>
       <h1 className="mt-1 text-3xl font-bold">Platform overview</h1>
@@ -53,28 +53,28 @@ export default async function Home() {
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
-        <Card title="Tenants">
-          <p className="text-sm text-neutral-500">Search and inspect every seller.</p>
-          <Link href="/tenants" className="mt-3 inline-block text-sm font-medium text-blue-600 underline">
+        <GlassCard title="Tenants">
+          <p className="text-sm text-muted">Search and inspect every seller.</p>
+          <Link href="/tenants" className="mt-3 inline-block text-sm font-medium text-cyan underline">
             View tenants →
           </Link>
-        </Card>
-        <Card title="Plans">
-          <p className="text-sm text-neutral-500">
+        </GlassCard>
+        <GlassCard title="Plans">
+          <p className="text-sm text-muted">
             {plans.length} plan{plans.length === 1 ? "" : "s"} · {activePlans} active
           </p>
-          <Link href="/plans" className="mt-3 inline-block text-sm font-medium text-blue-600 underline">
+          <Link href="/plans" className="mt-3 inline-block text-sm font-medium text-cyan underline">
             Manage plans →
           </Link>
-        </Card>
-        <Card title="Pricing settings">
-          <p className="text-sm text-neutral-500">
+        </GlassCard>
+        <GlassCard title="Pricing settings">
+          <p className="text-sm text-muted">
             {settings.length} setting{settings.length === 1 ? "" : "s"}
           </p>
-          <Link href="/pricing" className="mt-3 inline-block text-sm font-medium text-blue-600 underline">
+          <Link href="/pricing" className="mt-3 inline-block text-sm font-medium text-cyan underline">
             Manage pricing →
           </Link>
-        </Card>
+        </GlassCard>
       </div>
     </AdminShell>
   );

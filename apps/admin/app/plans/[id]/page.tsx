@@ -27,7 +27,7 @@ export default async function EditPlanPage({
   return (
     <AdminShell email={gate.user.email}>
       <h1 className="text-2xl font-bold">Edit plan</h1>
-      <p className="mt-1 text-neutral-500">{plan.name}</p>
+      <p className="mt-1 text-muted">{plan.name}</p>
       <div className="mt-6 max-w-xl">
         <PlanForm
           action={action}

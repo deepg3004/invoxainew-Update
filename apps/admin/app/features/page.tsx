@@ -7,7 +7,7 @@ import { saveFeatureRuleAction, setFeatureLimitsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const input = "rounded-lg border border-neutral-300 px-2 py-1 text-sm";
+const input = "rounded-lg border border-white/10 px-2 py-1 text-sm";
 
 export default async function FeaturesPage() {
   const gate = await requireAdmin();
@@ -24,7 +24,7 @@ export default async function FeaturesPage() {
   return (
     <AdminShell email={gate.user.email}>
       <h1 className="text-2xl font-bold">Feature billing</h1>
-      <p className="mt-2 text-neutral-500">
+      <p className="mt-2 text-muted">
         Admin-priced features. Each plan grants a free monthly allowance
         (−1 = unlimited); beyond it the fee is charged from the seller’s wallet.
       </p>
@@ -36,22 +36,22 @@ export default async function FeaturesPage() {
           <form
             key={r.featureKey}
             action={saveFeatureRuleAction}
-            className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-white p-3 text-sm"
+            className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-surface p-3 text-sm"
           >
             <input type="hidden" name="featureKey" value={r.featureKey} />
-            <span className="font-mono text-xs text-neutral-400">{r.featureKey}</span>
+            <span className="font-mono text-xs text-muted">{r.featureKey}</span>
             <input name="name" defaultValue={r.name} className={`${input} w-40`} />
             <label className="flex items-center gap-1">₹<input name="base" defaultValue={paiseToRupeeString(r.basePaise)} className={`${input} w-20`} /></label>
             <label className="flex items-center gap-1">GST%<input name="gst" defaultValue={bpsToPercentString(r.gstRateBps)} className={`${input} w-14`} /></label>
             <label className="flex items-center gap-1"><input type="checkbox" name="wallet" defaultChecked={r.walletEnabled} /> wallet</label>
             <label className="flex items-center gap-1"><input type="checkbox" name="direct" defaultChecked={r.directEnabled} /> direct</label>
             <label className="flex items-center gap-1"><input type="checkbox" name="active" defaultChecked={r.active} /> active</label>
-            <button className="rounded-lg bg-neutral-900 px-3 py-1 font-medium text-white">Save</button>
+            <button className="rounded-lg bg-brand px-3 py-1 font-medium text-white">Save</button>
           </form>
         ))}
 
         {/* New rule */}
-        <form action={saveFeatureRuleAction} className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-neutral-300 p-3 text-sm">
+        <form action={saveFeatureRuleAction} className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-white/10 p-3 text-sm">
           <input name="featureKey" placeholder="feature_key" className={`${input} w-32 font-mono`} />
           <input name="name" placeholder="Name" className={`${input} w-40`} />
           <label className="flex items-center gap-1">₹<input name="base" placeholder="0" className={`${input} w-20`} /></label>
@@ -59,7 +59,7 @@ export default async function FeaturesPage() {
           <label className="flex items-center gap-1"><input type="checkbox" name="wallet" defaultChecked /> wallet</label>
           <label className="flex items-center gap-1"><input type="checkbox" name="direct" /> direct</label>
           <label className="flex items-center gap-1"><input type="checkbox" name="active" defaultChecked /> active</label>
-          <button className="rounded-lg border border-neutral-300 px-3 py-1 font-medium hover:bg-neutral-50">Add</button>
+          <button className="rounded-lg border border-white/10 px-3 py-1 font-medium hover:bg-white/5">Add</button>
         </form>
       </div>
 
@@ -70,12 +70,12 @@ export default async function FeaturesPage() {
           <form
             key={r.featureKey}
             action={setFeatureLimitsAction.bind(null, r.featureKey)}
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3 text-sm"
+            className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-surface p-3 text-sm"
           >
             <span className="w-36 font-medium">{r.name}</span>
             {plans.map((p) => (
               <label key={p.id} className="flex items-center gap-1">
-                <span className="text-neutral-500">{p.name}</span>
+                <span className="text-muted">{p.name}</span>
                 <input
                   name={`limit_${p.id}`}
                   defaultValue={limitOf(p.id, r.featureKey)}
@@ -83,7 +83,7 @@ export default async function FeaturesPage() {
                 />
               </label>
             ))}
-            <button className="rounded-lg bg-neutral-900 px-3 py-1 font-medium text-white">Save</button>
+            <button className="rounded-lg bg-brand px-3 py-1 font-medium text-white">Save</button>
           </form>
         ))}
       </div>

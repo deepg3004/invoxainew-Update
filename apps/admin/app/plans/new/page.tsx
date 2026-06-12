@@ -13,7 +13,7 @@ export default async function NewPlanPage() {
   return (
     <AdminShell email={gate.user.email}>
       <h1 className="text-2xl font-bold">New plan</h1>
-      <p className="mt-1 text-neutral-500">
+      <p className="mt-1 text-muted">
         Define a subscription tier. Prices and commission are editable later;
         the key is permanent.
       </p>

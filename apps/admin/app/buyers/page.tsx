@@ -30,7 +30,7 @@ export default async function BuyersPage({
   return (
     <AdminShell email={gate.user.email}>
       <h1 className="text-2xl font-bold">Buyer lookup</h1>
-      <p className="mt-1 text-sm text-neutral-500">
+      <p className="mt-1 text-sm text-muted">
         Find a buyer’s payments across all sellers by email or phone (support).
       </p>
 
@@ -39,21 +39,21 @@ export default async function BuyersPage({
           name="q"
           defaultValue={q ?? ""}
           placeholder="buyer email or phone"
-          className="w-full max-w-md rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+          className="w-full max-w-md rounded-lg border border-white/10 px-3 py-2 text-sm outline-none focus:border-brand"
         />
-        <button className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white">
+        <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
           Search
         </button>
       </form>
 
       {!q ? (
-        <p className="mt-6 text-sm text-neutral-400">Enter an email or phone to search.</p>
+        <p className="mt-6 text-sm text-muted">Enter an email or phone to search.</p>
       ) : results.length === 0 ? (
-        <p className="mt-6 text-sm text-neutral-500">No payments found for “{q}”.</p>
+        <p className="mt-6 text-sm text-muted">No payments found for “{q}”.</p>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+        <div className="mt-6 overflow-x-auto rounded-xl border border-white/10 bg-surface">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-neutral-200 text-neutral-500">
+            <thead className="border-b border-white/10 text-muted">
               <tr>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Buyer</th>
@@ -65,22 +65,22 @@ export default async function BuyersPage({
             </thead>
             <tbody>
               {results.map((r) => (
-                <tr key={r.id} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-3 text-neutral-500">{fmtDate(r.paidAt ?? r.createdAt)}</td>
+                <tr key={r.id} className="border-b border-white/10 last:border-0">
+                  <td className="px-4 py-3 text-muted">{fmtDate(r.paidAt ?? r.createdAt)}</td>
                   <td className="px-4 py-3">
                     <div>{r.buyerEmail ?? "—"}</div>
-                    {r.buyerContact ? <div className="text-xs text-neutral-400">{r.buyerContact}</div> : null}
+                    {r.buyerContact ? <div className="text-xs text-muted">{r.buyerContact}</div> : null}
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/tenants/${r.tenant.id}`} className="text-blue-600 underline">
+                    <Link href={`/tenants/${r.tenant.id}`} className="text-cyan underline">
                       {r.tenant.username}
                     </Link>
                   </td>
                   <td className="px-4 py-3">{r.itemTitle ?? r.paymentPage?.title ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <span className="text-xs text-neutral-500">{r.status}</span>
+                    <span className="text-xs text-muted">{r.status}</span>
                     {r.status === "PAID" ? (
-                      <span className="ml-1 text-xs text-neutral-400">· {r.fulfillmentStatus}</span>
+                      <span className="ml-1 text-xs text-muted">· {r.fulfillmentStatus}</span>
                     ) : null}
                   </td>
                   <td className="px-4 py-3 text-right">{formatRupees(r.amountPaise)}</td>

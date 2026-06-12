@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card } from "@invoxai/ui";
+import { GlassCard } from "@invoxai/ui";
 import {
   getTenantAdminDetail,
   getTenantSalesSummary,
@@ -44,7 +44,7 @@ export default async function TenantDetail({
 
   return (
     <AdminShell email={gate.user.email}>
-      <Link href="/tenants" className="text-sm text-blue-600 underline">
+      <Link href="/tenants" className="text-sm text-cyan underline">
         ← Tenants
       </Link>
       <h1 className="mt-2 flex items-center gap-3 text-2xl font-bold">
@@ -55,60 +55,60 @@ export default async function TenantDetail({
           </span>
         ) : null}
       </h1>
-      <p className="mt-1 text-sm text-neutral-500">
+      <p className="mt-1 text-sm text-muted">
         {t.username}.invoxai.io · owner {t.owner.email ?? "—"} · joined{" "}
         {fmtDate(t.createdAt)}
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <Card title="Subscription">
+        <GlassCard title="Subscription">
           {t.subscription ? (
             <p className="text-sm">
               <strong>{t.subscription.plan.name}</strong> · {t.subscription.status}
               <br />
-              <span className="text-neutral-500">
+              <span className="text-muted">
                 {t.subscription.billingCycle.toLowerCase()} · renews{" "}
                 {fmtDate(t.subscription.currentPeriodEnd)}
               </span>
             </p>
           ) : (
-            <p className="text-sm text-neutral-400">No subscription</p>
+            <p className="text-sm text-muted">No subscription</p>
           )}
-        </Card>
-        <Card title="Wallet">
+        </GlassCard>
+        <GlassCard title="Wallet">
           <p className="text-2xl font-bold">
             {formatRupees(t.wallet?.balancePaise ?? 0)}
           </p>
-        </Card>
-        <Card title="Gateway">
+        </GlassCard>
+        <GlassCard title="Gateway">
           {t.gateway ? (
             <p className="text-sm">
               {t.gateway.provider} · {maskKeyId(t.gateway.keyId)}
               <br />
-              <span className={t.gateway.mode === "LIVE" ? "text-green-700" : "text-amber-600"}>
+              <span className={t.gateway.mode === "LIVE" ? "text-green-700" : "text-warning"}>
                 {t.gateway.mode}
               </span>{" "}
               · {t.gateway.status}
             </p>
           ) : (
-            <p className="text-sm text-neutral-400">Not connected</p>
+            <p className="text-sm text-muted">Not connected</p>
           )}
-        </Card>
+        </GlassCard>
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <Card title="Orders">
+        <GlassCard title="Orders">
           <p className="text-xl font-bold">{summary.orderCount}</p>
-        </Card>
-        <Card title="GMV">
+        </GlassCard>
+        <GlassCard title="GMV">
           <p className="text-xl font-bold">{formatRupees(summary.grossPaise)}</p>
-        </Card>
-        <Card title="Commission">
+        </GlassCard>
+        <GlassCard title="Commission">
           <p className="text-xl font-bold">{formatRupees(summary.commissionPaidPaise)}</p>
           {summary.commissionDuePaise > 0 ? (
-            <p className="text-xs text-amber-600">{formatRupees(summary.commissionDuePaise)} due</p>
+            <p className="text-xs text-warning">{formatRupees(summary.commissionDuePaise)} due</p>
           ) : null}
-        </Card>
+        </GlassCard>
       </div>
 
       {/* Admin actions */}
@@ -116,7 +116,7 @@ export default async function TenantDetail({
         <h2 className="text-lg font-bold">Admin actions</h2>
 
         <div className="mt-4">
-          <p className="text-sm font-medium text-neutral-700">
+          <p className="text-sm font-medium text-neutral-200">
             {suspended ? "This store is suspended." : "Store is active."}
           </p>
           <form
@@ -127,7 +127,7 @@ export default async function TenantDetail({
               <input
                 name="reason"
                 placeholder="Reason for suspension (logged)"
-                className="min-w-64 flex-1 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"
+                className="min-w-64 flex-1 rounded-lg border border-white/10 px-2 py-1.5 text-sm"
               />
             ) : null}
             <button
@@ -141,8 +141,8 @@ export default async function TenantDetail({
         </div>
 
         <div className="mt-5 border-t border-amber-200 pt-4">
-          <p className="text-sm font-medium text-neutral-700">Manual wallet adjustment</p>
-          <p className="mb-2 text-xs text-neutral-500">
+          <p className="text-sm font-medium text-neutral-200">Manual wallet adjustment</p>
+          <p className="mb-2 text-xs text-muted">
             Moves the seller’s own wallet money only (refunds, corrections). Never
             buyer money. Every change is logged below.
           </p>
@@ -154,18 +154,18 @@ export default async function TenantDetail({
       {audit.length > 0 ? (
         <div className="mt-6">
           <h2 className="text-lg font-bold">Admin audit log</h2>
-          <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+          <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
             <table className="w-full text-left text-sm">
               <tbody>
                 {audit.map((a) => (
-                  <tr key={a.id} className="border-b border-neutral-100 last:border-0">
-                    <td className="px-4 py-2 text-neutral-500">{fmtDate(a.createdAt)}</td>
+                  <tr key={a.id} className="border-b border-white/10 last:border-0">
+                    <td className="px-4 py-2 text-muted">{fmtDate(a.createdAt)}</td>
                     <td className="px-4 py-2 font-medium">{a.action}</td>
-                    <td className="px-4 py-2 text-neutral-600">
+                    <td className="px-4 py-2 text-muted">
                       {a.amountPaise != null ? formatRupees(a.amountPaise) + " · " : ""}
                       {a.detail ?? ""}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs text-neutral-400">
+                    <td className="px-4 py-2 text-right text-xs text-muted">
                       {a.adminEmail}
                     </td>
                   </tr>
@@ -179,22 +179,22 @@ export default async function TenantDetail({
       {/* Recent wallet ledger */}
       <h2 className="mt-8 text-lg font-bold">Wallet ledger (recent)</h2>
       {t.wallet && t.wallet.transactions.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
           <table className="w-full text-left text-sm">
             <tbody>
               {t.wallet.transactions.map((tx) => (
-                <tr key={tx.id} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-2 text-neutral-500">{fmtDate(tx.createdAt)}</td>
+                <tr key={tx.id} className="border-b border-white/10 last:border-0">
+                  <td className="px-4 py-2 text-muted">{fmtDate(tx.createdAt)}</td>
                   <td className="px-4 py-2">{tx.reason}</td>
                   <td
                     className={`px-4 py-2 text-right font-medium ${
-                      tx.direction === "CREDIT" ? "text-green-700" : "text-neutral-900"
+                      tx.direction === "CREDIT" ? "text-green-700" : "text-white"
                     }`}
                   >
                     {tx.direction === "CREDIT" ? "+" : "−"}
                     {formatRupees(tx.amountPaise)}
                   </td>
-                  <td className="px-4 py-2 text-right text-neutral-400">
+                  <td className="px-4 py-2 text-right text-muted">
                     {formatRupees(tx.balanceAfter)}
                   </td>
                 </tr>
@@ -203,27 +203,27 @@ export default async function TenantDetail({
           </table>
         </div>
       ) : (
-        <p className="mt-2 text-sm text-neutral-400">No wallet activity.</p>
+        <p className="mt-2 text-sm text-muted">No wallet activity.</p>
       )}
 
       {/* Recent orders */}
       <h2 className="mt-8 text-lg font-bold">Recent orders</h2>
       {t.buyerPayments.length > 0 ? (
-        <div className="mt-2 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-surface">
           <table className="w-full text-left text-sm">
             <tbody>
               {t.buyerPayments.map((o) => (
-                <tr key={o.id} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-4 py-2 font-medium text-neutral-900">
+                <tr key={o.id} className="border-b border-white/10 last:border-0">
+                  <td className="px-4 py-2 font-medium text-white">
                     {o.itemTitle ?? o.paymentPage?.title ?? "—"}
                     {o.refundedPaise > 0 && !o.chargebackAt ? (
-                      <span className="ml-2 text-xs text-amber-600">
+                      <span className="ml-2 text-xs text-warning">
                         refunded {formatRupees(o.refundedPaise)}
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-2 text-neutral-500">{o.buyerEmail ?? "—"}</td>
-                  <td className="px-4 py-2 text-neutral-500">{o.fulfillmentStatus}</td>
+                  <td className="px-4 py-2 text-muted">{o.buyerEmail ?? "—"}</td>
+                  <td className="px-4 py-2 text-muted">{o.fulfillmentStatus}</td>
                   <td className="px-4 py-2 text-right">{formatRupees(o.amountPaise)}</td>
                   <td className="px-4 py-2 text-right">
                     {o.chargebackAt ? (
@@ -244,12 +244,12 @@ export default async function TenantDetail({
           </table>
         </div>
       ) : (
-        <p className="mt-2 text-sm text-neutral-400">No orders.</p>
+        <p className="mt-2 text-sm text-muted">No orders.</p>
       )}
 
       {/* Pages */}
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <Card title={`Payment pages (${t.paymentPages.length})`}>
+        <GlassCard title={`Payment pages (${t.paymentPages.length})`}>
           {t.paymentPages.length > 0 ? (
             <ul className="space-y-1 text-sm">
               {t.paymentPages.map((p) => (
@@ -258,15 +258,15 @@ export default async function TenantDetail({
                     /pay/{p.slug}
                     {p.isActive ? "" : " (off)"}
                   </span>
-                  <span className="text-neutral-500">{formatRupees(p.amountPaise)}</span>
+                  <span className="text-muted">{formatRupees(p.amountPaise)}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-neutral-400">None</p>
+            <p className="text-sm text-muted">None</p>
           )}
-        </Card>
-        <Card title={`AI pages (${t.aiPages.length})`}>
+        </GlassCard>
+        <GlassCard title={`AI pages (${t.aiPages.length})`}>
           {t.aiPages.length > 0 ? (
             <ul className="space-y-1 text-sm">
               {t.aiPages.map((p) => (
@@ -274,9 +274,9 @@ export default async function TenantDetail({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-neutral-400">None</p>
+            <p className="text-sm text-muted">None</p>
           )}
-        </Card>
+        </GlassCard>
       </div>
     </AdminShell>
   );
