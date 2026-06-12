@@ -85,6 +85,34 @@ model Tenant {
   // Lead forms + CRM (Final Plan §12): capture forms and their submissions.
   leadForms     LeadForm[]
   leadSubmissions LeadSubmission[]
+  // Bio link (Final Plan §12): one link-in-bio page per tenant.
+  bioLink       BioLink?
+}
+
+/// Link-in-bio page for a tenant (Final Plan §12) — a single public page that
+/// aggregates the seller's socials and links. One per tenant. Social/link URLs
+/// are sanitized with safeUrl at render (no javascript:/data: URLs). RLS:
+/// deny-anon; the public read goes through Prisma server-side.
+model BioLink {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @unique @map("tenant_id") @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  displayName String?  @map("display_name")
+  bio         String?
+  avatarUrl   String?  @map("avatar_url")
+  instagram   String?
+  youtube     String?
+  twitter     String?
+  facebook    String?
+  whatsapp    String?
+  website     String?
+  // Custom links as "Label | https://url" lines; parsed + sanitized at render.
+  linksText   String?  @map("links_text")
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("bio_links")
 }
 
 /// Lead-capture form on a tenant's public site (Final Plan §12). v1 collects a

@@ -214,3 +214,10 @@ export {
 } from "./leadforms";
 
 export { listContacts, type CrmContact } from "./crm";
+
+export {
+  getBioLink,
+  getPublishedBioLink,
+  upsertBioLink,
+  type BioLinkInput,
+} from "./biolink";

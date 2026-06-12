@@ -66,7 +66,7 @@ function str(v: unknown, max = 4000): string {
 }
 
 /** Allow only http(s) absolute URLs or site-relative paths; else "". */
-function safeUrl(v: unknown): string {
+export function safeUrl(v: unknown): string {
   const s = str(v, 2000).trim();
   if (!s) return "";
   // Site-relative ("/path") only — NOT protocol-relative ("//evil.com"), which
