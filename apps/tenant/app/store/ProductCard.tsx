@@ -39,6 +39,10 @@ export function ProductCard({
           {formatRupees(product.pricePaise)}
           {product.stockQty === 0 ? (
             <span className="ml-2 text-xs font-medium text-red-600">Sold out</span>
+          ) : product.stockQty !== null && product.stockQty <= 5 ? (
+            <span className="ml-2 text-xs font-medium text-amber-600">
+              Only {product.stockQty} left
+            </span>
           ) : null}
         </div>
       </Link>
