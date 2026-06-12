@@ -1,13 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { cn } from "./cn";
 
-// One nav item.
-type NavItem = { href: string; label: string; icon: string };
-type NavGroup = { heading: string; items: NavItem[] };
+export type NavItem = { href: string; label: string; icon: string };
+export type NavGroup = { heading: string; items: NavItem[] };
 
-const NAV: NavGroup[] = [
+// Seller (app) navigation — exported so the seller shell wrapper can pass it in.
+export const SELLER_NAV: NavGroup[] = [
   {
     heading: "Overview",
     items: [{ href: "/", label: "Dashboard", icon: "M4 5h16M4 12h10M4 19h16" }],
@@ -52,9 +53,6 @@ const NAV: NavGroup[] = [
   },
 ];
 
-// Routes that should render without the dashboard chrome.
-const BARE_PREFIXES = ["/login", "/onboarding"];
-
 function Icon({ d }: { d: string }) {
   return (
     <svg
@@ -73,119 +71,151 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-const FLAT = NAV.flatMap((g) => g.items);
-
 function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
 }
 
+function Brand({ href, suffix }: { href: string; suffix?: string }) {
+  return (
+    <a href={href} className="font-display text-lg font-bold tracking-tight text-zinc-900">
+      Invox<span className="text-gradient">AI</span>
+      {suffix ? (
+        <span className="ml-1.5 text-[0.7rem] font-semibold uppercase tracking-wide text-muted">
+          {suffix}
+        </span>
+      ) : null}
+    </a>
+  );
+}
+
+function NavLinks({
+  nav,
+  pathname,
+  onNavigate,
+}: {
+  nav: NavGroup[];
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+      {nav.map((group) => (
+        <div key={group.heading}>
+          <div className="px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-muted/80">
+            {group.heading}
+          </div>
+          <div className="mt-2 space-y-0.5">
+            {group.items.map((item) => {
+              const active = isActive(pathname, item.href);
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-150",
+                    active
+                      ? "bg-gradient-to-r from-brand/[0.12] via-flame/[0.06] to-transparent font-medium text-brand-strong"
+                      : "text-zinc-600 hover:translate-x-0.5 hover:bg-zinc-100 hover:text-zinc-900",
+                  )}
+                >
+                  {active ? (
+                    <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-brand-gradient" />
+                  ) : null}
+                  <span className={active ? "text-brand-strong" : "text-muted transition group-hover:text-zinc-700"}>
+                    <Icon d={item.icon} />
+                  </span>
+                  {item.label}
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 /**
- * Premium-dark dashboard chrome: fixed sidebar (lg+), mobile top-strip nav,
- * topbar with notifications + sign out. Auth routes render children bare.
- *
- * `pathname` is passed in by the app's root layout via a thin client wrapper,
- * keeping this component free of a hard next/navigation dependency.
+ * Shared dashboard chrome (seller + admin): a high-contrast solid-white sidebar
+ * on lg+, a slide-in drawer on mobile, and a sticky topbar. `nav` and `topRight`
+ * are supplied by each app's thin client wrapper, keeping this package free of a
+ * hard next/navigation dependency.
  */
 export function DashboardShell({
   pathname,
+  nav = SELLER_NAV,
+  topRight,
+  brandHref = "/",
+  brandSuffix,
+  barePrefixes = ["/login", "/onboarding"],
   children,
 }: {
   pathname: string;
+  nav?: NavGroup[];
+  topRight?: ReactNode;
+  brandHref?: string;
+  brandSuffix?: string;
+  barePrefixes?: string[];
   children: ReactNode;
 }) {
-  const bare = BARE_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/"),
-  );
+  const [open, setOpen] = useState(false);
+  const bare = barePrefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
   if (bare) return <>{children}</>;
 
   return (
     <div className="min-h-screen bg-ink">
-      {/* Sidebar (lg+) */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-zinc-200 bg-white/70 backdrop-blur-xl lg:flex">
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-zinc-200 bg-white shadow-[6px_0_28px_-20px_rgba(15,23,42,0.45)] lg:flex">
         <div className="flex h-16 items-center px-6">
-          <a href="/" className="font-display text-lg font-bold tracking-tight text-zinc-900">
-            Invox<span className="text-gradient">AI</span>
-          </a>
+          <Brand href={brandHref} suffix={brandSuffix} />
         </div>
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-          {NAV.map((group) => (
-            <div key={group.heading}>
-              <div className="px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-muted/80">
-                {group.heading}
-              </div>
-              <div className="mt-2 space-y-0.5">
-                {group.items.map((item) => {
-                  const active = isActive(pathname, item.href);
-                  return (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
-                        active
-                          ? "bg-brand/10 font-medium text-brand-strong shadow-[inset_0_0_0_1px_rgba(236,72,153,0.25)]"
-                          : "text-muted hover:bg-zinc-100 hover:text-zinc-900",
-                      )}
-                    >
-                      <span className={active ? "text-brand-strong" : ""}>
-                        <Icon d={item.icon} />
-                      </span>
-                      {item.label}
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
+        <NavLinks nav={nav} pathname={pathname} />
       </aside>
+
+      {/* Mobile drawer */}
+      {open ? (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 animate-fadein bg-black/30 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+          />
+          <aside className="absolute inset-y-0 left-0 flex w-64 animate-slidein flex-col border-r border-zinc-200 bg-white shadow-2xl">
+            <div className="flex h-16 items-center justify-between px-6">
+              <Brand href={brandHref} suffix={brandSuffix} />
+              <button
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+                className="rounded-lg p-1.5 text-muted hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
+            <NavLinks nav={nav} pathname={pathname} onNavigate={() => setOpen(false)} />
+          </aside>
+        </div>
+      ) : null}
 
       {/* Main column */}
       <div className="lg:pl-64">
-        {/* Topbar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-zinc-200 bg-ink/80 px-4 backdrop-blur-xl sm:px-6">
-          <a
-            href="/"
-            className="font-display text-base font-bold tracking-tight text-zinc-900 lg:hidden"
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-zinc-200 bg-ink/85 px-4 backdrop-blur-xl sm:px-6">
+          <button
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            className="rounded-lg border border-zinc-200 p-2 text-zinc-700 transition hover:bg-zinc-100 lg:hidden"
           >
-            Invox<span className="text-gradient">AI</span>
-          </a>
-          <div className="ml-auto flex items-center gap-2">
-            <a
-              href="/notifications"
-              className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-muted transition hover:bg-zinc-50 hover:text-zinc-900"
-            >
-              Notifications
-            </a>
-            <form action="/auth/signout" method="post">
-              <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-muted transition hover:bg-zinc-50 hover:text-zinc-900">
-                Sign out
-              </button>
-            </form>
-          </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="lg:hidden">
+            <Brand href={brandHref} suffix={brandSuffix} />
+          </span>
+          <div className="ml-auto flex items-center gap-2">{topRight}</div>
         </header>
-
-        {/* Mobile nav strip */}
-        <div className="flex gap-1.5 overflow-x-auto border-b border-zinc-200 px-4 py-2 lg:hidden">
-          {FLAT.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition",
-                  active
-                    ? "bg-brand/10 font-medium text-brand-strong"
-                    : "text-muted hover:bg-zinc-100 hover:text-zinc-900",
-                )}
-              >
-                {item.label}
-              </a>
-            );
-          })}
-        </div>
 
         <main className="px-4 py-8 sm:px-6 lg:px-10">{children}</main>
       </div>

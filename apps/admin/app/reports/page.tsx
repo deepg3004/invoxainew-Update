@@ -10,6 +10,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
 import { AdminShell } from "../components/AdminShell";
 import { NotAuthorized } from "../components/NotAuthorized";
+import { RevenueBreakdownChart } from "../components/RevenueBreakdownChart";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,17 @@ export default async function ReportsPage() {
           <p className="mt-1 text-xs text-muted">{rev.subscriptionCount} payments</p>
         </GlassCard>
       </div>
+
+      <GlassCard className="mt-4" title="Revenue mix">
+        <RevenueBreakdownChart
+          data={[
+            { name: "Commission", value: Math.round(rev.commissionCollectedPaise / 100) },
+            { name: "AI pages", value: Math.round(rev.aiPageFeesPaise / 100) },
+            { name: "Subscriptions", value: Math.round(rev.subscriptionRevenuePaise / 100) },
+          ]}
+        />
+      </GlassCard>
+
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <GlassCard title="Wallet top-ups received">
           <p className="text-xl font-bold">{formatRupees(rev.walletTopupsPaise)}</p>

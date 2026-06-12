@@ -2,6 +2,7 @@ import { GlassCard, StatCard } from "@invoxai/ui";
 import { getAnalytics } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
+import { RevenueChart } from "../components/RevenueChart";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,6 @@ export default async function AnalyticsPage({
     : 30;
 
   const a = await getAnalytics(tenant.id, days);
-  const maxRev = Math.max(1, ...a.daily.map((d) => d.revenuePaise));
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
@@ -69,21 +69,16 @@ export default async function AnalyticsPage({
         {a.revenuePaise === 0 ? (
           <p className="mt-6 text-sm text-muted">No sales in this window yet.</p>
         ) : (
-          <div className="mt-6 flex h-40 items-end gap-[3px]">
-            {a.daily.map((d) => (
-              <div
-                key={d.date}
-                title={`${d.date}: ${formatRupees(d.revenuePaise)} · ${d.orders} order${d.orders === 1 ? "" : "s"}`}
-                className="flex-1 rounded-t bg-brand-gradient transition hover:opacity-80"
-                style={{ height: `${Math.max(2, (d.revenuePaise / maxRev) * 100)}%` }}
-              />
-            ))}
+          <div className="mt-4">
+            <RevenueChart
+              data={a.daily.map((d) => ({
+                date: d.date.slice(5),
+                revenue: Math.round(d.revenuePaise / 100),
+                orders: d.orders,
+              }))}
+            />
           </div>
         )}
-        <div className="mt-2 flex justify-between text-xs text-muted">
-          <span>{a.daily[0]?.date}</span>
-          <span>{a.daily[a.daily.length - 1]?.date}</span>
-        </div>
       </GlassCard>
 
       {/* Funnel + top items + sources */}

@@ -6,6 +6,7 @@ export { Badge } from "./Badge";
 export { AuroraBackground } from "./AuroraBackground";
 export { Container, Section } from "./Container";
 export { StatCard } from "./StatCard";
-export { DashboardShell } from "./DashboardShell";
+export { DashboardShell, SELLER_NAV } from "./DashboardShell";
+export type { NavItem, NavGroup } from "./DashboardShell";
 export { PaymentSuccess } from "./PaymentSuccess";
 export { Skeleton, PageLoading } from "./Skeleton";

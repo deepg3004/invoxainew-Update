@@ -65,11 +65,26 @@ export const invoxPreset = {
           "60%": { transform: "scale(1.15)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        slidein: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        fadein: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        scalein: {
+          "0%": { opacity: "0", transform: "scale(0.96)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         float: "float 9s ease-in-out infinite",
         "fade-up": "fade-up 0.6s ease-out both",
         pop: "pop 0.5s cubic-bezier(0.2,0.8,0.2,1) both",
+        slidein: "slidein 0.22s ease-out both",
+        fadein: "fadein 0.15s ease-out both",
+        scalein: "scalein 0.3s cubic-bezier(0.2,0.8,0.2,1) both",
       },
     },
   },
