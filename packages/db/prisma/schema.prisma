@@ -703,6 +703,13 @@ model BuyerPayment {
   buyerProfileId    String?            @map("buyer_profile_id") @db.Uuid
   buyerEmail        String?            @map("buyer_email")
   buyerContact      String?            @map("buyer_contact")
+  // Campaign attribution: UTM params captured on landing (cookie) and stamped at
+  // checkout, so analytics can break revenue down by source/campaign. Nullable.
+  utmSource         String?            @map("utm_source")
+  utmMedium         String?            @map("utm_medium")
+  utmCampaign       String?            @map("utm_campaign")
+  utmContent        String?            @map("utm_content")
+  utmTerm           String?            @map("utm_term")
   razorpayPaymentId String?            @map("razorpay_payment_id")
   paidAt            DateTime?          @map("paid_at")
   // C10: fulfillment tracking (seller-set, buyer-visible).

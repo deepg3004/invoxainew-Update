@@ -37,12 +37,18 @@ export default async function AnalyticsPage({
           <h1 className="mt-1 text-3xl font-bold">Analytics</h1>
           <p className="mt-2 text-muted">Your sales, conversion and leads over time.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {RANGES.map((r) => (
             <a key={r} href={`/analytics?days=${r}`} className={rangeCls(r === days)}>
               {r}d
             </a>
           ))}
+          <a
+            href="/utm"
+            className="rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-cyan hover:bg-white/5"
+          >
+            UTM builder
+          </a>
         </div>
       </div>
 
@@ -80,8 +86,8 @@ export default async function AnalyticsPage({
         </div>
       </GlassCard>
 
-      {/* Funnel + top items */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      {/* Funnel + top items + sources */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <GlassCard>
           <h2 className="font-display text-lg font-semibold">Checkout funnel</h2>
           <div className="mt-4 space-y-3">
@@ -125,6 +131,31 @@ export default async function AnalyticsPage({
               ))}
             </ul>
           )}
+        </GlassCard>
+
+        <GlassCard>
+          <h2 className="font-display text-lg font-semibold">Top sources</h2>
+          {a.topSources.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">No sales yet.</p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {a.topSources.map((s) => (
+                <li key={s.source} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="min-w-0 truncate text-white">{s.source}</span>
+                  <span className="shrink-0 text-muted">
+                    {formatRupees(s.revenuePaise)} · {s.count}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-xs text-muted">
+            Tag your links with{" "}
+            <a href="/utm" className="text-cyan underline">
+              UTM
+            </a>{" "}
+            to see which campaigns convert.
+          </p>
         </GlassCard>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sora, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { UtmCapture } from "./UtmCapture";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -26,7 +27,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${sora.variable} ${jakarta.variable}`}>
-      <body>{children}</body>
+      <body>
+        <UtmCapture />
+        {children}
+      </body>
     </html>
   );
 }

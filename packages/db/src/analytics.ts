@@ -16,6 +16,7 @@ export interface AnalyticsResult {
   leadCount: number;
   daily: AnalyticsDay[];
   topItems: { title: string; revenuePaise: number; count: number }[];
+  topSources: { source: string; revenuePaise: number; count: number }[];
 }
 
 /**
@@ -42,6 +43,8 @@ export async function getAnalytics(
         itemTitle: true,
         paidAt: true,
         createdAt: true,
+        utmSource: true,
+        utmCampaign: true,
       },
     }),
     prisma.leadSubmission.count({ where: { tenantId, createdAt: { gte: cutoff } } }),
@@ -60,6 +63,7 @@ export async function getAnalytics(
   const revenuePaise = paid.reduce((s, p) => s + p.amountPaise, 0);
 
   const itemMap = new Map<string, { revenuePaise: number; count: number }>();
+  const sourceMap = new Map<string, { revenuePaise: number; count: number }>();
   for (const p of paid) {
     const key = (p.paidAt ?? p.createdAt).toISOString().slice(0, 10);
     const bucket = byDay.get(key);
@@ -72,12 +76,24 @@ export async function getAnalytics(
     it.revenuePaise += p.amountPaise;
     it.count += 1;
     itemMap.set(title, it);
+
+    // Attribution: prefer campaign, fall back to source, else Direct/untagged.
+    const src = p.utmCampaign?.trim() || p.utmSource?.trim() || "Direct";
+    const s = sourceMap.get(src) ?? { revenuePaise: 0, count: 0 };
+    s.revenuePaise += p.amountPaise;
+    s.count += 1;
+    sourceMap.set(src, s);
   }
 
   const topItems = [...itemMap.entries()]
     .map(([title, v]) => ({ title, ...v }))
     .sort((a, b) => b.revenuePaise - a.revenuePaise)
     .slice(0, 5);
+
+  const topSources = [...sourceMap.entries()]
+    .map(([source, v]) => ({ source, ...v }))
+    .sort((a, b) => b.revenuePaise - a.revenuePaise)
+    .slice(0, 6);
 
   return {
     days,
@@ -89,5 +105,6 @@ export async function getAnalytics(
     leadCount,
     daily: dayKeys.map((k) => ({ date: k, ...byDay.get(k)! })),
     topItems,
+    topSources,
   };
 }

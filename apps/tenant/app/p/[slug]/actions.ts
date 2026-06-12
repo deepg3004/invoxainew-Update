@@ -9,6 +9,7 @@ import {
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
+import { readUtmCookie } from "../../../lib/utm";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 
 export type StartProductResult =
@@ -101,6 +102,7 @@ export async function startProductCheckout(
     buyerProfileId: user?.id ?? null,
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
+    utm: await readUtmCookie(),
   });
 
   return {

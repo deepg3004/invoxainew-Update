@@ -12,6 +12,7 @@ import { createOrderWithKeys } from "../../lib/razorpay";
 import { getSessionUser } from "../../lib/auth";
 import { couponErrorMessage } from "../../lib/coupon-message";
 import { resolveTenantByHost } from "../../lib/resolve";
+import { readUtmCookie } from "../../lib/utm";
 
 export type StartCartResult =
   | { ok: false; error: string }
@@ -211,6 +212,7 @@ export async function startCartCheckout(
     buyerProfileId: user?.id ?? null,
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
+    utm: await readUtmCookie(),
   });
 
   return { ok: true, orderId: order.id, amountPaise, keyId: creds.keyId, title };

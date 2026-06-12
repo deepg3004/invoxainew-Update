@@ -8,6 +8,7 @@ import {
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
+import { readUtmCookie } from "../../../lib/utm";
 
 export type StartBuyerResult =
   | { ok: false; error: string }
@@ -61,6 +62,7 @@ export async function startBuyerCheckout(
     buyerProfileId: user?.id ?? null,
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
+    utm: await readUtmCookie(),
   });
 
   return {

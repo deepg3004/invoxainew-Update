@@ -13,6 +13,7 @@ import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import { resolveTenantByHost } from "../../../lib/resolve";
+import { readUtmCookie } from "../../../lib/utm";
 
 export type StartCourseResult =
   | { ok: false; error: string }
@@ -110,6 +111,7 @@ export async function startCourseCheckout(
     buyerProfileId: user?.id ?? null,
     buyerEmail,
     buyerContact: buyer.contact ?? null,
+    utm: await readUtmCookie(),
   });
 
   return { ok: true, orderId: order.id, amountPaise, keyId: creds.keyId, title: course.title };

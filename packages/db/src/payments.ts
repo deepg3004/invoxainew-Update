@@ -137,6 +137,25 @@ export function getCommissionBpsForTenant(tenantId: string) {
  * product (Store slice 2). Exactly one of paymentPageId/productId must be set;
  * `itemTitle` snapshots the name so order history is source-independent.
  */
+/** Campaign attribution captured on landing, stamped onto the order at checkout. */
+export interface UtmFields {
+  source?: string | null;
+  medium?: string | null;
+  campaign?: string | null;
+  content?: string | null;
+  term?: string | null;
+}
+
+function utmData(u?: UtmFields | null) {
+  return {
+    utmSource: u?.source ?? null,
+    utmMedium: u?.medium ?? null,
+    utmCampaign: u?.campaign ?? null,
+    utmContent: u?.content ?? null,
+    utmTerm: u?.term ?? null,
+  };
+}
+
 export function createBuyerPayment(input: {
   razorpayOrderId: string;
   tenantId: string;
@@ -152,6 +171,7 @@ export function createBuyerPayment(input: {
   buyerProfileId?: string | null;
   buyerEmail?: string | null;
   buyerContact?: string | null;
+  utm?: UtmFields | null;
 }) {
   return prisma.buyerPayment.create({
     data: {
@@ -170,6 +190,7 @@ export function createBuyerPayment(input: {
       buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerContact: input.buyerContact ?? null,
+      ...utmData(input.utm),
     },
     select: { id: true, razorpayOrderId: true },
   });
@@ -207,6 +228,7 @@ export function createCartOrder(input: {
   buyerProfileId?: string | null;
   buyerEmail?: string | null;
   buyerContact?: string | null;
+  utm?: UtmFields | null;
 }) {
   return prisma.buyerPayment.create({
     data: {
@@ -223,6 +245,7 @@ export function createCartOrder(input: {
       buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerContact: input.buyerContact ?? null,
+      ...utmData(input.utm),
       orderItems: {
         create: input.items.map((it) => ({
           productId: it.productId,
