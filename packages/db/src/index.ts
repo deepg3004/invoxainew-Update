@@ -1,6 +1,6 @@
 export { prisma } from "./client";
 export { PrismaClient, Prisma } from "@prisma/client";
-export type { ProductKind, ProductStatus, DiscountType, CourseStatus } from "@prisma/client";
+export type { ProductKind, ProductStatus, DiscountType, CourseStatus, LeadFormStatus } from "@prisma/client";
 export {
   upsertProfile,
   getTenantByOwnerId,
@@ -198,3 +198,17 @@ export {
   type RevenueReport,
   type AttentionRow,
 } from "./admin";
+
+export {
+  createLeadForm,
+  listLeadForms,
+  getLeadFormById,
+  getPublishedLeadForm,
+  updateLeadForm,
+  setLeadFormStatus,
+  submitLead,
+  listLeadSubmissions,
+  countLeadSubmissions,
+  type CreateLeadFormResult,
+  type LeadFormInput,
+} from "./leadforms";

@@ -82,6 +82,59 @@ model Tenant {
   notifications Notification[]
   // Custom domains (Final Plan §38): the seller's connected domains.
   domains       TenantDomain[]
+  // Lead forms + CRM (Final Plan §12): capture forms and their submissions.
+  leadForms     LeadForm[]
+  leadSubmissions LeadSubmission[]
+}
+
+/// Lead-capture form on a tenant's public site (Final Plan §12). v1 collects a
+/// fixed set of fields (name/email/phone/message); the seller controls title,
+/// description, button label and which optional fields show. RLS: deny-anon —
+/// reads/writes are server-side, always tenant-scoped.
+model LeadForm {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug        String
+  title       String
+  description String?
+  buttonLabel String           @default("Submit") @map("button_label")
+  successMessage String?       @map("success_message")
+  collectPhone   Boolean       @default(true) @map("collect_phone")
+  collectMessage Boolean       @default(true) @map("collect_message")
+  status      LeadFormStatus   @default(DRAFT)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  submissions LeadSubmission[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("lead_forms")
+}
+
+enum LeadFormStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// A single submission of a LeadForm (Final Plan §12 / CRM). Buyer PII — always
+/// read tenant-scoped (a seller sees only their own). RLS: deny-anon.
+model LeadSubmission {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  formId    String   @map("form_id") @db.Uuid
+  form      LeadForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  name      String?
+  email     String?
+  phone     String?
+  message   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@index([formId, createdAt])
+  @@map("lead_submissions")
 }
 
 /// Per-tenant ads/analytics tracking IDs (Final Plan §21). Injected on the

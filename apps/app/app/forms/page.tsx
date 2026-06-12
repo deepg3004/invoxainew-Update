@@ -1,0 +1,72 @@
+import Link from "next/link";
+import { GlassCard } from "@invoxai/ui";
+import { listLeadForms } from "@invoxai/db";
+import { requireTenant } from "../../lib/tenant";
+
+export const dynamic = "force-dynamic";
+
+const STATUS_BADGE: Record<string, string> = {
+  PUBLISHED: "bg-success/10 text-success border-success/30",
+  DRAFT: "bg-warning/10 text-warning border-warning/30",
+  ARCHIVED: "bg-white/5 text-muted border-white/10",
+};
+
+export default async function FormsPage() {
+  const { tenant } = await requireTenant();
+  const forms = await listLeadForms(tenant.id);
+
+  return (
+    <div className="mx-auto max-w-4xl px-6 py-12">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
+            InvoxAI · grow
+          </p>
+          <h1 className="mt-1 text-3xl font-bold">Lead forms</h1>
+          <p className="mt-2 text-muted">
+            Collect enquiries, sign-ups and leads from your site — submissions
+            land here for you to follow up.
+          </p>
+        </div>
+        <Link
+          href="/forms/new"
+          className="rounded-xl bg-brand-gradient px-4 py-2.5 text-sm font-medium text-white shadow-glow"
+        >
+          New form
+        </Link>
+      </div>
+
+      {forms.length === 0 ? (
+        <GlassCard className="mt-8 text-center">
+          <p className="text-muted">No lead forms yet.</p>
+          <Link href="/forms/new" className="mt-3 inline-block text-cyan underline">
+            Create your first form →
+          </Link>
+        </GlassCard>
+      ) : (
+        <div className="mt-8 space-y-3">
+          {forms.map((f) => (
+            <Link key={f.id} href={`/forms/${f.id}`}>
+              <GlassCard className="transition hover:border-brand/30">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-medium text-white">{f.title}</div>
+                    <div className="mt-0.5 text-sm text-muted">
+                      /f/{f.slug} · {f._count.submissions} submission
+                      {f._count.submissions === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE[f.status]}`}
+                  >
+                    {f.status.charAt(0) + f.status.slice(1).toLowerCase()}
+                  </span>
+                </div>
+              </GlassCard>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
