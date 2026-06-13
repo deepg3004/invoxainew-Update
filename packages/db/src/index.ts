@@ -268,3 +268,14 @@ export {
   type TrafficResult,
 } from "./analytics";
 export { logActivity, listActivityLog } from "./activity";
+export {
+  createProductReview,
+  getBuyerReviewForProduct,
+  getProductReviews,
+  getProductRatingSummary,
+  getProductRatingSummaries,
+  listTenantReviews,
+  setReviewStatus,
+  type CreateReviewResult,
+  type RatingSummary,
+} from "./reviews";

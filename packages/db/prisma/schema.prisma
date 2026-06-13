@@ -233,6 +233,37 @@ model Product {
   buyerPayments BuyerPayment[]
   // Store slice 3: line items referencing this product (multi-item carts).
   orderItems    OrderItem[]
+  // Verified-purchase reviews.
+  reviews       ProductReview[]
+}
+
+/// A buyer's star rating + review of a product. Written ONLY after a PAID order
+/// containing the product (verified purchase, enforced in createProductReview),
+/// one per buyer per product. `tenantId` is denormalised for tenant-scoped seller
+/// moderation (scalar + FK in migration, like other aux tables). status HIDDEN
+/// lets the seller moderate a review off the public page. deny-anon RLS.
+model ProductReview {
+  id             String       @id @default(uuid()) @db.Uuid
+  tenantId       String       @map("tenant_id") @db.Uuid
+  productId      String       @map("product_id") @db.Uuid
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerProfileId String       @map("buyer_profile_id") @db.Uuid
+  authorName     String?      @map("author_name")
+  rating         Int // 1..5
+  body           String?
+  status         ReviewStatus @default(PUBLISHED)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@unique([productId, buyerProfileId])
+  @@index([productId, status])
+  @@index([tenantId, createdAt])
+  @@map("product_reviews")
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
 }
 
 enum ProductKind {

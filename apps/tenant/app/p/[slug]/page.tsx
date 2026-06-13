@@ -6,11 +6,15 @@ import {
   getSellerGateway,
   getEnabledSellerUpi,
   getTenantTracking,
+  getProductRatingSummary,
+  getProductReviews,
 } from "@invoxai/db";
+import { formatDateIST } from "@invoxai/utils/date";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { cachedProduct } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { ProductBuyBox } from "./ProductBuyBox";
+import { Stars } from "../../Stars";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -58,10 +62,12 @@ export default async function ProductPage({
   const product = await cachedProduct(tenant.id, slug);
   if (!product) notFound();
 
-  const [gateway, upi, tracking] = await Promise.all([
+  const [gateway, upi, tracking, rating, reviews] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
+    getProductRatingSummary(product.id),
+    getProductReviews(product.id),
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
@@ -87,6 +93,15 @@ export default async function ProductPage({
       ) : null}
 
       <h1 className="mt-4 text-2xl font-bold">{product.title}</h1>
+      {rating.count > 0 ? (
+        <a href="#reviews" className="mt-1 flex items-center gap-2 text-sm">
+          <Stars value={rating.avg} />
+          <span className="font-medium text-zinc-900">{rating.avg.toFixed(1)}</span>
+          <span className="text-muted">
+            ({rating.count} review{rating.count === 1 ? "" : "s"})
+          </span>
+        </a>
+      ) : null}
       {product.description ? (
         <p className="mt-2 whitespace-pre-line text-muted">{product.description}</p>
       ) : null}
@@ -121,6 +136,35 @@ export default async function ProductPage({
           </p>
         )}
       </div>
+
+      {reviews.length > 0 ? (
+        <section id="reviews" className="mt-8">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-zinc-900">Reviews</h2>
+            <Stars value={rating.avg} />
+            <span className="text-sm text-muted">
+              {rating.avg.toFixed(1)} · {rating.count}
+            </span>
+          </div>
+          <ul className="mt-3 space-y-3">
+            {reviews.map((r) => (
+              <li key={r.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Stars value={r.rating} className="text-sm" />
+                  <span className="text-xs text-muted">{formatDateIST(r.createdAt)}</span>
+                </div>
+                {r.body ? (
+                  <p className="mt-2 whitespace-pre-line text-sm text-zinc-700">{r.body}</p>
+                ) : null}
+                <p className="mt-1.5 text-xs text-muted">
+                  {r.authorName || "Verified buyer"} ·{" "}
+                  <span className="font-medium text-green-700">✓ Verified purchase</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   );
 }

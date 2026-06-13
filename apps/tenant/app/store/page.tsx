@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   listPublishedProducts,
   getTenantTracking,
+  getProductRatingSummaries,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
@@ -46,6 +47,9 @@ export default async function StorePage({
           (p.description?.toLowerCase().includes(needle) ?? false),
       )
     : products;
+
+  // Batched rating summaries for the visible cards (one query, no N+1).
+  const ratingSummaries = await getProductRatingSummaries(filtered.map((p) => p.id));
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -116,6 +120,7 @@ export default async function StorePage({
                       imageUrl: p.imageUrl,
                       stockQty: p.stockQty,
                     }}
+                    rating={ratingSummaries.get(p.id)}
                   />
                 ))}
               </div>

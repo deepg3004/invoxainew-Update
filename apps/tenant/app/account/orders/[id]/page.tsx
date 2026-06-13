@@ -2,12 +2,13 @@ import {formatDateTimeIST} from "@invoxai/utils/date";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { getBuyerOrder } from "@invoxai/db";
+import { getBuyerOrder, getBuyerReviewForProduct } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { safeUrl } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../../../lib/resolve";
 import { getSessionUser } from "../../../../lib/auth";
 import { PrintButton } from "./PrintButton";
+import { ReviewForm } from "./ReviewForm";
 import { LinkifiedText } from "../../../LinkifiedText";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +61,25 @@ export default async function OrderReceipt({
   };
   pushLink(order.product?.title, order.product?.accessUrl);
   for (const li of order.orderItems) pushLink(li.product?.title ?? li.titleSnapshot, li.product?.accessUrl);
+
+  // Verified-purchase reviews: the distinct products in this order (single-product
+  // + cart lines) the buyer can rate, each prefilled with their existing review.
+  const reviewable = new Map<string, { id: string; title: string }>();
+  if (order.product?.id) {
+    reviewable.set(order.product.id, { id: order.product.id, title: order.product.title });
+  }
+  for (const li of order.orderItems) {
+    if (li.product?.id) {
+      reviewable.set(li.product.id, {
+        id: li.product.id,
+        title: li.product.title ?? li.titleSnapshot,
+      });
+    }
+  }
+  const reviewableList = [...reviewable.values()];
+  const existingReviews = await Promise.all(
+    reviewableList.map((p) => getBuyerReviewForProduct(p.id, user.id)),
+  );
 
   // Fulfillment timeline (physical/service orders). Digital/community orders are
   // delivered via the "Your access" card, so they skip the shipping steps.
@@ -233,9 +253,31 @@ export default async function OrderReceipt({
         </div>
       ) : null}
 
-      <p className="mt-4 text-center text-xs text-muted">
-        Paid to {sellerName} via Razorpay.
-      </p>
+      {reviewableList.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-zinc-200 bg-surface p-5 print:hidden">
+          <h2 className="text-sm font-semibold text-zinc-900">Rate your purchase</h2>
+          <p className="mt-1 text-xs text-muted">
+            Your review appears on the product page and helps other buyers (verified purchase).
+          </p>
+          <div className="mt-4 space-y-6">
+            {reviewableList.map((pr, i) => {
+              const ex = existingReviews[i];
+              return (
+                <ReviewForm
+                  key={pr.id}
+                  productId={pr.id}
+                  productTitle={pr.title}
+                  initial={
+                    ex ? { rating: ex.rating, body: ex.body, authorName: ex.authorName } : null
+                  }
+                />
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      <p className="mt-4 text-center text-xs text-muted">Paid to {sellerName}.</p>
     </main>
   );
 }

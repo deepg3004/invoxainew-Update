@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { formatRupees } from "@invoxai/utils/money";
 import { AddToCartButton } from "../AddToCartButton";
+import { Stars } from "../Stars";
 
 /** A storefront product card with an add-to-cart action (Store slice 3). */
 export function ProductCard({
   product,
+  rating,
 }: {
   product: {
     id: string;
@@ -16,6 +18,7 @@ export function ProductCard({
     imageUrl: string | null;
     stockQty: number | null;
   };
+  rating?: { count: number; avg: number };
 }) {
   return (
     <div className="flex flex-col rounded-xl border border-zinc-200 bg-surface p-4">
@@ -35,6 +38,12 @@ export function ProductCard({
         <div className="mt-3 font-medium text-zinc-900 group-hover:underline">
           {product.title}
         </div>
+        {rating && rating.count > 0 ? (
+          <div className="mt-0.5 flex items-center gap-1 text-xs">
+            <Stars value={rating.avg} />
+            <span className="text-muted">({rating.count})</span>
+          </div>
+        ) : null}
         <div className="mt-0.5 text-sm text-muted">
           {formatRupees(product.pricePaise)}
           {product.stockQty === 0 ? (
