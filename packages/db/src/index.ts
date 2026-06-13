@@ -152,6 +152,7 @@ export {
   listPublishedProductsByIds,
   updateProduct,
   setProductStatus,
+  getProductSalesCounts,
   type CreateProductResult,
 } from "./products";
 export {

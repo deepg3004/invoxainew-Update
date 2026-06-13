@@ -145,3 +145,35 @@ export function setProductStatus(
     data: { status },
   });
 }
+
+/**
+ * Paid-order counts per product — single-product orders + cart line items — for
+ * "bestseller" badges on the storefront. Batched (two grouped queries), tenant-
+ * scoped. Returns a productId→count map (products with no sales are absent).
+ */
+export async function getProductSalesCounts(
+  tenantId: string,
+  productIds: string[],
+): Promise<Map<string, number>> {
+  if (productIds.length === 0) return new Map();
+  const [single, lines] = await Promise.all([
+    prisma.buyerPayment.groupBy({
+      by: ["productId"],
+      where: { tenantId, status: "PAID", productId: { in: productIds } },
+      _count: { _all: true },
+    }),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: { productId: { in: productIds }, buyerPayment: { tenantId, status: "PAID" } },
+      _count: { _all: true },
+    }),
+  ]);
+  const map = new Map<string, number>();
+  for (const r of single) {
+    if (r.productId) map.set(r.productId, (map.get(r.productId) ?? 0) + r._count._all);
+  }
+  for (const r of lines) {
+    if (r.productId) map.set(r.productId, (map.get(r.productId) ?? 0) + r._count._all);
+  }
+  return map;
+}

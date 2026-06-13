@@ -9,6 +9,7 @@ import { Stars } from "../Stars";
 export function ProductCard({
   product,
   rating,
+  bestseller,
 }: {
   product: {
     id: string;
@@ -20,6 +21,7 @@ export function ProductCard({
     stockQty: number | null;
   };
   rating?: { count: number; avg: number };
+  bestseller?: boolean;
 }) {
   const onSale =
     product.compareAtPaise != null && product.compareAtPaise > product.pricePaise;
@@ -29,18 +31,25 @@ export function ProductCard({
   return (
     <div className="flex flex-col rounded-xl border border-zinc-200 bg-surface p-4">
       <Link href={`/p/${product.slug}`} className="group">
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.imageUrl}
-            alt={product.title}
-            className="aspect-square w-full rounded-lg border border-zinc-200 object-cover"
-          />
-        ) : (
-          <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-zinc-50 text-muted">
-            No image
-          </div>
-        )}
+        <div className="relative">
+          {bestseller ? (
+            <span className="absolute left-2 top-2 z-10 rounded-full bg-brand-gradient px-2 py-0.5 text-xs font-medium text-white shadow-glow">
+              ★ Bestseller
+            </span>
+          ) : null}
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt={product.title}
+              className="aspect-square w-full rounded-lg border border-zinc-200 object-cover"
+            />
+          ) : (
+            <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-zinc-50 text-muted">
+              No image
+            </div>
+          )}
+        </div>
         <div className="mt-3 font-medium text-zinc-900 group-hover:underline">
           {product.title}
         </div>

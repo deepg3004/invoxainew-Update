@@ -6,6 +6,7 @@ import {
   listPublishedProducts,
   getTenantTracking,
   getProductRatingSummaries,
+  getProductSalesCounts,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
@@ -48,8 +49,20 @@ export default async function StorePage({
       )
     : products;
 
-  // Batched rating summaries for the visible cards (one query, no N+1).
-  const ratingSummaries = await getProductRatingSummaries(filtered.map((p) => p.id));
+  // Batched rating summaries + sales counts for the visible cards (no N+1).
+  const ids = filtered.map((p) => p.id);
+  const [ratingSummaries, salesCounts] = await Promise.all([
+    getProductRatingSummaries(ids),
+    getProductSalesCounts(tenant.id, ids),
+  ]);
+  // "Bestseller" badge → the top 3 products that have at least one sale.
+  const bestsellerIds = new Set(
+    [...salesCounts.entries()]
+      .filter(([, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([id]) => id),
+  );
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
@@ -122,6 +135,7 @@ export default async function StorePage({
                       stockQty: p.stockQty,
                     }}
                     rating={ratingSummaries.get(p.id)}
+                    bestseller={bestsellerIds.has(p.id)}
                   />
                 ))}
               </div>
