@@ -40,6 +40,9 @@ export default async function SettingsPage() {
             invoice_support_email: s.invoice_support_email ?? "",
             brand_logo_url: s.brand_logo_url ?? "",
             brand_favicon_url: s.brand_favicon_url ?? "",
+            upi_due_block_rupees: s.upi_due_block_paise
+              ? String(Number(s.upi_due_block_paise) / 100)
+              : "",
             ph_legal_name: env.INVOICE_LEGAL_NAME,
             ph_gstin: env.INVOICE_GSTIN,
             ph_gst_percent: String(env.INVOICE_GST_RATE_BPS / 100),

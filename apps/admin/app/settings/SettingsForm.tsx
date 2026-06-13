@@ -22,6 +22,7 @@ export type SettingsInitial = {
   invoice_support_email: string;
   brand_logo_url: string;
   brand_favicon_url: string;
+  upi_due_block_rupees: string;
   // Env fallbacks shown as placeholders so admin sees what's currently in effect.
   ph_legal_name: string;
   ph_gstin: string;
@@ -122,6 +123,30 @@ export function SettingsForm({ initial }: { initial: SettingsInitial }) {
                 recommend="Recommended: square PNG, 512×512px (or a 32×32 .ico). Max 5 MB."
               />
             </div>
+          </Field>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-card">
+        <h2 className="text-lg font-semibold text-zinc-900">Manual UPI gateway</h2>
+        <p className="mt-1 text-sm text-muted">
+          Manual UPI auto-confirms orders the instant a buyer submits their reference (charging the
+          commission then). To stop commission piling up uncollected, instant auto-confirm pauses for
+          a seller once their unpaid commission exceeds this limit — their UPI orders then fall to a
+          manual queue until they top up (which auto-settles the dues and re-enables it).
+        </p>
+        <div className="mt-5 max-w-xs">
+          <Field
+            label="Pause instant UPI above unpaid commission (₹)"
+            hint="Default ₹500. Set 0 to pause on any unpaid commission."
+          >
+            <input
+              name="upi_due_block_rupees"
+              defaultValue={initial.upi_due_block_rupees}
+              placeholder="500"
+              inputMode="decimal"
+              className={inputCls}
+            />
           </Field>
         </div>
       </section>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { encryptSecret } from "@invoxai/utils/crypto";
+import { rupeeStringToPaise } from "@invoxai/utils/money";
 import {
   connectSellerGateway,
   disconnectSellerGateway,
@@ -79,7 +80,12 @@ const UPI_RE = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
 
 export type UpiFormState = { error?: string; ok?: boolean };
 
-/** Save the seller's manual UPI method (buyers pay this UPI ID directly). */
+/**
+ * Save the seller's manual UPI "gateway" + auto-confirm settings. Buyers pay this
+ * UPI ID directly; with auto-confirm on, an order is finalised the instant the
+ * buyer submits their reference (commission charged then) — no manual step. The
+ * cap keeps high-value orders manual; the TTL is the QR/payment-session window.
+ */
 export async function saveUpiAction(
   _prev: UpiFormState,
   form: FormData,
@@ -91,7 +97,29 @@ export async function saveUpiAction(
   }
   const displayName = String(form.get("displayName") ?? "").trim() || null;
   const enabled = form.get("enabled") === "on";
-  await upsertSellerUpi(tenant.id, { upiId, displayName, enabled });
+  const autoConfirm = form.get("autoConfirm") === "on";
+
+  // Optional auto-confirm cap (rupees → paise); blank = no cap.
+  const capRaw = String(form.get("autoConfirmMax") ?? "").trim();
+  let autoConfirmMaxPaise: number | null = null;
+  if (capRaw) {
+    const cap = rupeeStringToPaise(capRaw);
+    if (!cap.ok) return { error: `Auto-confirm cap: ${cap.message}` };
+    autoConfirmMaxPaise = cap.paise > 0 ? cap.paise : null;
+  }
+
+  // Session TTL minutes (how long the QR / payable amount stays valid), 2–60.
+  const ttl = Math.floor(Number(form.get("sessionTtl") ?? 10));
+  const sessionTtlMinutes = Number.isFinite(ttl) ? Math.min(60, Math.max(2, ttl)) : 10;
+
+  await upsertSellerUpi(tenant.id, {
+    upiId,
+    displayName,
+    enabled,
+    autoConfirm,
+    autoConfirmMaxPaise,
+    sessionTtlMinutes,
+  });
   await logActivity(tenant.id, "upi.saved", upiId).catch(() => {});
   revalidatePath("/gateway");
   return { ok: true };

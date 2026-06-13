@@ -42,6 +42,7 @@ export async function saveSettingsAction(
   const supportEmail = get("invoice_support_email");
   const logoUrlRaw = get("brand_logo_url");
   const faviconUrlRaw = get("brand_favicon_url");
+  const upiDueBlockRupees = get("upi_due_block_rupees");
 
   // GSTIN: optional, but if present must be a valid 15-char GSTIN (it prints on
   // tax invoices — a malformed one is worse than none).
@@ -77,6 +78,16 @@ export async function saveSettingsAction(
     return { error: "Favicon URL must be a valid http(s) image URL." };
   }
 
+  // UPI dues-block ceiling: rupees → paise. Blank = use the ₹500 default.
+  let upiDueBlockPaise = "";
+  if (upiDueBlockRupees) {
+    const r = Number(upiDueBlockRupees);
+    if (!Number.isFinite(r) || r < 0) {
+      return { error: "UPI dues limit must be ₹0 or more (or leave it blank for the default)." };
+    }
+    upiDueBlockPaise = String(Math.round(r * 100));
+  }
+
   await upsertPlatformSettings(
     [
       { key: "invoice_legal_name", value: legalName },
@@ -93,6 +104,7 @@ export async function saveSettingsAction(
       { key: "invoice_support_email", value: supportEmail },
       { key: "brand_logo_url", value: logoUrl },
       { key: "brand_favicon_url", value: faviconUrl },
+      { key: "upi_due_block_paise", value: upiDueBlockPaise },
     ],
     gate.user.email ?? "admin",
   );

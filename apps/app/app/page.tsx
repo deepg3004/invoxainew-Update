@@ -8,6 +8,8 @@ import {
   countUnreadNotifications,
   getTenantSalesSummary,
   countAbandonedCheckouts,
+  getEnabledSellerUpi,
+  getUpiDueBlockPaise,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { getSessionUser } from "../lib/auth";
@@ -38,13 +40,16 @@ export default async function Dashboard() {
   if (!tenant) redirect("/onboarding");
 
   const siteUrl = publicSiteUrl(tenant.username);
-  const [wallet, onboarding, unread, sales, abandoned] = await Promise.all([
-    getWalletStatus(tenant.id),
-    getOnboardingStatus(tenant.id),
-    countUnreadNotifications(tenant.id),
-    getTenantSalesSummary(tenant.id),
-    countAbandonedCheckouts(tenant.id),
-  ]);
+  const [wallet, onboarding, unread, sales, abandoned, upi, upiBlockThresholdPaise] =
+    await Promise.all([
+      getWalletStatus(tenant.id),
+      getOnboardingStatus(tenant.id),
+      countUnreadNotifications(tenant.id),
+      getTenantSalesSummary(tenant.id),
+      countAbandonedCheckouts(tenant.id),
+      getEnabledSellerUpi(tenant.id),
+      getUpiDueBlockPaise(),
+    ]);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -66,6 +71,8 @@ export default async function Dashboard() {
         <LowBalanceBanner
           balancePaise={wallet.balancePaise}
           dueCommissionPaise={wallet.dueCommissionPaise}
+          upiEnabled={Boolean(upi && upi.autoConfirm)}
+          upiBlockThresholdPaise={upiBlockThresholdPaise}
         />
         <OnboardingChecklist status={onboarding} />
       </div>

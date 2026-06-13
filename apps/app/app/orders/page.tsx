@@ -10,6 +10,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { updateOrderFulfillmentAction, advanceOrderAction, confirmUpiOrderAction } from "./actions";
 import { RefundForm } from "./RefundForm";
+import { CancelUpiButton } from "./CancelUpiButton";
 
 export const dynamic = "force-dynamic";
 
@@ -219,6 +220,11 @@ export default async function OrdersPage({
                         ×{o.quantity}
                       </span>
                     ) : null}
+                    {o.paymentMethod === "UPI_MANUAL" ? (
+                      <span className="ml-2 rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand-strong align-middle">
+                        UPI
+                      </span>
+                    ) : null}
                   </div>
                   <div className="mt-0.5 text-sm text-muted">
                     {formatRupees(o.amountPaise)} · {formatDate(o.paidAt)}
@@ -291,6 +297,11 @@ export default async function OrdersPage({
               {o.razorpayPaymentId && o.refundedPaise < o.amountPaise ? (
                 <div className="mt-3 border-t border-zinc-200 pt-3">
                   <RefundForm orderId={o.id} remainingPaise={o.amountPaise - o.refundedPaise} />
+                </div>
+              ) : null}
+              {o.paymentMethod === "UPI_MANUAL" ? (
+                <div className="mt-3 border-t border-zinc-200 pt-3">
+                  <CancelUpiButton id={o.id} />
                 </div>
               ) : null}
             </GlassCard>

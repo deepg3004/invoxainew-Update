@@ -7,6 +7,7 @@ import {
   getRefundableOrder,
   recordRefund,
   confirmManualBuyerPayment,
+  cancelManualUpiOrder,
   logActivity,
 } from "@invoxai/db";
 import { rupeeStringToPaise, formatRupees } from "@invoxai/utils/money";
@@ -50,6 +51,22 @@ export async function confirmUpiOrderAction(id: string): Promise<void> {
   const res = await confirmManualBuyerPayment(tenant.id, id);
   if (res.ok && !res.alreadyProcessed) {
     await logActivity(tenant.id, "order.upi_confirmed").catch(() => {});
+  }
+  revalidatePath("/orders");
+}
+
+/**
+ * Cancel an auto-confirmed manual-UPI order ("payment not received"). Tenant-
+ * scoped + idempotent in the DB layer: claims PAID→CANCELLED, reverses the full
+ * commission (wallet credit / DUE zeroed), restocks, drops the coupon redemption,
+ * deletes the enrolment, and revokes the buyer's access. The seller refunds the
+ * buyer directly off-platform if money did arrive — no gateway refund here.
+ */
+export async function cancelUpiOrderAction(id: string): Promise<void> {
+  const { tenant } = await requireTenant();
+  const res = await cancelManualUpiOrder(tenant.id, id);
+  if (res.ok && !res.alreadyProcessed) {
+    await logActivity(tenant.id, "order.upi_cancelled").catch(() => {});
   }
   revalidatePath("/orders");
 }

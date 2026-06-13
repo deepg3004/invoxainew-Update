@@ -20,11 +20,12 @@ export default async function GatewayPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader
         eyebrow="InvoxAI · payments"
-        title="Payment gateway"
+        title="Payment gateways"
         description={
           <>
-            Connect your own Razorpay account. Buyers pay you <strong>directly</strong>
-            {" "}— their money settles to your Razorpay account and never passes through
+            Take payments two ways — connect <strong>Razorpay</strong> (cards, netbanking, UPI) or
+            add a <strong>Manual UPI gateway</strong> (buyers pay your UPI ID directly). Use either
+            or both. Either way the money settles to <strong>you</strong> and never passes through
             InvoxAI.
           </>
         }
@@ -77,12 +78,13 @@ export default async function GatewayPage() {
         </div>
       )}
 
-      {/* Manual UPI (alternative rail) */}
+      {/* Manual UPI gateway (co-equal rail) */}
       <div className="mt-10">
-        <h2 className="text-lg font-semibold text-zinc-900">Manual UPI</h2>
+        <h2 className="text-lg font-semibold text-zinc-900">Manual UPI gateway</h2>
         <p className="mt-1 text-sm text-muted">
-          Accept payments via your own UPI ID — buyers pay you directly and submit the
-          transaction reference, which you confirm. Works alongside Razorpay or on its own.
+          No Razorpay account? Accept payments straight to your UPI ID. Buyers scan a QR / pay the
+          exact amount and submit their reference; with auto-confirm on, the order is finalised
+          instantly. Works on its own or alongside Razorpay.
         </p>
         <div className="mt-4 max-w-lg">
           <GlassCard>
@@ -100,6 +102,18 @@ export default async function GatewayPage() {
                       ) : (
                         <span className="text-muted">Saved but hidden at checkout</span>
                       )}
+                      {upi.enabled ? (
+                        <span className="text-muted">
+                          {" · "}
+                          {upi.autoConfirm
+                            ? `auto-confirm on${
+                                upi.autoConfirmMaxPaise != null
+                                  ? ` (manual above ₹${(upi.autoConfirmMaxPaise / 100).toLocaleString("en-IN")})`
+                                  : ""
+                              }`
+                            : "manual confirm"}
+                        </span>
+                      ) : null}
                     </p>
                   </div>
                   <form action={removeUpiAction}>
@@ -110,7 +124,14 @@ export default async function GatewayPage() {
                 </div>
                 <div className="mt-4 border-t border-zinc-100 pt-4">
                   <UpiForm
-                    initial={{ upiId: upi.upiId, displayName: upi.displayName, enabled: upi.enabled }}
+                    initial={{
+                      upiId: upi.upiId,
+                      displayName: upi.displayName,
+                      enabled: upi.enabled,
+                      autoConfirm: upi.autoConfirm,
+                      autoConfirmMaxPaise: upi.autoConfirmMaxPaise,
+                      sessionTtlMinutes: upi.sessionTtlMinutes,
+                    }}
                   />
                 </div>
               </div>
@@ -118,9 +139,6 @@ export default async function GatewayPage() {
               <UpiForm />
             )}
           </GlassCard>
-          <p className="mt-2 text-xs text-muted">
-            Buyer UPI checkout + your confirmation step are rolling out next.
-          </p>
         </div>
       </div>
     </div>
