@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   Area,
   AreaChart,
@@ -13,6 +14,13 @@ import {
 type Point = { date: string; views: number };
 
 export default function TrafficChartInner({ data }: { data: Point[] }) {
+  // See RevenueChartInner: force a re-measure on the next frame so a 0-width first
+  // paint (this is a dynamic ssr:false chart) doesn't leave the area blank.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
     <ResponsiveContainer width="100%" height={200}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: -14, bottom: 0 }}>

@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import {
   getPublishedProductById,
   createBuyerPayment,
@@ -10,12 +11,23 @@ import {
   getEnabledSellerUpi,
   createUpiSession,
 } from "@invoxai/db";
+import { resolveTenantByHost } from "../../../lib/resolve";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { readUtmCookie } from "../../../lib/utm";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import type { StartUpiSessionResult } from "../../../lib/upi";
+
+/**
+ * The store that owns THIS request, from the Host header (the single source of
+ * truth for "which tenant"). Buyer checkout actions resolve the product within
+ * this tenant so a foreign productId can't be checked out through another store.
+ */
+async function currentTenant() {
+  const host = (await headers()).get("host");
+  return resolveTenantByHost(host);
+}
 
 type OrderLine = {
   productId: string;
@@ -76,7 +88,10 @@ export async function startProductCheckout(
     return { ok: false, error: "Choose a quantity between 1 and 99." };
   }
 
-  const product = await getPublishedProductById(productId);
+  const tenant = await currentTenant();
+  if (!tenant) return { ok: false, error: "This store is unavailable." };
+
+  const product = await getPublishedProductById(tenant.id, productId);
   if (!product) return { ok: false, error: "This product is unavailable." };
 
   if (await isTenantSuspended(product.tenantId)) {
@@ -193,7 +208,10 @@ export async function startProductUpiSession(
     return { ok: false, error: "Choose a quantity between 1 and 99." };
   }
 
-  const product = await getPublishedProductById(productId);
+  const tenant = await currentTenant();
+  if (!tenant) return { ok: false, error: "This store is unavailable." };
+
+  const product = await getPublishedProductById(tenant.id, productId);
   if (!product) return { ok: false, error: "This product is unavailable." };
 
   if (await isTenantSuspended(product.tenantId)) {
@@ -290,7 +308,10 @@ export async function previewProductCoupon(
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
     return { ok: false, error: "Choose a valid quantity first." };
   }
-  const product = await getPublishedProductById(productId);
+  const tenant = await currentTenant();
+  if (!tenant) return { ok: false, error: "This store is unavailable." };
+
+  const product = await getPublishedProductById(tenant.id, productId);
   if (!product) return { ok: false, error: "This product is unavailable." };
 
   const result = await applyCoupon(product.tenantId, trimmed, product.pricePaise * qty);

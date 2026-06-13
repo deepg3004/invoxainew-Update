@@ -125,11 +125,14 @@ export function getPublishedProduct(tenantId: string, slug: string) {
   });
 }
 
-/** A PUBLISHED product by id — used by the buyer checkout action so the price
- *  and stock are read server-trusted from the DB, never from the client. */
-export function getPublishedProductById(id: string) {
+/** A PUBLISHED product by id WITHIN a tenant — used by the buyer checkout action
+ *  so the price and stock are read server-trusted from the DB, never from the
+ *  client. Scoped by tenantId (the host-resolved store): a buyer on store B can
+ *  never check out store A's product by passing a foreign id — the lookup simply
+ *  returns null, mirroring listPublishedProductsByIds' tenant scoping. */
+export function getPublishedProductById(tenantId: string, id: string) {
   return prisma.product.findFirst({
-    where: { id, status: "PUBLISHED" },
+    where: { id, tenantId, status: "PUBLISHED" },
     select: PUBLIC_PRODUCT_SELECT,
   });
 }
