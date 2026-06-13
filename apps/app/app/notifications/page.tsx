@@ -1,7 +1,9 @@
 import {formatDateTimeShortIST} from "@invoxai/utils/date";
 import Link from "next/link";
+import { Pagination, pageSlice } from "@invoxai/ui";
 import {
   listNotifications,
+  countNotifications,
   countUnreadNotifications,
   getNotificationPreferences,
   listNotificationLogs,
@@ -23,14 +25,23 @@ const STATUS_STYLE: Record<string, string> = {
   skipped: "bg-zinc-100 text-zinc-600",
 };
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { tenant } = await requireTenant();
+  const { page: rawPage } = await searchParams;
+  const totalItems = await countNotifications(tenant.id);
+  const { page, totalPages, skip, take } = pageSlice(totalItems, rawPage, 10);
   const [items, unread, prefRows, logs] = await Promise.all([
-    listNotifications(tenant.id),
+    listNotifications(tenant.id, { skip, take }),
     countUnreadNotifications(tenant.id),
     getNotificationPreferences(tenant.id),
     listNotificationLogs(tenant.id, 10),
   ]);
+  const firstOnPage = totalItems === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + items.length;
 
   const prefs: PrefRow[] = NOTIFICATION_EVENTS.filter((e) => e.channel === "email").map((e) => ({
     key: e.key,
@@ -97,6 +108,18 @@ export default async function NotificationsPage() {
           })}
         </ul>
       )}
+
+      {totalItems > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={totalItems}
+          hrefFor={(p) => (p > 1 ? `/notifications?page=${p}` : "/notifications")}
+          label="notifications"
+        />
+      ) : null}
 
       {/* Email preferences */}
       <div className="mt-10 rounded-xl border border-zinc-200 bg-surface p-5">

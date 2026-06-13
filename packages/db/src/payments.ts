@@ -432,12 +432,13 @@ export function listPendingUpiOrders(tenantId: string) {
  */
 export function listAbandonedCheckouts(
   tenantId: string,
-  opts: { olderThanMinutes?: number; take?: number } = {},
+  opts: { olderThanMinutes?: number; skip?: number; take?: number } = {},
 ) {
   const cutoff = new Date(Date.now() - (opts.olderThanMinutes ?? 30) * 60_000);
   return prisma.buyerPayment.findMany({
     where: { tenantId, status: "CREATED", createdAt: { lt: cutoff } },
     orderBy: { createdAt: "desc" },
+    skip: opts.skip,
     take: opts.take ?? 100,
     include: {
       paymentPage: { select: { title: true, slug: true } },

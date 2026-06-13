@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listTenantsAdmin } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listTenantsAdmin, countTenantsAdmin } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
 import { AdminShell } from "../components/AdminShell";
@@ -11,22 +11,31 @@ export const dynamic = "force-dynamic";
 export default async function TenantsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
-  const { q } = await searchParams;
-  const tenants = await listTenantsAdmin(q);
+  const { q, page: rawPage } = await searchParams;
+  const total = await countTenantsAdmin(q);
+  const { page, totalPages, skip, take } = pageSlice(total, rawPage, 10);
+  const tenants = await listTenantsAdmin({ search: q, skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + tenants.length;
+  const hrefFor = (p: number) => {
+    const sp = new URLSearchParams();
+    if (q) sp.set("q", q);
+    if (p > 1) sp.set("page", String(p));
+    const s = sp.toString();
+    return s ? `/tenants?${s}` : "/tenants";
+  };
 
   return (
     <AdminShell email={gate.user.email}>
       <PageHeader
         eyebrow="InvoxAI · admin"
         title="Tenants"
-        description={`${tenants.length} tenant${tenants.length === 1 ? "" : "s"}${
-          q ? ` matching "${q}"` : ""
-        } (max 100)`}
+        description={`${total} tenant${total === 1 ? "" : "s"}${q ? ` matching "${q}"` : ""}`}
         actions={
           <form method="get" className="flex flex-wrap items-center gap-2">
             <input
@@ -120,6 +129,18 @@ export default async function TenantsPage({
           </tbody>
         </table>
       </GlassCard>
+
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          hrefFor={hrefFor}
+          label="tenants"
+        />
+      ) : null}
     </AdminShell>
   );
 }

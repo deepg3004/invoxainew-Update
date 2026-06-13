@@ -129,6 +129,7 @@ export {
 export {
   notifyTenant,
   listNotifications,
+  countNotifications,
   countUnreadNotifications,
   markNotificationRead,
   markAllNotificationsRead,
@@ -273,6 +274,7 @@ export {
 export {
   getPlatformOverview,
   listTenantsAdmin,
+  countTenantsAdmin,
   getTenantAdminDetail,
   setTenantSuspended,
   adminAdjustWallet,
@@ -322,7 +324,7 @@ export {
   type AnalyticsDay,
   type TrafficResult,
 } from "./analytics";
-export { logActivity, listActivityLog } from "./activity";
+export { logActivity, listActivityLog, countActivityLog } from "./activity";
 export {
   createProductReview,
   getBuyerReviewForProduct,

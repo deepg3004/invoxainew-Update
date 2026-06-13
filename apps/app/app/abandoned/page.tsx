@@ -1,5 +1,5 @@
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listAbandonedCheckouts } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listAbandonedCheckouts, countAbandonedCheckouts } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 
@@ -14,9 +14,18 @@ function timeAgo(d: Date): string {
   return `${days}d ago`;
 }
 
-export default async function AbandonedPage() {
+export default async function AbandonedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { tenant } = await requireTenant();
-  const carts = await listAbandonedCheckouts(tenant.id, { take: 100 });
+  const { page: rawPage } = await searchParams;
+  const total = await countAbandonedCheckouts(tenant.id);
+  const { page, totalPages, skip, take } = pageSlice(total, rawPage, 10);
+  const carts = await listAbandonedCheckouts(tenant.id, { skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + carts.length;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -100,6 +109,18 @@ export default async function AbandonedPage() {
           })}
         </div>
       )}
+
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          hrefFor={(p) => (p > 1 ? `/abandoned?page=${p}` : "/abandoned")}
+          label="checkouts"
+        />
+      ) : null}
 
       <div className="mt-8">
         <Button href="/orders" variant="secondary" size="sm">

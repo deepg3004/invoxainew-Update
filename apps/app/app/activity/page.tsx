@@ -1,6 +1,6 @@
 import { formatDateTimeShortIST } from "@invoxai/utils/date";
-import { PageHeader } from "@invoxai/ui";
-import { listActivityLog } from "@invoxai/db";
+import { PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listActivityLog, countActivityLog } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 
 export const dynamic = "force-dynamic";
@@ -22,9 +22,18 @@ function label(action: string): string {
   return LABELS[action] ?? action.replace(/[._]/g, " ");
 }
 
-export default async function ActivityPage() {
+export default async function ActivityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { tenant } = await requireTenant();
-  const items = await listActivityLog(tenant.id);
+  const { page: rawPage } = await searchParams;
+  const total = await countActivityLog(tenant.id);
+  const { page, totalPages, skip, take } = pageSlice(total, rawPage, 10);
+  const items = await listActivityLog(tenant.id, { skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + items.length;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -50,6 +59,17 @@ export default async function ActivityPage() {
           ))}
         </ul>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          hrefFor={(p) => (p > 1 ? `/activity?page=${p}` : "/activity")}
+          label="events"
+        />
+      ) : null}
     </div>
   );
 }

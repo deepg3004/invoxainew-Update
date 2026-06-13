@@ -10,11 +10,17 @@ export function logActivity(tenantId: string, action: string, detail?: string | 
   });
 }
 
-/** A seller's recent activity, newest first. Scoped by tenantId. */
-export function listActivityLog(tenantId: string, take = 50) {
+/** A seller's recent activity, newest first. Scoped by tenantId. Paginated. */
+export function listActivityLog(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.activityLog.findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
-    take,
+    skip: opts.skip,
+    take: opts.take ?? 50,
   });
+}
+
+/** Total activity entries for the tenant (drives pagination). */
+export function countActivityLog(tenantId: string) {
+  return prisma.activityLog.count({ where: { tenantId } });
 }

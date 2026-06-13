@@ -1,5 +1,5 @@
 import {formatDateIST} from "@invoxai/utils/date";
-import { Button, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader, StatCard, Pagination } from "@invoxai/ui";
 import {
   listTenantOrders,
   countTenantOrders,
@@ -37,7 +37,7 @@ function formatDate(d: Date | null): string {
   return formatDateIST(d);
 }
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 /** Build an /orders URL preserving status + search + page (page omitted when 1). */
 function buildHref(params: { status?: string; q?: string; page?: number }): string {
@@ -308,42 +308,15 @@ export default async function OrdersPage({
           ))}
         </div>
 
-        <div className="mt-6 flex items-center justify-between text-sm text-muted">
-          <span>
-            Showing {firstOnPage}–{lastOnPage} of {total}
-          </span>
-          {totalPages > 1 ? (
-            <div className="flex items-center gap-2">
-              {page > 1 ? (
-                <a
-                  href={buildHref({ status: activeStatus, q: search, page: page - 1 })}
-                  className="rounded-lg border border-zinc-200 px-3 py-1.5 font-medium hover:bg-zinc-50"
-                >
-                  ← Prev
-                </a>
-              ) : (
-                <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-muted/40">
-                  ← Prev
-                </span>
-              )}
-              <span>
-                Page {page} of {totalPages}
-              </span>
-              {page < totalPages ? (
-                <a
-                  href={buildHref({ status: activeStatus, q: search, page: page + 1 })}
-                  className="rounded-lg border border-zinc-200 px-3 py-1.5 font-medium hover:bg-zinc-50"
-                >
-                  Next →
-                </a>
-              ) : (
-                <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-muted/40">
-                  Next →
-                </span>
-              )}
-            </div>
-          ) : null}
-        </div>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          hrefFor={(p) => buildHref({ status: activeStatus, q: search, page: p })}
+          label="orders"
+        />
         </>
       )}
     </div>

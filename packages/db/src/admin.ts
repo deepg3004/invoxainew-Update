@@ -58,9 +58,9 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
 }
 
 /** All tenants (newest first), optionally filtered by username/name/owner email. */
-export function listTenantsAdmin(search?: string) {
+function tenantsAdminWhere(search?: string) {
   const q = search?.trim();
-  const where = q
+  return q
     ? {
         OR: [
           { username: { contains: q, mode: "insensitive" as const } },
@@ -69,10 +69,19 @@ export function listTenantsAdmin(search?: string) {
         ],
       }
     : {};
+}
+
+/** Count of tenants matching the admin search (drives pagination). */
+export function countTenantsAdmin(search?: string) {
+  return prisma.tenant.count({ where: tenantsAdminWhere(search) });
+}
+
+export function listTenantsAdmin(opts: { search?: string; skip?: number; take?: number } = {}) {
   return prisma.tenant.findMany({
-    where,
+    where: tenantsAdminWhere(opts.search),
     orderBy: { createdAt: "desc" },
-    take: 100,
+    skip: opts.skip,
+    take: opts.take ?? 100,
     include: {
       owner: { select: { email: true } },
       subscription: { select: { status: true, plan: { select: { name: true } } } },

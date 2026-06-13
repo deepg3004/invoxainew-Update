@@ -30,13 +30,19 @@ export function notifyTenant(
   });
 }
 
-/** A tenant's notifications, newest first. Scoped by tenantId. */
-export function listNotifications(tenantId: string, take = 50) {
+/** A tenant's notifications, newest first. Scoped by tenantId. Paginated. */
+export function listNotifications(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.notification.findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
-    take,
+    skip: opts.skip,
+    take: opts.take ?? 50,
   });
+}
+
+/** Total notifications for the tenant (drives pagination). */
+export function countNotifications(tenantId: string) {
+  return prisma.notification.count({ where: { tenantId } });
 }
 
 /** Count of unread notifications for the dashboard badge. Scoped by tenantId. */

@@ -11,5 +11,6 @@ export type { NavItem, NavGroup } from "./DashboardShell";
 export { PaymentSuccess } from "./PaymentSuccess";
 export { Skeleton, PageLoading } from "./Skeleton";
 export { PageHeader } from "./PageHeader";
+export { Pagination, pageSlice } from "./Pagination";
 export { ImageUpload, type ImageUploadResult } from "./ImageUpload";
 export { FileUpload, type FileUploadResult } from "./FileUpload";
