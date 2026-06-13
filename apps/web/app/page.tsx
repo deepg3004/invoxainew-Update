@@ -211,12 +211,13 @@ export default async function Home() {
           <span className="font-display font-semibold text-zinc-900">
             Invox<span className="text-gradient">AI</span>
           </span>
-          <span>
-            Buyers pay your gateway. You keep your money. ·{" "}
-            <a className="underline transition hover:text-zinc-900" href="/health">
-              status
-            </a>
-          </span>
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <a className="underline transition hover:text-zinc-900" href="/terms">Terms</a>
+            <a className="underline transition hover:text-zinc-900" href="/privacy">Privacy</a>
+            <a className="underline transition hover:text-zinc-900" href="/refund-policy">Refunds</a>
+            <a className="underline transition hover:text-zinc-900" href="/contact">Contact</a>
+            <a className="underline transition hover:text-zinc-900" href="/health">Status</a>
+          </nav>
         </Container>
       </footer>
     </>
