@@ -8,6 +8,7 @@ import { startProductCheckout, startProductUpiSession, previewProductCoupon } fr
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { AddToCartButton } from "../../AddToCartButton";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
+import { readCouponCookie } from "../../../lib/coupon-cookie";
 
 declare global {
   interface Window {
@@ -65,6 +66,28 @@ export function ProductBuyBox({
     setApplied(null);
     setCouponMsg(null);
   }, [qty]);
+
+  // Share-link coupon: if the buyer arrived via ?coupon=… (captured to a cookie),
+  // pre-fill + auto-apply it on mount. Runs once; checkout re-validates regardless.
+  useEffect(() => {
+    const c = readCouponCookie();
+    if (!c) return;
+    setCode(c);
+    let cancelled = false;
+    (async () => {
+      setApplying(true);
+      try {
+        const res = await previewProductCoupon(productId, 1, c);
+        if (!cancelled && res.ok) setApplied({ code: res.code, discountPaise: res.discountPaise });
+      } finally {
+        if (!cancelled) setApplying(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function applyPromo() {
     setApplying(true);

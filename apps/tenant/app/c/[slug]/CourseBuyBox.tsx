@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
 import { startCourseCheckout, startCourseUpiSession, previewCourseCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
+import { readCouponCookie } from "../../../lib/coupon-cookie";
 
 declare global {
   interface Window {
@@ -44,6 +45,28 @@ export function CourseBuyBox({
 
   const discount = applied ? Math.min(applied.discountPaise, course.pricePaise) : 0;
   const total = Math.max(0, course.pricePaise - discount);
+
+  // Share-link coupon: auto-apply a ?coupon=… captured to the cookie. Once, on
+  // mount; checkout re-validates regardless.
+  useEffect(() => {
+    const c = readCouponCookie();
+    if (!c) return;
+    setCode(c);
+    let cancelled = false;
+    (async () => {
+      setApplying(true);
+      try {
+        const res = await previewCourseCoupon(course.id, c);
+        if (!cancelled && res.ok) setApplied({ code: res.code, discountPaise: res.discountPaise });
+      } finally {
+        if (!cancelled) setApplying(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function applyPromo() {
     setApplying(true);

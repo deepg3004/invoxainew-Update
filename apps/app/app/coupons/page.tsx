@@ -5,6 +5,7 @@ import { listCoupons, getSellerGateway } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setCouponActiveAction, deleteCouponAction } from "./actions";
+import { CopyCouponLink } from "./CopyCouponLink";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,9 @@ export default async function CouponsPage() {
                   </div>
                   <div className="shrink-0 text-right text-sm">
                     <div className="flex items-center gap-3">
+                      <CopyCouponLink
+                        url={`https://${tenant.username}.invoxai.io/store?coupon=${encodeURIComponent(c.code)}`}
+                      />
                       <Link href={`/coupons/${c.id}`} className="text-brand-strong underline">
                         Edit
                       </Link>

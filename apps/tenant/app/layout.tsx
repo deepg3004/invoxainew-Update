@@ -4,6 +4,7 @@ import { Sora, Plus_Jakarta_Sans } from "next/font/google";
 import { safeUrl } from "@invoxai/utils/blocks";
 import "./globals.css";
 import { UtmCapture } from "./UtmCapture";
+import { CouponCapture } from "./CouponCapture";
 import { PageViewBeacon } from "./PageViewBeacon";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { resolveTenantByHost } from "../lib/resolve";
@@ -42,6 +43,7 @@ export default async function RootLayout({
     <html lang="en" className={`${sora.variable} ${jakarta.variable}`}>
       <body>
         <UtmCapture />
+        <CouponCapture />
         <PageViewBeacon />
         {announcement ? <AnnouncementBar text={announcement} href={annHref} /> : null}
         {children}

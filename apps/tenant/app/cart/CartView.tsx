@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
@@ -8,6 +8,7 @@ import { useCart, setQty, removeFromCart, clearCart } from "../../lib/cart";
 import { startCartCheckout, startCartUpiSession, previewCartCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../UpiPayPanel";
+import { readCouponCookie } from "../../lib/coupon-cookie";
 
 declare global {
   interface Window {
@@ -53,6 +54,33 @@ export function CartView({
     setApplied(null);
     setCouponMsg(null);
   }, [subtotal]);
+
+  // Share-link coupon: once the cart has hydrated, auto-apply a ?coupon=… captured
+  // to the cookie (runs once, after the subtotal-clear effect above). Checkout
+  // re-validates regardless.
+  const triedCookieRef = useRef(false);
+  useEffect(() => {
+    if (triedCookieRef.current || items.length === 0) return;
+    triedCookieRef.current = true;
+    const c = readCouponCookie();
+    if (!c) return;
+    setCode(c);
+    let cancelled = false;
+    (async () => {
+      setApplying(true);
+      try {
+        const lines = items.map((i) => ({ productId: i.productId, qty: i.qty }));
+        const res = await previewCartCoupon(lines, c);
+        if (!cancelled && res.ok) setApplied({ code: res.code, discountPaise: res.discountPaise });
+      } finally {
+        if (!cancelled) setApplying(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
 
   async function applyPromo() {
     setApplying(true);
