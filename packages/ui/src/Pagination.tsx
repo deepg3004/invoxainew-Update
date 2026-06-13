@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-
-/** Allowed rows-per-page options (the "custom page number" selector). */
-export const PAGE_SIZES = [10, 25, 50, 100] as const;
-const DEFAULT_SIZE = 10;
+import { PAGE_SIZES, DEFAULT_PAGE_SIZE } from "./pageSlice";
 
 /**
  * Shared list pagination — a rows-per-page selector + "Showing X–Y of N" +
@@ -38,7 +35,7 @@ export function Pagination({
     const next = new URLSearchParams(sp?.toString() ?? "");
     for (const [k, v] of Object.entries(changes)) {
       // Drop defaults (page 1, size 10) to keep URLs clean.
-      if (v === undefined || (k === "page" && v === 1) || (k === "size" && v === DEFAULT_SIZE)) {
+      if (v === undefined || (k === "page" && v === 1) || (k === "size" && v === DEFAULT_PAGE_SIZE)) {
         next.delete(k);
       } else {
         next.set(k, String(v));
@@ -92,17 +89,4 @@ export function Pagination({
       ) : null}
     </div>
   );
-}
-
-/**
- * Compute a clamped page + slice from the raw `page`/`size` search params. The
- * size is validated against PAGE_SIZES (default 10). Returns page, totalPages,
- * skip/take for the DB query, and the resolved pageSize (pass to <Pagination>).
- */
-export function pageSlice(total: number, rawPage?: string, rawSize?: string) {
-  const sizeNum = Number(rawSize);
-  const pageSize = (PAGE_SIZES as readonly number[]).includes(sizeNum) ? sizeNum : DEFAULT_SIZE;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const page = Math.min(Math.max(1, Number.parseInt(rawPage ?? "1", 10) || 1), totalPages);
-  return { page, totalPages, skip: (page - 1) * pageSize, take: pageSize, pageSize };
 }
