@@ -132,6 +132,9 @@ export {
   countUnreadNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  recordNotificationLog,
+  listNotificationLogs,
+  getOrderNotifyContext,
 } from "./notifications";
 export {
   normalizeDomain,

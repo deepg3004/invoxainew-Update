@@ -1152,6 +1152,29 @@ model Notification {
   @@map("notifications")
 }
 
+/// Phase 14 (slice 2): an append-only record of every outbound notification we
+/// attempt on an EXTERNAL channel (email now; SMS/WhatsApp later). Written AFTER
+/// the money path as a best-effort side effect, so a logging failure never
+/// affects a payment. `status` is "sent" | "failed" | "skipped" ("skipped" =
+/// no provider key configured). `tenantId` is a denormalised scalar (no Prisma
+/// relation); the FK + deny-anon RLS are added in the migration SQL, the same
+/// pattern as SellerUpi. Read server-side via Prisma.
+model NotificationLog {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  channel           String   @default("email")
+  eventType         String   @map("event_type")
+  recipient         String
+  subject           String?
+  status            String
+  providerMessageId String?  @map("provider_message_id")
+  error             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("notification_logs")
+}
+
 /// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`
 /// is Razorpay's event id with a UNIQUE constraint — the webhook records the
 /// event first and a duplicate delivery trips the constraint, so the handler

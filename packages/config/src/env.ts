@@ -67,6 +67,13 @@ const serverSchema = z.object({
   // here so non-gateway deploys don't fail; the crypto helper throws clearly if
   // a gateway op runs without it.
   GATEWAY_ENCRYPTION_KEY: z.string().optional().default(""),
+
+  // Email channel (Phase 14). RESEND_API_KEY enables real sending via Resend;
+  // when empty, sendEmail() is a logged no-op (status "skipped") so nothing
+  // blocks. EMAIL_FROM must be a Resend-verified sender (e.g. a verified
+  // invoxai.io address). SERVER ONLY.
+  RESEND_API_KEY: z.string().optional().default(""),
+  EMAIL_FROM: z.string().optional().default("InvoxAI <noreply@invoxai.io>"),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

@@ -59,3 +59,65 @@ export function markAllNotificationsRead(tenantId: string) {
     data: { readAt: new Date() },
   });
 }
+
+/**
+ * Phase 14 (slice 2): record one outbound-channel notification attempt. Append-
+ * only audit of what we sent (or skipped/failed). Best-effort — the caller wraps
+ * it so a logging failure never affects the triggering action.
+ */
+export function recordNotificationLog(input: {
+  tenantId: string;
+  channel?: string;
+  eventType: string;
+  recipient: string;
+  subject?: string | null;
+  status: "sent" | "failed" | "skipped";
+  providerMessageId?: string | null;
+  error?: string | null;
+}) {
+  return prisma.notificationLog.create({
+    data: {
+      tenantId: input.tenantId,
+      channel: input.channel ?? "email",
+      eventType: input.eventType,
+      recipient: input.recipient,
+      subject: input.subject ?? null,
+      status: input.status,
+      providerMessageId: input.providerMessageId ?? null,
+      error: input.error ?? null,
+    },
+    select: { id: true },
+  });
+}
+
+/** A tenant's outbound-notification log, newest first. Scoped by tenantId. */
+export function listNotificationLogs(tenantId: string, take = 50) {
+  return prisma.notificationLog.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+    take,
+  });
+}
+
+/**
+ * Everything the email notifications need about a newly-paid order, in one query:
+ * the buyer's email + item/amount, plus the seller store (username/name) and the
+ * owner's email. Returns null if the payment is gone. Read server-side only.
+ */
+export function getOrderNotifyContext(buyerPaymentId: string) {
+  return prisma.buyerPayment.findUnique({
+    where: { id: buyerPaymentId },
+    select: {
+      buyerEmail: true,
+      itemTitle: true,
+      amountPaise: true,
+      tenant: {
+        select: {
+          username: true,
+          name: true,
+          owner: { select: { email: true } },
+        },
+      },
+    },
+  });
+}
