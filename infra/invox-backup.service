@@ -1,0 +1,12 @@
+[Unit]
+Description=InvoxAI database backup (pg_dump of the public schema)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Adjust the path if the repo lives elsewhere.
+ExecStart=/root/invoxai/infra/backup-db.sh
+# Optional overrides:
+# Environment=INVOX_BACKUP_DIR=/root/invox-backups
+# Environment=INVOX_BACKUP_RETENTION_DAYS=14

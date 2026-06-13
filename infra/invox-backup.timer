@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the InvoxAI database backup daily
+
+[Timer]
+# 02:30 server time, daily. Persistent=true runs a missed backup after downtime.
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
