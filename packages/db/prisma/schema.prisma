@@ -1122,6 +1122,11 @@ model TenantDomain {
   status      DomainStatus @default(PENDING)
   verifyToken String       @map("verify_token")
   verifiedAt  DateTime?    @map("verified_at")
+  // Phase 15 (slice 4): the tenant's canonical/preferred public host. At most one
+  // primary per tenant (partial unique index in the migration); only a VERIFIED
+  // domain can be made primary. Used for canonical links (e.g. the buyer receipt's
+  // "Visit store" URL) — host RESOLUTION is still by exact domain match, unaffected.
+  isPrimary   Boolean      @default(false) @map("is_primary")
   createdAt   DateTime     @default(now()) @map("created_at")
 
   @@unique([tenantId, domain])

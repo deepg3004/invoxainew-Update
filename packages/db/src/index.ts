@@ -151,8 +151,11 @@ export {
   deleteDomain,
   markDomainVerified,
   getTenantByCustomDomain,
+  setPrimaryDomain,
+  getPrimaryDomain,
   type AddDomainResult,
   type VerifyDomainResult,
+  type SetPrimaryResult,
 } from "./domains";
 export {
   createProduct,

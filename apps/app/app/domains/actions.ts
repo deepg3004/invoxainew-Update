@@ -8,6 +8,7 @@ import {
   getDomainById,
   deleteDomain,
   markDomainVerified,
+  setPrimaryDomain,
   planAllowsCustomDomain,
   logActivity,
 } from "@invoxai/db";
@@ -71,4 +72,12 @@ export async function deleteDomainAction(id: string) {
   const { tenant } = await requireTenant();
   await deleteDomain(tenant.id, id);
   revalidatePath("/domains");
+}
+
+/** Make a VERIFIED domain the tenant's canonical/primary host. */
+export async function setPrimaryDomainAction(id: string) {
+  const { tenant } = await requireTenant();
+  const res = await setPrimaryDomain(tenant.id, id);
+  revalidatePath("/domains");
+  redirect(res.ok ? "/domains?msg=primary_set" : "/domains?msg=primary_failed");
 }

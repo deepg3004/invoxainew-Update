@@ -116,6 +116,13 @@ export function getOrderNotifyContext(buyerPaymentId: string) {
           username: true,
           name: true,
           owner: { select: { email: true } },
+          // Phase 15: the seller's canonical custom domain (if any), so the
+          // buyer-receipt "Visit store" link prefers it over the subdomain.
+          domains: {
+            where: { isPrimary: true, status: "VERIFIED" },
+            select: { domain: true },
+            take: 1,
+          },
         },
       },
     },

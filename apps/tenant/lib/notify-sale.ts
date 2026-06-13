@@ -76,12 +76,19 @@ async function sendSaleEmails(input: {
     amount: formatRupees(input.amountPaise),
   };
 
+  // Prefer the seller's primary custom domain for the buyer's "Visit store" link,
+  // falling back to the username subdomain.
+  const primaryDomain = ctx.tenant.domains[0]?.domain;
+  const storeUrl = primaryDomain
+    ? `https://${primaryDomain}`
+    : `https://${ctx.tenant.username}.invoxai.io`;
+
   await dispatchEmail({
     tenantId: input.tenantId,
     eventKey: "buyer.receipt",
     to: ctx.buyerEmail,
     vars,
-    buttonUrl: `https://${ctx.tenant.username}.invoxai.io`,
+    buttonUrl: storeUrl,
     cfg,
   });
   await dispatchEmail({

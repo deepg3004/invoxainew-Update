@@ -106,3 +106,36 @@ export function getTenantByCustomDomain(hostname: string) {
     where: { domains: { some: { domain: d, status: "VERIFIED" } } },
   });
 }
+
+export type SetPrimaryResult = { ok: true } | { ok: false; reason: "not_found" | "not_verified" };
+
+/**
+ * Make one VERIFIED domain this tenant's primary, atomically clearing any prior
+ * primary first (the partial unique index allows only one). Tenant-scoped; a
+ * PENDING domain can't be primary (it isn't serving yet).
+ */
+export async function setPrimaryDomain(
+  tenantId: string,
+  id: string,
+): Promise<SetPrimaryResult> {
+  return prisma.$transaction(async (tx) => {
+    const row = await tx.tenantDomain.findFirst({ where: { id, tenantId } });
+    if (!row) return { ok: false, reason: "not_found" as const };
+    if (row.status !== "VERIFIED") return { ok: false, reason: "not_verified" as const };
+    await tx.tenantDomain.updateMany({
+      where: { tenantId, isPrimary: true },
+      data: { isPrimary: false },
+    });
+    await tx.tenantDomain.update({ where: { id: row.id }, data: { isPrimary: true } });
+    return { ok: true as const };
+  });
+}
+
+/** The tenant's primary custom domain hostname, or null if none is set. */
+export async function getPrimaryDomain(tenantId: string): Promise<string | null> {
+  const row = await prisma.tenantDomain.findFirst({
+    where: { tenantId, isPrimary: true, status: "VERIFIED" },
+    select: { domain: true },
+  });
+  return row?.domain ?? null;
+}

@@ -4,7 +4,7 @@ import { listDomains, planAllowsCustomDomain } from "@invoxai/db";
 import { serverEnv } from "@invoxai/config";
 import { requireTenant } from "../../lib/tenant";
 import { AddDomainForm } from "./AddDomainForm";
-import { verifyDomainAction, deleteDomainAction } from "./actions";
+import { verifyDomainAction, deleteDomainAction, setPrimaryDomainAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,8 @@ const MSG: Record<string, { text: string; tone: "ok" | "err" }> = {
     tone: "err",
   },
   conflict: { text: "That domain is already verified on another account.", tone: "err" },
+  primary_set: { text: "Primary domain updated — it’s now your canonical address.", tone: "ok" },
+  primary_failed: { text: "Only a verified domain can be set as primary.", tone: "err" },
 };
 
 export default async function DomainsPage({
@@ -82,7 +84,7 @@ export default async function DomainsPage({
           {domains.map((d) => (
             <div key={d.id} className="rounded-xl border border-zinc-100 bg-surface p-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-zinc-900">{d.domain}</span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -93,6 +95,11 @@ export default async function DomainsPage({
                   >
                     {d.status === "VERIFIED" ? "Live" : "Pending"}
                   </span>
+                  {d.isPrimary ? (
+                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand-strong">
+                      Primary
+                    </span>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   {d.status !== "VERIFIED" ? (
@@ -100,11 +107,24 @@ export default async function DomainsPage({
                       <button className="font-medium text-brand-strong underline">Verify</button>
                     </form>
                   ) : null}
+                  {d.status === "VERIFIED" && !d.isPrimary ? (
+                    <form action={setPrimaryDomainAction.bind(null, d.id)}>
+                      <button className="font-medium text-brand-strong underline">Make primary</button>
+                    </form>
+                  ) : null}
                   <form action={deleteDomainAction.bind(null, d.id)}>
                     <button className="text-muted underline hover:text-red-700">Remove</button>
                   </form>
                 </div>
               </div>
+
+              {d.status === "VERIFIED" ? (
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-green-700">
+                  <span aria-hidden>🔒</span>
+                  HTTPS active — SSL is issued and renewed automatically.
+                  {d.isPrimary ? " This is your canonical address." : ""}
+                </p>
+              ) : null}
 
               {d.status !== "VERIFIED" ? (
                 <div className="mt-3 space-y-2 rounded-lg bg-zinc-50 p-3 text-xs text-muted">
