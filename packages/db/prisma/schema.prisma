@@ -91,6 +91,8 @@ model Tenant {
   domains       TenantDomain[]
   // Phase 16: abuse/scam reports filed against this store.
   abuseReports  AbuseReport[]
+  // Phase 16: admin-facing risk signals about this store.
+  riskAlerts    RiskAlert[]
   // Phase 12: communities (members spaces) + their memberships.
   communities          Community[]
   communityMemberships CommunityMembership[]
@@ -1089,6 +1091,40 @@ model AbuseReport {
   @@index([status, createdAt])
   @@index([tenantId])
   @@map("abuse_reports")
+}
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum RiskStatus {
+  OPEN
+  DISMISSED
+  RESOLVED
+}
+
+/// Phase 16: an admin-facing risk signal derived from existing data (chargebacks,
+/// open abuse reports, large uncollected commission). Generated/refreshed by
+/// refreshRiskAlerts (idempotent, one row per tenant+type); admins dismiss them.
+/// Read-only signal — NO buyer/money surface. deny-anon RLS.
+model RiskAlert {
+  id         String       @id @default(uuid()) @db.Uuid
+  tenantId   String       @map("tenant_id") @db.Uuid
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type       String // "chargebacks" | "abuse_reports" | "commission_due"
+  severity   RiskSeverity @default(MEDIUM)
+  detail     String
+  status     RiskStatus   @default(OPEN)
+  reviewedBy String?      @map("reviewed_by")
+  reviewedAt DateTime?    @map("reviewed_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  @@unique([tenantId, type])
+  @@index([status])
+  @@map("risk_alerts")
 }
 
 enum CommunityStatus {

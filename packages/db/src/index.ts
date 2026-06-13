@@ -164,6 +164,12 @@ export {
   reviewAbuseReport,
 } from "./abuse";
 export {
+  refreshRiskAlerts,
+  listRiskAlerts,
+  countOpenRiskAlerts,
+  dismissRiskAlert,
+} from "./risk";
+export {
   createCommunity,
   listCommunities,
   getCommunityById,

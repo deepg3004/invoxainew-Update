@@ -1,7 +1,13 @@
 import { formatDateTimeShortIST } from "@invoxai/utils/date";
 import Link from "next/link";
 import { GlassCard, PageHeader } from "@invoxai/ui";
-import { getWalletAttention, listRecentPaymentEvents, listAbuseReports } from "@invoxai/db";
+import {
+  getWalletAttention,
+  listRecentPaymentEvents,
+  listAbuseReports,
+  refreshRiskAlerts,
+  listRiskAlerts,
+} from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
 import { AdminShell } from "../components/AdminShell";
@@ -9,14 +15,22 @@ import { NotAuthorized } from "../components/NotAuthorized";
 
 export const dynamic = "force-dynamic";
 
+const RISK_TYPE_LABEL: Record<string, string> = {
+  chargebacks: "Chargebacks",
+  abuse_reports: "Abuse reports",
+  commission_due: "Uncollected commission",
+};
+
 export default async function AdminNotificationsPage() {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
-  const [attention, events, openAbuse] = await Promise.all([
+  await refreshRiskAlerts();
+  const [attention, events, openAbuse, openRisk] = await Promise.all([
     getWalletAttention(),
     listRecentPaymentEvents(),
     listAbuseReports({ status: "NEW", take: 10 }),
+    listRiskAlerts("OPEN", 10),
   ]);
   const unprocessed = events.filter((e) => !e.processedAt);
 
@@ -41,6 +55,25 @@ export default async function AdminNotificationsPage() {
                 <span className="text-muted">
                   wallet {formatRupees(a.balancePaise)}
                   {a.commissionDuePaise > 0 ? ` · ${formatRupees(a.commissionDuePaise)} due` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </GlassCard>
+
+      <GlassCard className="mt-4" title={`Risk alerts (${openRisk.length})`}>
+        {openRisk.length === 0 ? (
+          <p className="text-sm text-emerald-700">No open risk alerts ✓</p>
+        ) : (
+          <ul className="divide-y divide-zinc-100">
+            {openRisk.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                <Link href="/risk" className="font-medium text-brand-strong hover:underline">
+                  {r.tenant.name?.trim() || r.tenant.username}
+                </Link>
+                <span className="text-xs font-medium text-red-700">
+                  {RISK_TYPE_LABEL[r.type] ?? r.type} · {r.severity}
                 </span>
               </li>
             ))}

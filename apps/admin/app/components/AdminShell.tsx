@@ -4,6 +4,7 @@ import {
   listRecentPaymentEvents,
   getBranding,
   countOpenAbuseReports,
+  countOpenRiskAlerts,
 } from "@invoxai/db";
 import { AdminShellClient } from "./AdminShellClient";
 
@@ -22,13 +23,14 @@ export async function AdminShell({
   let alerts = 0;
   let logoUrl: string | undefined;
   try {
-    const [attention, events, branding, openAbuse] = await Promise.all([
+    const [attention, events, branding, openAbuse, openRisk] = await Promise.all([
       getWalletAttention(),
       listRecentPaymentEvents(),
       getBranding(),
       countOpenAbuseReports(),
+      countOpenRiskAlerts(),
     ]);
-    alerts = attention.length + events.filter((e) => !e.processedAt).length + openAbuse;
+    alerts = attention.length + events.filter((e) => !e.processedAt).length + openAbuse + openRisk;
     logoUrl = branding.logoUrl;
   } catch {
     alerts = 0;
