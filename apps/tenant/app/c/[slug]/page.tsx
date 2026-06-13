@@ -12,6 +12,7 @@ import { resolveTenantByHost } from "../../../lib/resolve";
 import { cachedCourse } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { CourseBuyBox } from "./CourseBuyBox";
+import { MoreFromStore } from "../../MoreFromStore";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -175,6 +176,8 @@ export default async function CoursePage({
           </>
         )}
       </div>
+
+      <MoreFromStore tenantId={tenant.id} />
     </main>
   );
 }

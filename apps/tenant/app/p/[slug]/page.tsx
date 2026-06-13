@@ -15,6 +15,7 @@ import { cachedProduct } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { ProductBuyBox } from "./ProductBuyBox";
 import { Stars } from "../../Stars";
+import { MoreFromStore } from "../../MoreFromStore";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -177,6 +178,8 @@ export default async function ProductPage({
           </ul>
         </section>
       ) : null}
+
+      <MoreFromStore tenantId={tenant.id} excludeProductId={product.id} />
     </main>
   );
 }
