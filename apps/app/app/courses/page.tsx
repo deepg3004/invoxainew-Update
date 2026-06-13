@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listCourses, getSellerGateway } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listCourses, countCourses, getSellerGateway } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setCourseStatusAction } from "./actions";
@@ -20,12 +20,21 @@ const STATUS_BADGE: Record<string, string> = {
   ARCHIVED: "bg-zinc-100 text-muted",
 };
 
-export default async function CoursesPage() {
+export default async function CoursesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
   const { tenant } = await requireTenant();
+  const { page: rawPage, size: rawSize } = await searchParams;
+  const total = await countCourses(tenant.id);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
   const [courses, gateway] = await Promise.all([
-    listCourses(tenant.id),
+    listCourses(tenant.id, { skip, take }),
     getSellerGateway(tenant.id),
   ]);
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + courses.length;
   const base = buyerBase(tenant.username);
 
   return (
@@ -135,6 +144,17 @@ export default async function CoursesPage() {
           })}
         </GlassCard>
       )}
+      {gateway && total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="courses"
+        />
+      ) : null}
     </div>
   );
 }

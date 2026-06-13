@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listProducts, getSellerGateway } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listProducts, countProducts, getSellerGateway } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setProductStatusAction } from "./actions";
@@ -20,12 +20,21 @@ const STATUS_BADGE: Record<string, string> = {
   ARCHIVED: "bg-zinc-100 text-muted",
 };
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
   const { tenant } = await requireTenant();
+  const { page: rawPage, size: rawSize } = await searchParams;
+  const total = await countProducts(tenant.id);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
   const [products, gateway] = await Promise.all([
-    listProducts(tenant.id),
+    listProducts(tenant.id, { skip, take }),
     getSellerGateway(tenant.id),
   ]);
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + products.length;
   const base = buyerBase(tenant.username);
 
   return (
@@ -140,6 +149,17 @@ export default async function ProductsPage() {
           })}
         </GlassCard>
       )}
+      {gateway && total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="products"
+        />
+      ) : null}
     </div>
   );
 }

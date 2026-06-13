@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listLeadForms } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listLeadForms, countLeadForms } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +11,18 @@ const STATUS_BADGE: Record<string, string> = {
   ARCHIVED: "bg-zinc-50 text-muted border-zinc-200",
 };
 
-export default async function FormsPage() {
+export default async function FormsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
   const { tenant } = await requireTenant();
-  const forms = await listLeadForms(tenant.id);
+  const { page: rawPage, size: rawSize } = await searchParams;
+  const total = await countLeadForms(tenant.id);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const forms = await listLeadForms(tenant.id, { skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + forms.length;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -60,6 +69,17 @@ export default async function FormsPage() {
           ))}
         </div>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="forms"
+        />
+      ) : null}
     </div>
   );
 }

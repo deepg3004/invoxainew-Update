@@ -96,11 +96,17 @@ export async function createProduct(input: {
 }
 
 /** A seller's products, newest first. Scoped by tenantId. */
-export function listProducts(tenantId: string) {
+export function listProducts(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.product.findMany({
     where: { tenantId },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    skip: opts.skip,
+    take: opts.take,
   });
+}
+
+export function countProducts(tenantId: string) {
+  return prisma.product.count({ where: { tenantId } });
 }
 
 /** A product owned by this tenant (seller scope). */

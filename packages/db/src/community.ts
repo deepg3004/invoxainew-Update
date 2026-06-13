@@ -54,12 +54,18 @@ export async function createCommunity(input: {
 }
 
 /** A seller's communities, with member + post counts. Scoped by tenantId. */
-export function listCommunities(tenantId: string) {
+export function listCommunities(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.community.findMany({
     where: { tenantId },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     include: { _count: { select: { memberships: true, posts: true } } },
+    skip: opts.skip,
+    take: opts.take,
   });
+}
+
+export function countCommunities(tenantId: string) {
+  return prisma.community.count({ where: { tenantId } });
 }
 
 export function getCommunityById(tenantId: string, id: string) {

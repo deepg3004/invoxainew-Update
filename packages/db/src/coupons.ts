@@ -71,11 +71,17 @@ export async function createCoupon(
 }
 
 /** A seller's coupons, newest first. Scoped by tenantId. */
-export function listCoupons(tenantId: string) {
+export function listCoupons(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.coupon.findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
+    skip: opts.skip,
+    take: opts.take,
   });
+}
+
+export function countCoupons(tenantId: string) {
+  return prisma.coupon.count({ where: { tenantId } });
 }
 
 /** A coupon owned by this tenant (seller scope). */

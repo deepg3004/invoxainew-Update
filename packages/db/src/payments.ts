@@ -61,11 +61,17 @@ export async function createPaymentPage(input: {
 }
 
 /** A seller's pages, newest first. Scoped by tenantId. */
-export function listPaymentPages(tenantId: string) {
+export function listPaymentPages(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.paymentPage.findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
+    skip: opts.skip,
+    take: opts.take,
   });
+}
+
+export function countPaymentPages(tenantId: string) {
+  return prisma.paymentPage.count({ where: { tenantId } });
 }
 
 /** A page owned by this tenant (seller scope). */

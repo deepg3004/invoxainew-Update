@@ -58,12 +58,18 @@ export async function createCourse(input: {
 }
 
 /** A seller's courses, newest first, with a lesson count. Scoped by tenantId. */
-export function listCourses(tenantId: string) {
+export function listCourses(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.course.findMany({
     where: { tenantId },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     include: { _count: { select: { lessons: true, enrolments: true } } },
+    skip: opts.skip,
+    take: opts.take,
   });
+}
+
+export function countCourses(tenantId: string) {
+  return prisma.course.count({ where: { tenantId } });
 }
 
 /** A course owned by this tenant (seller scope). */

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listCommunities } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listCommunities, countCommunities } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setCommunityStatusAction } from "./actions";
@@ -20,9 +20,18 @@ const STATUS_BADGE: Record<string, string> = {
   ARCHIVED: "bg-zinc-100 text-muted",
 };
 
-export default async function CommunitiesPage() {
+export default async function CommunitiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
   const { tenant } = await requireTenant();
-  const communities = await listCommunities(tenant.id);
+  const { page: rawPage, size: rawSize } = await searchParams;
+  const total = await countCommunities(tenant.id);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const communities = await listCommunities(tenant.id, { skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + communities.length;
   const base = buyerBase(tenant.username);
 
   return (
@@ -101,6 +110,17 @@ export default async function CommunitiesPage() {
           })}
         </GlassCard>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="communities"
+        />
+      ) : null}
     </div>
   );
 }

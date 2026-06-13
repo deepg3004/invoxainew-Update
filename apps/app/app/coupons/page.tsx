@@ -1,7 +1,7 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listCoupons, getSellerGateway } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listCoupons, countCoupons, getSellerGateway } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setCouponActiveAction, deleteCouponAction } from "./actions";
@@ -22,12 +22,21 @@ function windowLabel(startsAt: Date | null, expiresAt: Date | null): string | nu
   return null;
 }
 
-export default async function CouponsPage() {
+export default async function CouponsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
   const { tenant } = await requireTenant();
+  const { page: rawPage, size: rawSize } = await searchParams;
+  const total = await countCoupons(tenant.id);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
   const [coupons, gateway] = await Promise.all([
-    listCoupons(tenant.id),
+    listCoupons(tenant.id, { skip, take }),
     getSellerGateway(tenant.id),
   ]);
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + coupons.length;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -131,6 +140,17 @@ export default async function CouponsPage() {
           })}
         </GlassCard>
       )}
+      {gateway && total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="coupons"
+        />
+      ) : null}
     </div>
   );
 }

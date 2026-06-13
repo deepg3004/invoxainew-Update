@@ -63,6 +63,7 @@ export {
 export {
   createPaymentPage,
   listPaymentPages,
+  countPaymentPages,
   getPaymentPageById,
   getActivePaymentPage,
   getActivePaymentPageById,
@@ -182,6 +183,7 @@ export type { VerificationStatus } from "@prisma/client";
 export {
   createCommunity,
   listCommunities,
+  countCommunities,
   getCommunityById,
   updateCommunity,
   setCommunityStatus,
@@ -200,6 +202,7 @@ export {
 export {
   createProduct,
   listProducts,
+  countProducts,
   getProductById,
   listPublishedProducts,
   getPublishedProduct,
@@ -214,6 +217,7 @@ export {
 export {
   createCoupon,
   listCoupons,
+  countCoupons,
   getCouponById,
   updateCoupon,
   setCouponActive,
@@ -226,6 +230,7 @@ export {
 export {
   createCourse,
   listCourses,
+  countCourses,
   getCourseById,
   updateCourse,
   setCourseStatus,
@@ -294,6 +299,7 @@ export {
 export {
   createLeadForm,
   listLeadForms,
+  countLeadForms,
   getLeadFormById,
   getPublishedLeadForm,
   updateLeadForm,

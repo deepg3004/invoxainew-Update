@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listPaymentPages, getSellerGateway, getEnabledSellerUpi } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listPaymentPages, countPaymentPages, getSellerGateway, getEnabledSellerUpi } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setPaymentPageActiveAction } from "./actions";
@@ -14,13 +14,22 @@ function buyerBase(username: string): string {
     : `https://${username}.invoxai.io`;
 }
 
-export default async function PayPagesPage() {
+export default async function PayPagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
   const { tenant } = await requireTenant();
+  const { page: rawPage, size: rawSize } = await searchParams;
+  const total = await countPaymentPages(tenant.id);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
   const [pages, gateway, upi] = await Promise.all([
-    listPaymentPages(tenant.id),
+    listPaymentPages(tenant.id, { skip, take }),
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
   ]);
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + pages.length;
   const ready = Boolean(gateway) || Boolean(upi);
   const base = buyerBase(tenant.username);
 
@@ -111,6 +120,17 @@ export default async function PayPagesPage() {
           })}
         </div>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="pages"
+        />
+      ) : null}
     </div>
   );
 }

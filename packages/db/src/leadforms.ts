@@ -45,12 +45,18 @@ export async function createLeadForm(
 }
 
 /** A seller's lead forms, newest first, with a submission count. Tenant-scoped. */
-export function listLeadForms(tenantId: string) {
+export function listLeadForms(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.leadForm.findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { submissions: true } } },
+    skip: opts.skip,
+    take: opts.take,
   });
+}
+
+export function countLeadForms(tenantId: string) {
+  return prisma.leadForm.count({ where: { tenantId } });
 }
 
 /** A lead form owned by this tenant (seller scope). */
