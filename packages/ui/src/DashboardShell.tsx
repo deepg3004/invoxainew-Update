@@ -29,6 +29,7 @@ import {
   Users,
   UsersRound,
   BadgeCheck,
+  ArrowLeftRight,
   Globe,
   LineChart,
   Target,
@@ -68,6 +69,7 @@ export const SELLER_NAV: NavGroup[] = [
   {
     heading: "Money",
     items: [
+      { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
       { href: "/wallet", label: "Wallet", icon: Wallet },
       { href: "/gateway", label: "Gateway", icon: Plug },
       { href: "/billing", label: "Billing", icon: Receipt },
