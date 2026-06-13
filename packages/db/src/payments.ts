@@ -184,6 +184,7 @@ export function createBuyerPayment(input: {
   paymentPageId?: string | null;
   productId?: string | null;
   courseId?: string | null;
+  communityId?: string | null;
   quantity?: number;
   itemTitle: string;
   amountPaise: number;
@@ -207,6 +208,7 @@ export function createBuyerPayment(input: {
       paymentPageId: input.paymentPageId ?? null,
       productId: input.productId ?? null,
       courseId: input.courseId ?? null,
+      communityId: input.communityId ?? null,
       quantity: input.quantity ?? 1,
       itemTitle: input.itemTitle,
       // amountPaise is the POST-discount charged total (server-trusted).
@@ -765,6 +767,25 @@ async function applyPaidEffects(
       });
     }
 
+    // Phase 12: grant the buyer's community membership for a community order.
+    // Identical guard to enrolments — claim-winner only + buyerPaymentId unique +
+    // skipDuplicates (so a racing re-grant can't throw and poison the PAID claim).
+    if (payment.communityId) {
+      await tx.communityMembership.createMany({
+        data: [
+          {
+            tenantId: payment.tenantId,
+            communityId: payment.communityId,
+            buyerProfileId: payment.buyerProfileId,
+            buyerEmail: payment.buyerEmail,
+            buyerPaymentId: payment.id,
+            source: "paid",
+          },
+        ],
+        skipDuplicates: true,
+      });
+    }
+
     const bps = await commissionBpsForTenant(tx, payment.tenantId);
     const commissionPaise = Math.floor((payment.amountPaise * bps) / 10000);
     if (commissionPaise <= 0) {
@@ -897,6 +918,7 @@ export async function createUpiSession(input: {
   paymentPageId?: string | null;
   productId?: string | null;
   courseId?: string | null;
+  communityId?: string | null;
   quantity?: number;
   couponId?: string | null;
   couponCode?: string | null;
@@ -921,6 +943,7 @@ export async function createUpiSession(input: {
           paymentPageId: input.paymentPageId ?? null,
           productId: input.productId ?? null,
           courseId: input.courseId ?? null,
+          communityId: input.communityId ?? null,
           quantity: input.quantity ?? 1,
           itemTitle: input.itemTitle,
           amountPaise: input.amountPaise, // TRUE sale price — commission/receipt base
@@ -1173,6 +1196,9 @@ export async function cancelManualUpiOrder(
       });
     }
     await tx.enrolment.deleteMany({ where: { buyerPaymentId: order.id } });
+    // Phase 12: revoke a community membership granted by this order (parity with
+    // the enrolment revoke above).
+    await tx.communityMembership.deleteMany({ where: { buyerPaymentId: order.id } });
 
     return { ok: true, alreadyProcessed: false, commissionReversedPaise: commissionReversed };
   });

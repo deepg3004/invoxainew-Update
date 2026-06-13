@@ -91,6 +91,9 @@ model Tenant {
   domains       TenantDomain[]
   // Phase 16: abuse/scam reports filed against this store.
   abuseReports  AbuseReport[]
+  // Phase 12: communities (members spaces) + their memberships.
+  communities          Community[]
+  communityMemberships CommunityMembership[]
   // Lead forms + CRM (Final Plan §12): capture forms and their submissions.
   leadForms     LeadForm[]
   leadSubmissions LeadSubmission[]
@@ -852,6 +855,10 @@ model BuyerPayment {
   // with paymentPageId/productId/cart lines.
   courseId          String?            @map("course_id") @db.Uuid
   course            Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  // Phase 12: set when this order is a community purchase. On PAID it grants a
+  // CommunityMembership (markBuyerPaymentPaid, claim-winner only).
+  communityId       String?            @map("community_id") @db.Uuid
+  community         Community?         @relation(fields: [communityId], references: [id], onDelete: SetNull)
   quantity          Int                @default(1)
   itemTitle         String?            @map("item_title")
   // `amountPaise` is the CHARGED total the buyer actually paid. When a coupon was
@@ -908,6 +915,8 @@ model BuyerPayment {
   orderItems        OrderItem[]
   // Courses / LMS: the enrolment this purchase granted (course orders only).
   enrolment         Enrolment?
+  // Phase 12: the community membership this purchase granted (community orders).
+  communityMembership CommunityMembership?
 
   @@index([tenantId, createdAt])
   @@index([tenantId, buyerProfileId])
@@ -1080,6 +1089,81 @@ model AbuseReport {
   @@index([status, createdAt])
   @@index([tenantId])
   @@map("abuse_reports")
+}
+
+enum CommunityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Phase 12: a community / members space — the SAME money model as a course
+/// (sold on the seller's own gateway; commission from the wallet; a PAID order
+/// grants a CommunityMembership in markBuyerPaymentPaid, claim-winner only). A
+/// free community (pricePaise 0) is joined directly (no payment). `accessUrl` is
+/// the members-only external link (Telegram/Discord/WhatsApp/private). RLS:
+/// deny-anon; published reads + member grants happen server-side via Prisma.
+model Community {
+  id             String          @id @default(uuid()) @db.Uuid
+  tenantId       String          @map("tenant_id") @db.Uuid
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug           String
+  title          String
+  description    String?
+  pricePaise     Int             @map("price_paise") // 0 = free to join
+  compareAtPaise Int?            @map("compare_at_paise")
+  imageUrl       String?         @map("image_url")
+  accessUrl      String?         @map("access_url") // members-only external link
+  status         CommunityStatus @default(DRAFT)
+  sortOrder      Int             @default(0) @map("sort_order")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  posts         CommunityPost[]
+  memberships   CommunityMembership[]
+  buyerPayments BuyerPayment[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("communities")
+}
+
+/// A seller announcement/post inside a community — shown only in the gated
+/// members area. Simpler than a Lesson (no preview gating; everything here is
+/// members-only).
+model CommunityPost {
+  id          String    @id @default(uuid()) @db.Uuid
+  communityId String    @map("community_id") @db.Uuid
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  title       String
+  body        String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([communityId])
+  @@map("community_posts")
+}
+
+/// A buyer's membership in a community (mirrors Enrolment). PAID memberships are
+/// created ONLY by the PAID claim winner in markBuyerPaymentPaid (buyerPaymentId
+/// unique → a replay can't double-grant); free memberships are created directly
+/// on join. Attribution by profileId (logged in) OR purchase/join email.
+model CommunityMembership {
+  id             String        @id @default(uuid()) @db.Uuid
+  tenantId       String        @map("tenant_id") @db.Uuid
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  communityId    String        @map("community_id") @db.Uuid
+  community      Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  buyerProfileId String?       @map("buyer_profile_id") @db.Uuid
+  buyerEmail     String?       @map("buyer_email")
+  buyerPaymentId String?       @unique @map("buyer_payment_id") @db.Uuid
+  buyerPayment   BuyerPayment? @relation(fields: [buyerPaymentId], references: [id], onDelete: SetNull)
+  source         String        @default("paid") // "paid" | "free"
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([tenantId, communityId])
+  @@index([communityId, buyerProfileId])
+  @@map("community_memberships")
 }
 
 /// Order fulfillment lifecycle (C10), set by the seller and shown to the buyer.

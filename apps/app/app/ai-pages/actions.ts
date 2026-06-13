@@ -25,7 +25,7 @@ export type AiPageFormState = { error?: string };
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
-const RESERVED = new Set(["pay", "account", "api", "health", "store", "p", "cart", "c", "courses", "learn", "report-abuse", "_next", "favicon"]);
+const RESERVED = new Set(["pay", "account", "api", "health", "store", "p", "cart", "c", "courses", "learn", "report-abuse", "m", "communities", "_next", "favicon"]);
 const FEATURE = "ai_page";
 
 export async function generateAiPageAction(

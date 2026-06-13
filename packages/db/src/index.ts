@@ -1,6 +1,6 @@
 export { prisma } from "./client";
 export { PrismaClient, Prisma } from "@prisma/client";
-export type { ProductKind, ProductStatus, DiscountType, CourseStatus, LeadFormStatus } from "@prisma/client";
+export type { ProductKind, ProductStatus, DiscountType, CourseStatus, LeadFormStatus, CommunityStatus } from "@prisma/client";
 export {
   upsertProfile,
   getTenantByOwnerId,
@@ -163,6 +163,24 @@ export {
   countOpenAbuseReports,
   reviewAbuseReport,
 } from "./abuse";
+export {
+  createCommunity,
+  listCommunities,
+  getCommunityById,
+  updateCommunity,
+  setCommunityStatus,
+  listCommunityPosts,
+  createCommunityPost,
+  deleteCommunityPost,
+  listPublishedCommunities,
+  getPublishedCommunity,
+  getPublishedCommunityById,
+  getPublishedCommunityMeta,
+  getMembership,
+  listJoinedCommunities,
+  joinFreeCommunity,
+  type CreateCommunityResult,
+} from "./community";
 export {
   createProduct,
   listProducts,

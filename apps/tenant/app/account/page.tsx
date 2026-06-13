@@ -11,6 +11,7 @@ import {
   listBuyerOrders,
   listBuyerDeliverables,
   listEnrolledCourses,
+  listJoinedCommunities,
 } from "@invoxai/db";
 import { createSignedDownloadUrl } from "@invoxai/auth/server";
 import { getSessionUser } from "../../lib/auth";
@@ -40,7 +41,7 @@ export default async function BuyerCorner() {
   await upsertProfile({ id: user.id, email: user.email ?? null, fullName });
   await ensureBuyerAccount(tenant.id, user.id);
 
-  const [orders, courses, deliverables] = await Promise.all([
+  const [orders, courses, deliverables, communities] = await Promise.all([
     listBuyerOrders({
       tenantId: tenant.id,
       profileId: user.id,
@@ -52,6 +53,11 @@ export default async function BuyerCorner() {
       email: user.email ?? null,
     }),
     listBuyerDeliverables({
+      tenantId: tenant.id,
+      profileId: user.id,
+      email: user.email ?? null,
+    }),
+    listJoinedCommunities({
       tenantId: tenant.id,
       profileId: user.id,
       email: user.email ?? null,
@@ -187,6 +193,36 @@ export default async function BuyerCorner() {
                 )}
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.title}</span>
                 <span className="text-xs text-cyan">Open →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {communities.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Your communities
+          </h2>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {communities.map((c) => (
+              <Link
+                key={c.id}
+                href={`/account/community/${c.slug}`}
+                className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-surface p-3 transition hover:border-brand/40"
+              >
+                {c.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={c.imageUrl}
+                    alt={c.title}
+                    className="h-12 w-12 rounded-lg border border-zinc-200 object-cover"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-lg bg-zinc-50" />
+                )}
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.title}</span>
+                <span className="text-xs text-cyan">Enter →</span>
               </Link>
             ))}
           </div>
