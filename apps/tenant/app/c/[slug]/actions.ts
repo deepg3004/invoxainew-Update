@@ -7,6 +7,7 @@ import {
   applyCoupon,
   getEnrolment,
   isTenantSuspended,
+  getEnabledSellerUpi,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
@@ -14,6 +15,8 @@ import { getSessionUser } from "../../../lib/auth";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { readUtmCookie } from "../../../lib/utm";
+import { UTR_RE } from "../../../lib/upi";
+import type { SubmitUpiResult } from "../../UpiPayPanel";
 
 export type StartCourseResult =
   | { ok: false; error: string }
@@ -115,6 +118,90 @@ export async function startCourseCheckout(
   });
 
   return { ok: true, orderId: order.id, amountPaise, keyId: creds.keyId, title: course.title };
+}
+
+/**
+ * Manual-UPI checkout for a course. Mirrors startCourseCheckout's server-trusted
+ * validation (tenant/host, email-required-for-access, already-enrolled guard,
+ * coupon re-applied), but records a PENDING / UPI_MANUAL BuyerPayment with the
+ * buyer-submitted reference instead of a Razorpay order. On the seller's confirm
+ * the shared paid-effects grant the Enrolment (same as a Razorpay sale).
+ */
+export async function submitCourseUpi(
+  courseId: string,
+  buyer: { email?: string; contact?: string },
+  upiRef: string,
+  couponCode?: string,
+): Promise<SubmitUpiResult> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return { ok: false, error: "This store is unavailable." };
+
+  const course = await getPublishedCourseById(courseId);
+  if (!course || course.tenantId !== tenant.id) {
+    return { ok: false, error: "This course is unavailable." };
+  }
+  if (await isTenantSuspended(tenant.id)) {
+    return { ok: false, error: "This store is temporarily unavailable." };
+  }
+
+  const user = await getSessionUser();
+
+  // Same access invariant as the Razorpay path: a guest who pays with no email
+  // could never be matched to their enrolment, so require an email.
+  const buyerEmail = (buyer.email ?? user?.email ?? "").trim() || null;
+  if (!user && !buyerEmail) {
+    return { ok: false, error: "Enter your email so you can access the course after paying." };
+  }
+
+  const existing = await getEnrolment({
+    tenantId: tenant.id,
+    courseId: course.id,
+    profileId: user?.id ?? "00000000-0000-0000-0000-000000000000",
+    email: buyerEmail,
+  });
+  if (existing) return { ok: false, error: "You already have access to this course." };
+
+  const upi = await getEnabledSellerUpi(tenant.id);
+  if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
+
+  const ref = (upiRef ?? "").trim();
+  if (!UTR_RE.test(ref)) {
+    return { ok: false, error: "Enter the UPI transaction reference (UTR) from your payment app." };
+  }
+
+  let amountPaise = course.pricePaise;
+  const code = (couponCode ?? "").trim();
+  let couponId: string | null = null;
+  let couponSnapshot: string | null = null;
+  let discountPaise = 0;
+  if (code) {
+    const result = await applyCoupon(tenant.id, code, amountPaise);
+    if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
+    couponId = result.couponId;
+    couponSnapshot = result.code;
+    discountPaise = result.discountPaise;
+    amountPaise -= discountPaise;
+  }
+
+  await createBuyerPayment({
+    razorpayOrderId: `upi_${crypto.randomUUID()}`,
+    tenantId: tenant.id,
+    courseId: course.id,
+    itemTitle: course.title,
+    amountPaise,
+    couponId,
+    couponCode: couponSnapshot,
+    discountPaise,
+    status: "PENDING",
+    paymentMethod: "UPI_MANUAL",
+    upiRef: ref,
+    buyerProfileId: user?.id ?? null,
+    buyerEmail,
+    buyerContact: buyer.contact ?? null,
+    utm: await readUtmCookie(),
+  });
+  return { ok: true };
 }
 
 export type PreviewCouponResult =

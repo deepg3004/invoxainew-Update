@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   getSellerGateway,
+  getEnabledSellerUpi,
   getTenantTracking,
   getEnrolment,
 } from "@invoxai/db";
@@ -59,12 +60,14 @@ export default async function CoursePage({
   const course = await cachedCourse(tenant.id, slug);
   if (!course) notFound();
 
-  const [gateway, tracking, user] = await Promise.all([
+  const [gateway, upi, tracking, user] = await Promise.all([
     getSellerGateway(tenant.id),
+    getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
     getSessionUser(),
   ]);
-  const sellerReady = Boolean(gateway && gateway.status === "CONNECTED");
+  const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
+  const sellerReady = razorpayReady || Boolean(upi);
 
   // If the signed-in buyer already owns this course, send them to the lessons.
   const enrolment = user
@@ -147,7 +150,7 @@ export default async function CoursePage({
           <>
             <div className="text-3xl font-bold">{formatRupees(course.pricePaise)}</div>
             <p className="mt-1 text-xs text-muted">
-              Lifetime access · paid securely to {tenant.name ?? tenant.username} via Razorpay.
+              Lifetime access · paid securely to {tenant.name ?? tenant.username}.
             </p>
             {sellerReady ? (
               <CourseBuyBox
@@ -157,6 +160,12 @@ export default async function CoursePage({
                   title: course.title,
                   pricePaise: course.pricePaise,
                 }}
+                razorpayReady={razorpayReady}
+                upi={
+                  upi
+                    ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
+                    : null
+                }
               />
             ) : (
               <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">

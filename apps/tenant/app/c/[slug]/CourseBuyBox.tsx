@@ -4,8 +4,9 @@ import { useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
-import { startCourseCheckout, previewCourseCoupon } from "./actions";
+import { startCourseCheckout, submitCourseUpi, previewCourseCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
+import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
 
 declare global {
   interface Window {
@@ -15,14 +16,26 @@ declare global {
 
 type Status = "idle" | "starting" | "paid";
 
+function tabCls(active: boolean): string {
+  return `flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+    active ? "border-brand bg-brand/10 text-brand-strong" : "border-zinc-200 text-muted hover:bg-zinc-50"
+  }`;
+}
+
 export function CourseBuyBox({
   course,
+  razorpayReady,
+  upi,
 }: {
   course: { id: string; slug: string; title: string; pricePaise: number };
+  razorpayReady: boolean;
+  upi: { upiId: string; payeeName: string } | null;
 }) {
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
+  const [method, setMethod] = useState<"razorpay" | "upi">(razorpayReady ? "razorpay" : "upi");
   const [status, setStatus] = useState<Status>("idle");
+  const [upiDone, setUpiDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
@@ -108,9 +121,23 @@ export function CourseBuyBox({
     );
   }
 
+  if (upiDone) return <UpiSubmitted />;
+
   return (
     <div className="mt-5">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      {razorpayReady ? (
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      ) : null}
+      {razorpayReady && upi ? (
+        <div className="mb-3 flex gap-2">
+          <button type="button" onClick={() => setMethod("razorpay")} className={tabCls(method === "razorpay")}>
+            Card / Netbanking
+          </button>
+          <button type="button" onClick={() => setMethod("upi")} className={tabCls(method === "upi")}>
+            UPI
+          </button>
+        </div>
+      ) : null}
       <div className="space-y-2">
         <input
           type="email"
@@ -154,15 +181,26 @@ export function CourseBuyBox({
       {error ? (
         <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       ) : null}
-      <button
-        onClick={buy}
-        disabled={status === "starting"}
-        className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
-      >
-        {status === "starting" ? "Starting…" : `Enrol · ${formatRupees(total)}`}
-      </button>
+      {method === "razorpay" && razorpayReady ? (
+        <button
+          onClick={buy}
+          disabled={status === "starting"}
+          className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
+        >
+          {status === "starting" ? "Starting…" : `Enrol · ${formatRupees(total)}`}
+        </button>
+      ) : null}
+      {method === "upi" && upi ? (
+        <UpiPayPanel
+          upi={upi}
+          amountPaise={total}
+          title={course.title}
+          onSubmit={(upiRef) => submitCourseUpi(course.id, { email, contact }, upiRef, applied?.code)}
+          onSubmitted={() => setUpiDone(true)}
+        />
+      ) : null}
       <p className="mt-2 text-center text-xs text-muted">
-        Paid securely via Razorpay. Sign in with this email to access your course.
+        Use this email to sign in and access your course after paying.
       </p>
     </div>
   );

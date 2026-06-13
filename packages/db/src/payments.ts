@@ -237,6 +237,12 @@ export function createCartOrder(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  // Manual UPI: same defaults as createBuyerPayment — a Razorpay cart order is
+  // CREATED/RAZORPAY (byte-identical to before); a manual-UPI cart order is
+  // PENDING/UPI_MANUAL and carries the buyer-submitted reference.
+  status?: "CREATED" | "PENDING";
+  paymentMethod?: "RAZORPAY" | "UPI_MANUAL";
+  upiRef?: string | null;
 }) {
   return prisma.buyerPayment.create({
     data: {
@@ -253,6 +259,9 @@ export function createCartOrder(input: {
       buyerProfileId: input.buyerProfileId ?? null,
       buyerEmail: input.buyerEmail ?? null,
       buyerContact: input.buyerContact ?? null,
+      status: input.status ?? "CREATED",
+      paymentMethod: input.paymentMethod ?? "RAZORPAY",
+      upiRef: input.upiRef ?? null,
       ...utmData(input.utm),
       orderItems: {
         create: input.items.map((it) => ({

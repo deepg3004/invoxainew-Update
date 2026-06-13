@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getTenantTracking } from "@invoxai/db";
+import { getSellerGateway, getEnabledSellerUpi, getTenantTracking } from "@invoxai/db";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 import { CartView } from "./CartView";
@@ -15,7 +15,12 @@ export default async function CartPage() {
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
-  const tracking = await getTenantTracking(tenant.id);
+  const [gateway, upi, tracking] = await Promise.all([
+    getSellerGateway(tenant.id),
+    getEnabledSellerUpi(tenant.id),
+    getTenantTracking(tenant.id),
+  ]);
+  const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
@@ -24,7 +29,14 @@ export default async function CartPage() {
         ← {tenant.name ?? tenant.username} store
       </Link>
       <h1 className="mt-4 text-2xl font-bold">Your cart</h1>
-      <CartView />
+      <CartView
+        razorpayReady={razorpayReady}
+        upi={
+          upi
+            ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
+            : null
+        }
+      />
     </main>
   );
 }

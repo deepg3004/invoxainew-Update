@@ -5,8 +5,9 @@ import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
 import { useCart, setQty, removeFromCart, clearCart } from "../../lib/cart";
-import { startCartCheckout, previewCartCoupon } from "./actions";
+import { startCartCheckout, submitCartUpi, previewCartCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../TrackingScripts";
+import { UpiPayPanel, UpiSubmitted } from "../UpiPayPanel";
 
 declare global {
   interface Window {
@@ -16,11 +17,25 @@ declare global {
 
 type Status = "idle" | "starting" | "paid";
 
-export function CartView() {
+function tabCls(active: boolean): string {
+  return `flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+    active ? "border-brand bg-brand/10 text-brand-strong" : "border-zinc-200 text-muted hover:bg-zinc-50"
+  }`;
+}
+
+export function CartView({
+  razorpayReady,
+  upi,
+}: {
+  razorpayReady: boolean;
+  upi: { upiId: string; payeeName: string } | null;
+}) {
   const items = useCart();
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
+  const [method, setMethod] = useState<"razorpay" | "upi">(razorpayReady ? "razorpay" : "upi");
   const [status, setStatus] = useState<Status>("idle");
+  const [upiDone, setUpiDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
@@ -119,6 +134,9 @@ export function CartView() {
     );
   }
 
+  // UPI submit clears the cart, so this must come BEFORE the empty-cart check.
+  if (upiDone) return <UpiSubmitted />;
+
   if (items.length === 0) {
     return (
       <p className="mt-6 text-muted">
@@ -132,7 +150,9 @@ export function CartView() {
 
   return (
     <div className="mt-6">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      {razorpayReady ? (
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      ) : null}
 
       <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
         {items.map((i) => {
@@ -197,7 +217,7 @@ export function CartView() {
         {couponMsg ? (
           <p className="mt-1.5 text-xs text-red-600">{couponMsg}</p>
         ) : null}
-        {applied ? (
+        {applied && discount > 0 ? (
           <p className="mt-1.5 text-xs font-medium text-green-700">
             Code {applied.code} applied — {formatRupees(discount)} off
           </p>
@@ -238,20 +258,61 @@ export function CartView() {
         />
       </div>
 
+      {razorpayReady && upi ? (
+        <div className="mt-4 flex gap-2">
+          <button type="button" onClick={() => setMethod("razorpay")} className={tabCls(method === "razorpay")}>
+            Card / Netbanking
+          </button>
+          <button type="button" onClick={() => setMethod("upi")} className={tabCls(method === "upi")}>
+            UPI
+          </button>
+        </div>
+      ) : null}
+
       {error ? (
         <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       ) : null}
 
-      <button
-        onClick={checkout}
-        disabled={status === "starting"}
-        className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
-      >
-        {status === "starting" ? "Starting…" : `Pay ${formatRupees(total)}`}
-      </button>
-      <p className="mt-2 text-center text-xs text-muted">
-        Paid securely via Razorpay. Final total is confirmed at checkout.
-      </p>
+      {!razorpayReady && !upi ? (
+        <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          This seller hasn’t finished setting up payments yet.
+        </p>
+      ) : null}
+
+      {method === "razorpay" && razorpayReady ? (
+        <>
+          <button
+            onClick={checkout}
+            disabled={status === "starting"}
+            className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
+          >
+            {status === "starting" ? "Starting…" : `Pay ${formatRupees(total)}`}
+          </button>
+          <p className="mt-2 text-center text-xs text-muted">
+            Paid securely via Razorpay. Final total is confirmed at checkout.
+          </p>
+        </>
+      ) : null}
+
+      {method === "upi" && upi ? (
+        <UpiPayPanel
+          upi={upi}
+          amountPaise={total}
+          title={items.length === 1 ? items[0]!.title : `${items[0]!.title} + ${items.length - 1} more`}
+          onSubmit={(upiRef) =>
+            submitCartUpi(
+              items.map((i) => ({ productId: i.productId, qty: i.qty })),
+              { email, contact },
+              upiRef,
+              applied?.code,
+            )
+          }
+          onSubmitted={() => {
+            clearCart();
+            setUpiDone(true);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

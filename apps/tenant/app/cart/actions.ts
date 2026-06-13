@@ -6,6 +6,7 @@ import {
   createCartOrder,
   applyCoupon,
   isTenantSuspended,
+  getEnabledSellerUpi,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../lib/gateway";
 import { createOrderWithKeys } from "../../lib/razorpay";
@@ -13,6 +14,8 @@ import { getSessionUser } from "../../lib/auth";
 import { couponErrorMessage } from "../../lib/coupon-message";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { readUtmCookie } from "../../lib/utm";
+import { UTR_RE } from "../../lib/upi";
+import type { SubmitUpiResult } from "../UpiPayPanel";
 
 export type StartCartResult =
   | { ok: false; error: string }
@@ -216,4 +219,78 @@ export async function startCartCheckout(
   });
 
   return { ok: true, orderId: order.id, amountPaise, keyId: creds.keyId, title };
+}
+
+/**
+ * Manual-UPI checkout for a multi-item cart. Mirrors startCartCheckout's
+ * server-trusted, single-tenant pricing (every line must belong to the host's
+ * tenant; prices/stock from the DB; coupon re-applied) but records ONE PENDING /
+ * UPI_MANUAL cart order (BuyerPayment + OrderItems) carrying the buyer-submitted
+ * reference, instead of a Razorpay order. Nothing is paid / no commission until
+ * the seller confirms (confirmManualBuyerPayment runs the shared paid-effects).
+ */
+export async function submitCartUpi(
+  lines: CartLine[],
+  buyer: { email?: string; contact?: string },
+  upiRef: string,
+  couponCode?: string,
+): Promise<SubmitUpiResult> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return { ok: false, error: "This store is unavailable." };
+
+  if (await isTenantSuspended(tenant.id)) {
+    return { ok: false, error: "This store is temporarily unavailable." };
+  }
+
+  const priced = await priceCart(lines, tenant.id);
+  if (!priced.ok) return { ok: false, error: priced.error };
+  const { items } = priced;
+  let amountPaise = priced.amountPaise;
+
+  const code = (couponCode ?? "").trim();
+  let couponId: string | null = null;
+  let couponSnapshot: string | null = null;
+  let discountPaise = 0;
+  if (code) {
+    const result = await applyCoupon(tenant.id, code, amountPaise);
+    if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
+    couponId = result.couponId;
+    couponSnapshot = result.code;
+    discountPaise = result.discountPaise;
+    amountPaise -= discountPaise;
+  }
+
+  const upi = await getEnabledSellerUpi(tenant.id);
+  if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
+
+  const ref = (upiRef ?? "").trim();
+  if (!UTR_RE.test(ref)) {
+    return { ok: false, error: "Enter the UPI transaction reference (UTR) from your payment app." };
+  }
+
+  const title =
+    items.length === 1
+      ? items[0]!.titleSnapshot
+      : `${items[0]!.titleSnapshot} + ${items.length - 1} more`;
+
+  const user = await getSessionUser();
+  await createCartOrder({
+    razorpayOrderId: `upi_${crypto.randomUUID()}`,
+    tenantId: tenant.id,
+    amountPaise,
+    itemTitle: title,
+    items,
+    couponId,
+    couponCode: couponSnapshot,
+    discountPaise,
+    status: "PENDING",
+    paymentMethod: "UPI_MANUAL",
+    upiRef: ref,
+    buyerProfileId: user?.id ?? null,
+    buyerEmail: buyer.email ?? user?.email ?? null,
+    buyerContact: buyer.contact ?? null,
+    utm: await readUtmCookie(),
+  });
+  return { ok: true };
 }

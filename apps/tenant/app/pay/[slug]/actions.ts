@@ -10,6 +10,7 @@ import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { readUtmCookie } from "../../../lib/utm";
+import { UTR_RE } from "../../../lib/upi";
 
 export type StartBuyerResult =
   | { ok: false; error: string }
@@ -76,8 +77,6 @@ export async function startBuyerCheckout(
 }
 
 export type SubmitUpiResult = { ok: true } | { ok: false; error: string };
-
-const UTR_RE = /^[A-Za-z0-9]{6,40}$/;
 
 /**
  * Buyer submits proof of a manual-UPI payment for a payment page. The buyer has

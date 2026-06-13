@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
-import { startProductCheckout, previewProductCoupon } from "./actions";
+import { startProductCheckout, submitProductUpi, previewProductCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { AddToCartButton } from "../../AddToCartButton";
+import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
 
 declare global {
   interface Window {
@@ -15,6 +16,12 @@ declare global {
 }
 
 type Status = "idle" | "starting" | "paid";
+
+function tabCls(active: boolean): string {
+  return `flex-1 rounded-lg border px-3 py-2 text-sm font-medium ${
+    active ? "border-brand bg-brand/10 text-brand-strong" : "border-zinc-200 text-muted hover:bg-zinc-50"
+  }`;
+}
 
 export interface BuyBoxProduct {
   id: string;
@@ -25,13 +32,23 @@ export interface BuyBoxProduct {
   stockQty: number | null;
 }
 
-export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
+export function ProductBuyBox({
+  product,
+  razorpayReady,
+  upi,
+}: {
+  product: BuyBoxProduct;
+  razorpayReady: boolean;
+  upi: { upiId: string; payeeName: string } | null;
+}) {
   const productId = product.id;
   const maxQty = product.stockQty;
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [qty, setQty] = useState(1);
+  const [method, setMethod] = useState<"razorpay" | "upi">(razorpayReady ? "razorpay" : "upi");
   const [status, setStatus] = useState<Status>("idle");
+  const [upiDone, setUpiDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
@@ -126,15 +143,29 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
     );
   }
 
+  if (upiDone) return <UpiSubmitted />;
+
   return (
     <div className="mt-5">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      {razorpayReady ? (
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      ) : null}
       {cap === 0 ? (
         <p className="rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-muted">
           Sold out
         </p>
       ) : (
         <>
+          {razorpayReady && upi ? (
+            <div className="mb-3 flex gap-2">
+              <button type="button" onClick={() => setMethod("razorpay")} className={tabCls(method === "razorpay")}>
+                Card / Netbanking
+              </button>
+              <button type="button" onClick={() => setMethod("upi")} className={tabCls(method === "upi")}>
+                UPI
+              </button>
+            </div>
+          ) : null}
           <div className="space-y-2">
             <label className="flex items-center justify-between gap-3 text-sm">
               <span className="text-muted">Quantity</span>
@@ -194,13 +225,26 @@ export function ProductBuyBox({ product }: { product: BuyBoxProduct }) {
           {error ? (
             <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
           ) : null}
-          <button
-            onClick={buy}
-            disabled={status === "starting"}
-            className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
-          >
-            {status === "starting" ? "Starting…" : `Buy now · ${formatRupees(total)}`}
-          </button>
+          {method === "razorpay" && razorpayReady ? (
+            <button
+              onClick={buy}
+              disabled={status === "starting"}
+              className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
+            >
+              {status === "starting" ? "Starting…" : `Buy now · ${formatRupees(total)}`}
+            </button>
+          ) : null}
+          {method === "upi" && upi ? (
+            <UpiPayPanel
+              upi={upi}
+              amountPaise={total}
+              title={product.title}
+              onSubmit={(upiRef) =>
+                submitProductUpi(productId, qty, { email, contact }, upiRef, applied?.code)
+              }
+              onSubmitted={() => setUpiDone(true)}
+            />
+          ) : null}
           <div className="mt-2">
             <AddToCartButton
               product={{

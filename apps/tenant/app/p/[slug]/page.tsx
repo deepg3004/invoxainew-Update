@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   getSellerGateway,
+  getEnabledSellerUpi,
   getTenantTracking,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
@@ -57,9 +58,13 @@ export default async function ProductPage({
   const product = await cachedProduct(tenant.id, slug);
   if (!product) notFound();
 
-  const gateway = await getSellerGateway(tenant.id);
-  const sellerReady = Boolean(gateway && gateway.status === "CONNECTED");
-  const tracking = await getTenantTracking(tenant.id);
+  const [gateway, upi, tracking] = await Promise.all([
+    getSellerGateway(tenant.id),
+    getEnabledSellerUpi(tenant.id),
+    getTenantTracking(tenant.id),
+  ]);
+  const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
+  const sellerReady = razorpayReady || Boolean(upi);
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
@@ -90,7 +95,7 @@ export default async function ProductPage({
         <div className="text-3xl font-bold">{formatRupees(product.pricePaise)}</div>
         <p className="mt-1 text-xs text-muted">
           {product.kind.charAt(0) + product.kind.slice(1).toLowerCase()} · paid securely
-          to {tenant.name ?? tenant.username} via Razorpay.
+          to {tenant.name ?? tenant.username}.
         </p>
 
         {sellerReady ? (
@@ -103,6 +108,12 @@ export default async function ProductPage({
               imageUrl: product.imageUrl,
               stockQty: product.stockQty,
             }}
+            razorpayReady={razorpayReady}
+            upi={
+              upi
+                ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
+                : null
+            }
           />
         ) : (
           <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
