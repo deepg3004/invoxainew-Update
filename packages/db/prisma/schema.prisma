@@ -355,6 +355,9 @@ model Course {
   title       String
   description String?
   pricePaise  Int          @map("price_paise")
+  // Optional compare-at / original price for a sale (display only — buyers are
+  // charged pricePaise). Shown struck through + a % off, like products.
+  compareAtPaise Int?      @map("compare_at_paise")
   imageUrl    String?      @map("image_url")
   status      CourseStatus @default(DRAFT)
   sortOrder   Int          @default(0) @map("sort_order")

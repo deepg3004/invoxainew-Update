@@ -105,7 +105,19 @@ export default async function CoursesListPage({
               <p className="mt-1 text-xs text-muted">
                 {c._count.lessons} lesson{c._count.lessons === 1 ? "" : "s"}
               </p>
-              <div className="mt-2 font-bold">{formatRupees(c.pricePaise)}</div>
+              <div className="mt-2 text-sm">
+                <span className="font-bold text-zinc-900">{formatRupees(c.pricePaise)}</span>
+                {c.compareAtPaise != null && c.compareAtPaise > c.pricePaise ? (
+                  <>
+                    <span className="ml-1.5 text-xs text-muted line-through">
+                      {formatRupees(c.compareAtPaise)}
+                    </span>
+                    <span className="ml-1.5 text-xs font-medium text-green-700">
+                      {Math.round((1 - c.pricePaise / c.compareAtPaise) * 100)}% off
+                    </span>
+                  </>
+                ) : null}
+              </div>
                 </Link>
               ))}
             </div>

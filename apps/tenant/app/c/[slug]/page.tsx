@@ -185,7 +185,19 @@ export default async function CoursePage({
           </div>
         ) : (
           <>
-            <div className="text-3xl font-bold">{formatRupees(course.pricePaise)}</div>
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span className="text-3xl font-bold">{formatRupees(course.pricePaise)}</span>
+              {course.compareAtPaise != null && course.compareAtPaise > course.pricePaise ? (
+                <>
+                  <span className="text-lg text-muted line-through">
+                    {formatRupees(course.compareAtPaise)}
+                  </span>
+                  <span className="rounded-full bg-green-50 px-2 py-0.5 text-sm font-medium text-green-700">
+                    {Math.round((1 - course.pricePaise / course.compareAtPaise) * 100)}% off
+                  </span>
+                </>
+              ) : null}
+            </div>
             <p className="mt-1 text-xs text-muted">
               Lifetime access · paid securely to {tenant.name ?? tenant.username}.
             </p>

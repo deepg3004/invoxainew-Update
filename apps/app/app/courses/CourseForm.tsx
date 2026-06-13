@@ -10,6 +10,7 @@ export interface CourseValues {
   title: string;
   description: string | null;
   pricePaise: number;
+  compareAtPaise: number | null;
   imageUrl: string | null;
   sortOrder: number;
 }
@@ -101,6 +102,19 @@ export function CourseForm({
             placeholder="https://…/cover.jpg"
             className={inputCls}
           />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700">Compare-at price (₹)</span>
+          <input
+            name="compareAt"
+            inputMode="decimal"
+            defaultValue={initial?.compareAtPaise ? paiseToRupeeString(initial.compareAtPaise) : ""}
+            placeholder="Optional — e.g. 1999"
+            className={inputCls}
+          />
+          <span className="mt-1 block text-xs text-muted">
+            Shows struck through with a “% off” badge. Must be above the price.
+          </span>
         </label>
       </div>
 

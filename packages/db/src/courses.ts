@@ -28,6 +28,7 @@ export async function createCourse(input: {
   title: string;
   description?: string | null;
   pricePaise: number;
+  compareAtPaise?: number | null;
   imageUrl?: string | null;
   sortOrder?: number;
   status?: CourseStatus;
@@ -40,6 +41,7 @@ export async function createCourse(input: {
         title: input.title,
         description: input.description ?? null,
         pricePaise: input.pricePaise,
+        compareAtPaise: input.compareAtPaise ?? null,
         imageUrl: input.imageUrl ?? null,
         sortOrder: input.sortOrder ?? 0,
         status: input.status ?? "DRAFT",
@@ -76,6 +78,7 @@ export function updateCourse(
     title: string;
     description?: string | null;
     pricePaise: number;
+    compareAtPaise?: number | null;
     imageUrl?: string | null;
     sortOrder?: number;
   },
@@ -86,6 +89,7 @@ export function updateCourse(
       title: data.title,
       description: data.description ?? null,
       pricePaise: data.pricePaise,
+      compareAtPaise: data.compareAtPaise ?? null,
       imageUrl: data.imageUrl ?? null,
       sortOrder: data.sortOrder ?? 0,
     },
