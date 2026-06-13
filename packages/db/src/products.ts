@@ -24,6 +24,7 @@ export async function createProduct(input: {
   title: string;
   description?: string | null;
   pricePaise: number;
+  compareAtPaise?: number | null;
   imageUrl?: string | null;
   kind: ProductKind;
   stockQty?: number | null;
@@ -39,6 +40,7 @@ export async function createProduct(input: {
         title: input.title,
         description: input.description ?? null,
         pricePaise: input.pricePaise,
+        compareAtPaise: input.compareAtPaise ?? null,
         imageUrl: input.imageUrl ?? null,
         kind: input.kind,
         stockQty: input.stockQty ?? null,
@@ -107,6 +109,7 @@ export function updateProduct(
     title: string;
     description?: string | null;
     pricePaise: number;
+    compareAtPaise?: number | null;
     imageUrl?: string | null;
     kind: ProductKind;
     stockQty?: number | null;
@@ -121,6 +124,7 @@ export function updateProduct(
       title: data.title,
       description: data.description ?? null,
       pricePaise: data.pricePaise,
+      compareAtPaise: data.compareAtPaise ?? null,
       imageUrl: data.imageUrl ?? null,
       kind: data.kind,
       stockQty: data.stockQty ?? null,

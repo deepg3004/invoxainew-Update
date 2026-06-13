@@ -13,6 +13,7 @@ export interface ProductValues {
   title: string;
   description: string | null;
   pricePaise: number;
+  compareAtPaise: number | null;
   imageUrl: string | null;
   kind: ProductKind;
   stockQty: number | null;
@@ -113,6 +114,19 @@ export function ProductForm({
               </option>
             ))}
           </select>
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-900">Compare-at price (₹)</span>
+          <input
+            name="compareAt"
+            inputMode="decimal"
+            defaultValue={initial?.compareAtPaise ? paiseToRupeeString(initial.compareAtPaise) : ""}
+            placeholder="Optional — e.g. 999"
+            className={inputCls}
+          />
+          <span className="mt-1 block text-xs text-muted">
+            Shows struck through with a “% off” badge. Must be above the price.
+          </span>
         </label>
       </div>
 

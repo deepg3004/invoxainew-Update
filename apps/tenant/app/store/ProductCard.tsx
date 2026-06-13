@@ -15,11 +15,17 @@ export function ProductCard({
     slug: string;
     title: string;
     pricePaise: number;
+    compareAtPaise: number | null;
     imageUrl: string | null;
     stockQty: number | null;
   };
   rating?: { count: number; avg: number };
 }) {
+  const onSale =
+    product.compareAtPaise != null && product.compareAtPaise > product.pricePaise;
+  const pctOff = onSale
+    ? Math.round((1 - product.pricePaise / product.compareAtPaise!) * 100)
+    : 0;
   return (
     <div className="flex flex-col rounded-xl border border-zinc-200 bg-surface p-4">
       <Link href={`/p/${product.slug}`} className="group">
@@ -44,8 +50,16 @@ export function ProductCard({
             <span className="text-muted">({rating.count})</span>
           </div>
         ) : null}
-        <div className="mt-0.5 text-sm text-muted">
-          {formatRupees(product.pricePaise)}
+        <div className="mt-0.5 text-sm">
+          <span className="font-medium text-zinc-900">{formatRupees(product.pricePaise)}</span>
+          {onSale ? (
+            <>
+              <span className="ml-1.5 text-xs text-muted line-through">
+                {formatRupees(product.compareAtPaise!)}
+              </span>
+              <span className="ml-1.5 text-xs font-medium text-green-700">{pctOff}% off</span>
+            </>
+          ) : null}
           {product.stockQty === 0 ? (
             <span className="ml-2 text-xs font-medium text-red-600">Sold out</span>
           ) : product.stockQty !== null && product.stockQty <= 5 ? (

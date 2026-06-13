@@ -117,6 +117,7 @@ export default async function StorePage({
                       slug: p.slug,
                       title: p.title,
                       pricePaise: p.pricePaise,
+                      compareAtPaise: p.compareAtPaise,
                       imageUrl: p.imageUrl,
                       stockQty: p.stockQty,
                     }}

@@ -107,7 +107,19 @@ export default async function ProductPage({
       ) : null}
 
       <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
-        <div className="text-3xl font-bold">{formatRupees(product.pricePaise)}</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-3xl font-bold">{formatRupees(product.pricePaise)}</span>
+          {product.compareAtPaise != null && product.compareAtPaise > product.pricePaise ? (
+            <>
+              <span className="text-lg text-muted line-through">
+                {formatRupees(product.compareAtPaise)}
+              </span>
+              <span className="rounded-full bg-green-50 px-2 py-0.5 text-sm font-medium text-green-700">
+                {Math.round((1 - product.pricePaise / product.compareAtPaise) * 100)}% off
+              </span>
+            </>
+          ) : null}
+        </div>
         <p className="mt-1 text-xs text-muted">
           {product.kind.charAt(0) + product.kind.slice(1).toLowerCase()} · paid securely
           to {tenant.name ?? tenant.username}.

@@ -23,6 +23,7 @@ interface ParsedProduct {
   title: string;
   description: string | null;
   pricePaise: number;
+  compareAtPaise: number | null;
   imageUrl: string | null;
   kind: ProductKind;
   stockQty: number | null;
@@ -39,6 +40,19 @@ function parseProductFields(
   const price = rupeeStringToPaise(String(form.get("price") ?? ""));
   if (!price.ok) return { ok: false, message: `Price: ${price.message}` };
   if (price.paise <= 0) return { ok: false, message: "Price must be greater than ₹0." };
+
+  // Optional compare-at / original price for a sale. If given it must be ABOVE the
+  // price (else there's no discount to show); blank clears it.
+  const compareRaw = String(form.get("compareAt") ?? "").trim();
+  let compareAtPaise: number | null = null;
+  if (compareRaw) {
+    const cmp = rupeeStringToPaise(compareRaw);
+    if (!cmp.ok) return { ok: false, message: `Compare-at price: ${cmp.message}` };
+    if (cmp.paise <= price.paise) {
+      return { ok: false, message: "Compare-at price must be higher than the price." };
+    }
+    compareAtPaise = cmp.paise;
+  }
 
   const kindRaw = String(form.get("kind") ?? "DIGITAL");
   const kind = KINDS.includes(kindRaw as ProductKind)
@@ -84,6 +98,7 @@ function parseProductFields(
       title,
       description,
       pricePaise: price.paise,
+      compareAtPaise,
       imageUrl: imageRaw || null,
       kind,
       stockQty,
