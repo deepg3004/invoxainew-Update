@@ -1,7 +1,12 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getSellerGateway, getEnabledSellerUpi, getTenantTracking } from "@invoxai/db";
+import {
+  getSellerGateway,
+  getEnabledSellerUpi,
+  getTenantTracking,
+  getOrderBumpProduct,
+} from "@invoxai/db";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 import { CartView } from "./CartView";
@@ -15,12 +20,23 @@ export default async function CartPage() {
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
-  const [gateway, upi, tracking] = await Promise.all([
+  const [gateway, upi, tracking, bumpProduct] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
+    getOrderBumpProduct(tenant.id),
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
+  const bump = bumpProduct
+    ? {
+        id: bumpProduct.id,
+        title: bumpProduct.title,
+        pricePaise: bumpProduct.pricePaise,
+        compareAtPaise: bumpProduct.compareAtPaise,
+        imageUrl: bumpProduct.imageUrl,
+        blurb: bumpProduct.bumpBlurb,
+      }
+    : null;
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
@@ -36,6 +52,7 @@ export default async function CartPage() {
             ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
             : null
         }
+        bump={bump}
       />
     </main>
   );

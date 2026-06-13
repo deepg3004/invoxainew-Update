@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import {
   listPublishedProductsByIds,
   createCartOrder,
+  getOrderBumpProduct,
   applyCoupon,
   isTenantSuspended,
   getEnabledSellerUpi,
@@ -16,6 +17,23 @@ import { couponErrorMessage } from "../../lib/coupon-message";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { readUtmCookie } from "../../lib/utm";
 import type { StartUpiSessionResult } from "../../lib/upi";
+
+/**
+ * Add the store's order-bump product as an extra cart line (qty 1) when the buyer
+ * opted in — unless it's already in the cart. Returns the lines unchanged when
+ * there's no bump or `addBump` is false. The bump is then priced/stock-checked by
+ * priceCart like any other line (server-trusted), so the client only sends a flag.
+ */
+async function withBumpLine(
+  tenantId: string,
+  lines: CartLine[],
+  addBump: boolean,
+): Promise<CartLine[]> {
+  if (!addBump) return lines;
+  const bump = await getOrderBumpProduct(tenantId);
+  if (!bump || lines.some((l) => l.productId === bump.id)) return lines;
+  return [...lines, { productId: bump.id, qty: 1 }];
+}
 
 export type StartCartResult =
   | { ok: false; error: string }
@@ -151,6 +169,7 @@ export async function startCartCheckout(
   lines: CartLine[],
   buyer: { email?: string; contact?: string },
   couponCode?: string,
+  addBump = false,
 ): Promise<StartCartResult> {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
@@ -160,9 +179,9 @@ export async function startCartCheckout(
     return { ok: false, error: "This store is temporarily unavailable." };
   }
 
-  // Validate + price the cart against the DB (server-trusted). `amountPaise`
-  // here is the SUBTOTAL before any discount.
-  const priced = await priceCart(lines, tenant.id);
+  // Validate + price the cart (+ the bump line if opted in) against the DB
+  // (server-trusted). `amountPaise` here is the SUBTOTAL before any discount.
+  const priced = await priceCart(await withBumpLine(tenant.id, lines, addBump), tenant.id);
   if (!priced.ok) return { ok: false, error: priced.error };
   const { items } = priced;
   let amountPaise = priced.amountPaise;
@@ -232,6 +251,7 @@ export async function startCartUpiSession(
   lines: CartLine[],
   buyer: { email?: string; contact?: string },
   couponCode?: string,
+  addBump = false,
 ): Promise<StartUpiSessionResult> {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
@@ -241,7 +261,7 @@ export async function startCartUpiSession(
     return { ok: false, error: "This store is temporarily unavailable." };
   }
 
-  const priced = await priceCart(lines, tenant.id);
+  const priced = await priceCart(await withBumpLine(tenant.id, lines, addBump), tenant.id);
   if (!priced.ok) return { ok: false, error: priced.error };
   const { items } = priced;
   let amountPaise = priced.amountPaise;

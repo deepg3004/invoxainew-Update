@@ -14,6 +14,8 @@ export interface ProductValues {
   description: string | null;
   pricePaise: number;
   compareAtPaise: number | null;
+  bumpEnabled: boolean;
+  bumpBlurb: string | null;
   imageUrl: string | null;
   kind: ProductKind;
   stockQty: number | null;
@@ -178,6 +180,32 @@ export function ProductForm({
           />
           <span className="mt-1 block text-xs text-muted">Lower shows first.</span>
         </label>
+      </div>
+
+      <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="bumpEnabled"
+            defaultChecked={initial?.bumpEnabled ?? false}
+            className="h-4 w-4"
+          />
+          <span className="text-sm font-medium text-zinc-900">
+            Offer this product as a checkout add-on (order bump)
+          </span>
+        </label>
+        <p className="mt-1 text-xs text-muted">
+          Shown as a one-tap “add this too” at checkout on your other products and in the cart. If you
+          enable it on several products, the first one is used. Tip: set a compare-at price so the
+          add-on shows a deal.
+        </p>
+        <input
+          name="bumpBlurb"
+          defaultValue={initial?.bumpBlurb ?? ""}
+          maxLength={140}
+          placeholder="Optional pitch — e.g. “Add the bonus templates and save 50%”"
+          className={`${inputCls} mt-2`}
+        />
       </div>
 
       {!isEdit ? (

@@ -8,6 +8,7 @@ import { useCart, setQty, removeFromCart, clearCart } from "../../lib/cart";
 import { startCartCheckout, startCartUpiSession, previewCartCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../UpiPayPanel";
+import { OrderBumpOption, type BumpInfo } from "../OrderBumpOption";
 import { readCouponCookie } from "../../lib/coupon-cookie";
 
 declare global {
@@ -27,9 +28,11 @@ function tabCls(active: boolean): string {
 export function CartView({
   razorpayReady,
   upi,
+  bump,
 }: {
   razorpayReady: boolean;
   upi: { upiId: string; payeeName: string } | null;
+  bump: BumpInfo | null;
 }) {
   const items = useCart();
   const [email, setEmail] = useState("");
@@ -42,10 +45,14 @@ export function CartView({
   const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [addBump, setAddBump] = useState(false);
 
+  // Offer the bump only if it isn't already in the cart.
+  const bumpAvailable = bump && !items.some((i) => i.productId === bump.id) ? bump : null;
   const subtotal = items.reduce((n, i) => n + i.pricePaise * i.qty, 0);
   const discount = applied ? Math.min(applied.discountPaise, subtotal) : 0;
-  const total = Math.max(0, subtotal - discount);
+  const total =
+    Math.max(0, subtotal - discount) + (addBump && bumpAvailable ? bumpAvailable.pricePaise : 0);
 
   // If the cart contents change after a code was applied, the discount is stale —
   // drop it so the buyer re-applies against the new subtotal. (Checkout also
@@ -107,7 +114,7 @@ export function CartView({
     setStatus("starting");
     try {
       const lines = items.map((i) => ({ productId: i.productId, qty: i.qty }));
-      const result = await startCartCheckout(lines, { email, contact }, applied?.code);
+      const result = await startCartCheckout(lines, { email, contact }, applied?.code, addBump);
       if (!result.ok) {
         setError(result.error);
         setStatus("idle");
@@ -286,6 +293,10 @@ export function CartView({
         />
       </div>
 
+      {bumpAvailable ? (
+        <OrderBumpOption bump={bumpAvailable} checked={addBump} onChange={setAddBump} />
+      ) : null}
+
       {razorpayReady && upi ? (
         <div className="mt-4 flex gap-2">
           <button type="button" onClick={() => setMethod("razorpay")} className={tabCls(method === "razorpay")}>
@@ -331,6 +342,7 @@ export function CartView({
               items.map((i) => ({ productId: i.productId, qty: i.qty })),
               { email, contact },
               applied?.code,
+              addBump,
             )
           }
           onConfirmed={() => {

@@ -36,6 +36,8 @@ export default async function EditProductPage({
             description: product.description,
             pricePaise: product.pricePaise,
             compareAtPaise: product.compareAtPaise,
+            bumpEnabled: product.bumpEnabled,
+            bumpBlurb: product.bumpBlurb,
             imageUrl: product.imageUrl,
             kind: product.kind,
             stockQty: product.stockQty,

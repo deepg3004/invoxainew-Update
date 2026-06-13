@@ -3,6 +3,8 @@
 import {
   getPublishedProductById,
   createBuyerPayment,
+  createCartOrder,
+  getOrderBumpProduct,
   applyCoupon,
   isTenantSuspended,
   getEnabledSellerUpi,
@@ -14,6 +16,36 @@ import { getSessionUser } from "../../../lib/auth";
 import { readUtmCookie } from "../../../lib/utm";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import type { StartUpiSessionResult } from "../../../lib/upi";
+
+type OrderLine = {
+  productId: string;
+  titleSnapshot: string;
+  unitPricePaise: number;
+  quantity: number;
+};
+
+/**
+ * Server-trusted order bump for a product checkout: the store's bump add-on, but
+ * only if it exists, is in stock, and ISN'T the product being bought. Returns the
+ * extra line + its price, or null. The price/stock come from the DB, never the
+ * client — `addBump` from the client is just a yes/no.
+ */
+async function resolveBumpLine(
+  tenantId: string,
+  mainProductId: string,
+): Promise<{ line: OrderLine; pricePaise: number } | null> {
+  const bump = await getOrderBumpProduct(tenantId);
+  if (!bump || bump.id === mainProductId) return null;
+  return {
+    line: {
+      productId: bump.id,
+      titleSnapshot: bump.title,
+      unitPricePaise: bump.pricePaise,
+      quantity: 1,
+    },
+    pricePaise: bump.pricePaise,
+  };
+}
 
 export type StartProductResult =
   | { ok: false; error: string }
@@ -37,6 +69,7 @@ export async function startProductCheckout(
   quantity: number,
   buyer: { email?: string; contact?: string },
   couponCode?: string,
+  addBump = false,
 ): Promise<StartProductResult> {
   const qty = Math.floor(Number(quantity));
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
@@ -66,11 +99,13 @@ export async function startProductCheckout(
     return { ok: false, error: "The seller hasn’t finished setting up payments yet." };
   }
 
-  // Subtotal before discount (server-trusted).
-  let amountPaise = product.pricePaise * qty;
+  // Order lines (server-trusted): the product, plus the store's bump add-on if the
+  // buyer opted in (price/stock from the DB). Subtotal before discount.
+  const bump = addBump ? await resolveBumpLine(product.tenantId, product.id) : null;
+  let amountPaise = product.pricePaise * qty + (bump?.pricePaise ?? 0);
 
-  // Apply a coupon if supplied — authoritative (re-validated + recomputed here).
-  // amountPaise becomes the charged, post-discount total commission is taken on.
+  // Apply a coupon if supplied — authoritative (re-validated + recomputed here),
+  // against the combined subtotal. amountPaise becomes the charged total.
   const code = (couponCode ?? "").trim();
   let couponId: string | null = null;
   let couponSnapshot: string | null = null;
@@ -91,13 +126,9 @@ export async function startProductCheckout(
   });
 
   const user = await getSessionUser();
-
-  await createBuyerPayment({
+  const common = {
     razorpayOrderId: order.id,
     tenantId: product.tenantId,
-    productId: product.id,
-    quantity: qty,
-    itemTitle: product.title,
     amountPaise,
     couponId,
     couponCode: couponSnapshot,
@@ -106,7 +137,33 @@ export async function startProductCheckout(
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
-  });
+  };
+
+  if (bump) {
+    // Bump included → a multi-item order (the proven cart path), so the bump is a
+    // real line with its own stock decrement + the commission on the combined total.
+    await createCartOrder({
+      ...common,
+      itemTitle: `${product.title} + 1 add-on`,
+      items: [
+        {
+          productId: product.id,
+          titleSnapshot: product.title,
+          unitPricePaise: product.pricePaise,
+          quantity: qty,
+        },
+        bump.line,
+      ],
+    });
+  } else {
+    // No bump → unchanged single-item order.
+    await createBuyerPayment({
+      ...common,
+      productId: product.id,
+      quantity: qty,
+      itemTitle: product.title,
+    });
+  }
 
   return {
     ok: true,
@@ -129,6 +186,7 @@ export async function startProductUpiSession(
   quantity: number,
   buyer: { email?: string; contact?: string },
   couponCode?: string,
+  addBump = false,
 ): Promise<StartUpiSessionResult> {
   const qty = Math.floor(Number(quantity));
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
@@ -155,8 +213,10 @@ export async function startProductUpiSession(
   const upi = await getEnabledSellerUpi(product.tenantId);
   if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
 
-  // Server-trusted subtotal + authoritative coupon (same as startProductCheckout).
-  let amountPaise = product.pricePaise * qty;
+  // Server-trusted subtotal (+ optional bump) + authoritative coupon (same as
+  // startProductCheckout).
+  const bump = addBump ? await resolveBumpLine(product.tenantId, product.id) : null;
+  let amountPaise = product.pricePaise * qty + (bump?.pricePaise ?? 0);
   const code = (couponCode ?? "").trim();
   let couponId: string | null = null;
   let couponSnapshot: string | null = null;
@@ -175,9 +235,22 @@ export async function startProductUpiSession(
     tenantId: product.tenantId,
     amountPaise,
     ttlMinutes: upi.sessionTtlMinutes,
-    productId: product.id,
-    quantity: qty,
-    itemTitle: product.title,
+    // Bump → multi-item session (lines carry both products' stock); else the
+    // single-product session, unchanged.
+    ...(bump
+      ? {
+          itemTitle: `${product.title} + 1 add-on`,
+          items: [
+            {
+              productId: product.id,
+              titleSnapshot: product.title,
+              unitPricePaise: product.pricePaise,
+              quantity: qty,
+            },
+            bump.line,
+          ],
+        }
+      : { productId: product.id, quantity: qty, itemTitle: product.title }),
     couponId,
     couponCode: couponSnapshot,
     discountPaise,

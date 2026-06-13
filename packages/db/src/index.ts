@@ -154,6 +154,7 @@ export {
   updateProduct,
   setProductStatus,
   getProductSalesCounts,
+  getOrderBumpProduct,
   type CreateProductResult,
 } from "./products";
 export {

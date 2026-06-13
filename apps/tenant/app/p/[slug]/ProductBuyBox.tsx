@@ -8,6 +8,7 @@ import { startProductCheckout, startProductUpiSession, previewProductCoupon } fr
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { AddToCartButton } from "../../AddToCartButton";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
+import { OrderBumpOption, type BumpInfo } from "../../OrderBumpOption";
 import { readCouponCookie } from "../../../lib/coupon-cookie";
 
 declare global {
@@ -37,10 +38,12 @@ export function ProductBuyBox({
   product,
   razorpayReady,
   upi,
+  bump,
 }: {
   product: BuyBoxProduct;
   razorpayReady: boolean;
   upi: { upiId: string; payeeName: string } | null;
+  bump: BumpInfo | null;
 }) {
   const productId = product.id;
   const maxQty = product.stockQty;
@@ -55,11 +58,15 @@ export function ProductBuyBox({
   const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [addBump, setAddBump] = useState(false);
 
   const cap = maxQty === null ? 99 : Math.min(maxQty, 99);
   const subtotal = product.pricePaise * qty;
   const discount = applied ? Math.min(applied.discountPaise, subtotal) : 0;
-  const total = Math.max(0, subtotal - discount);
+  // The bump is added at full price on top of the (discounted) product subtotal —
+  // the server re-applies the coupon to the combined total, so the buyer is never
+  // charged MORE than shown (a % coupon there discounts the bump too).
+  const total = Math.max(0, subtotal - discount) + (addBump && bump ? bump.pricePaise : 0);
 
   // Drop a stale discount when quantity changes (checkout re-validates anyway).
   useEffect(() => {
@@ -112,7 +119,13 @@ export function ProductBuyBox({
     setError(null);
     setStatus("starting");
     try {
-      const result = await startProductCheckout(productId, qty, { email, contact }, applied?.code);
+      const result = await startProductCheckout(
+        productId,
+        qty,
+        { email, contact },
+        applied?.code,
+        addBump,
+      );
       if (!result.ok) {
         setError(result.error);
         setStatus("idle");
@@ -245,6 +258,8 @@ export function ProductBuyBox({
             </p>
           ) : null}
 
+          {bump ? <OrderBumpOption bump={bump} checked={addBump} onChange={setAddBump} /> : null}
+
           {error ? (
             <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
           ) : null}
@@ -262,7 +277,7 @@ export function ProductBuyBox({
               upi={upi}
               title={product.title}
               onStart={() =>
-                startProductUpiSession(productId, qty, { email, contact }, applied?.code)
+                startProductUpiSession(productId, qty, { email, contact }, applied?.code, addBump)
               }
               onConfirmed={() => setStatus("paid")}
               onSubmitted={() => setUpiDone(true)}

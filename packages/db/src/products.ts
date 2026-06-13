@@ -25,6 +25,8 @@ export async function createProduct(input: {
   description?: string | null;
   pricePaise: number;
   compareAtPaise?: number | null;
+  bumpEnabled?: boolean;
+  bumpBlurb?: string | null;
   imageUrl?: string | null;
   kind: ProductKind;
   stockQty?: number | null;
@@ -41,6 +43,8 @@ export async function createProduct(input: {
         description: input.description ?? null,
         pricePaise: input.pricePaise,
         compareAtPaise: input.compareAtPaise ?? null,
+        bumpEnabled: input.bumpEnabled ?? false,
+        bumpBlurb: input.bumpBlurb ?? null,
         imageUrl: input.imageUrl ?? null,
         kind: input.kind,
         stockQty: input.stockQty ?? null,
@@ -110,6 +114,8 @@ export function updateProduct(
     description?: string | null;
     pricePaise: number;
     compareAtPaise?: number | null;
+    bumpEnabled?: boolean;
+    bumpBlurb?: string | null;
     imageUrl?: string | null;
     kind: ProductKind;
     stockQty?: number | null;
@@ -125,6 +131,8 @@ export function updateProduct(
       description: data.description ?? null,
       pricePaise: data.pricePaise,
       compareAtPaise: data.compareAtPaise ?? null,
+      bumpEnabled: data.bumpEnabled ?? false,
+      bumpBlurb: data.bumpBlurb ?? null,
       imageUrl: data.imageUrl ?? null,
       kind: data.kind,
       stockQty: data.stockQty ?? null,
@@ -176,4 +184,31 @@ export async function getProductSalesCounts(
     if (r.productId) map.set(r.productId, (map.get(r.productId) ?? 0) + r._count._all);
   }
   return map;
+}
+
+/**
+ * The store's order-bump add-on (or null): the first PUBLISHED, bump-enabled,
+ * in-stock product by sortOrder. Used both to render the bump at checkout and as
+ * the server-trusted source for its price/stock when a buyer opts in. Scoped.
+ */
+export function getOrderBumpProduct(tenantId: string) {
+  return prisma.product.findFirst({
+    where: {
+      tenantId,
+      status: "PUBLISHED",
+      bumpEnabled: true,
+      OR: [{ stockQty: null }, { stockQty: { gt: 0 } }],
+    },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      pricePaise: true,
+      compareAtPaise: true,
+      imageUrl: true,
+      stockQty: true,
+      bumpBlurb: true,
+    },
+  });
 }

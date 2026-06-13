@@ -8,6 +8,7 @@ import {
   getTenantTracking,
   getProductRatingSummary,
   getProductReviews,
+  getOrderBumpProduct,
 } from "@invoxai/db";
 import { formatDateIST } from "@invoxai/utils/date";
 import { resolveTenantByHost } from "../../../lib/resolve";
@@ -63,15 +64,28 @@ export default async function ProductPage({
   const product = await cachedProduct(tenant.id, slug);
   if (!product) notFound();
 
-  const [gateway, upi, tracking, rating, reviews] = await Promise.all([
+  const [gateway, upi, tracking, rating, reviews, bumpProduct] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
     getProductRatingSummary(product.id),
     getProductReviews(product.id),
+    getOrderBumpProduct(tenant.id),
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
+  // Offer the store's bump add-on here — unless this IS the bump product.
+  const bump =
+    bumpProduct && bumpProduct.id !== product.id
+      ? {
+          id: bumpProduct.id,
+          title: bumpProduct.title,
+          pricePaise: bumpProduct.pricePaise,
+          compareAtPaise: bumpProduct.compareAtPaise,
+          imageUrl: bumpProduct.imageUrl,
+          blurb: bumpProduct.bumpBlurb,
+        }
+      : null;
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
@@ -142,6 +156,7 @@ export default async function ProductPage({
                 ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
                 : null
             }
+            bump={bump}
           />
         ) : (
           <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">

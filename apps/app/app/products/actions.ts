@@ -24,6 +24,8 @@ interface ParsedProduct {
   description: string | null;
   pricePaise: number;
   compareAtPaise: number | null;
+  bumpEnabled: boolean;
+  bumpBlurb: string | null;
   imageUrl: string | null;
   kind: ProductKind;
   stockQty: number | null;
@@ -99,6 +101,8 @@ function parseProductFields(
       description,
       pricePaise: price.paise,
       compareAtPaise,
+      bumpEnabled: form.get("bumpEnabled") === "on",
+      bumpBlurb: String(form.get("bumpBlurb") ?? "").trim().slice(0, 140) || null,
       imageUrl: imageRaw || null,
       kind,
       stockQty,

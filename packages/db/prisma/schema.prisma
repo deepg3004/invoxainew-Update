@@ -222,6 +222,10 @@ model Product {
   // the storefront shows it struck through + a % off. Display only — buyers are
   // always charged pricePaise (the actual price).
   compareAtPaise Int?       @map("compare_at_paise")
+  // Order bump: when true this product is offered as a one-tap add-on at checkout
+  // (product pages + cart). The store's first bump-enabled product is THE bump.
+  bumpEnabled Boolean       @default(false) @map("bump_enabled")
+  bumpBlurb   String?       @map("bump_blurb") // short pitch shown on the bump card
   imageUrl    String?       @map("image_url")
   kind        ProductKind   @default(DIGITAL)
   // Gated post-purchase access link (community invite / download URL). Revealed
