@@ -36,6 +36,7 @@ export function ReviewForm({
     try {
       const res = await submitProductReview({
         productId,
+        productTitle,
         rating,
         body: body.trim(),
         authorName: authorName.trim(),

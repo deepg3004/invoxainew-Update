@@ -10,7 +10,7 @@ import { prisma } from "./client";
  */
 
 export type CreateReviewResult =
-  | { ok: true; reviewId: string }
+  | { ok: true; reviewId: string; isNew: boolean }
   | { ok: false; reason: "invalid" | "not_purchased" };
 
 /** Does this buyer have a PAID order containing this product? (verified purchase) */
@@ -65,13 +65,15 @@ export async function createProductReview(input: {
   const body = (input.body ?? "").trim().slice(0, 2000) || null;
   const authorName = (input.authorName ?? "").trim().slice(0, 80) || null;
 
-  const review = await prisma.productReview.upsert({
-    where: {
-      productId_buyerProfileId: {
-        productId: input.productId,
-        buyerProfileId: input.buyerProfileId,
-      },
+  const key = {
+    productId_buyerProfileId: {
+      productId: input.productId,
+      buyerProfileId: input.buyerProfileId,
     },
+  };
+  const existing = await prisma.productReview.findUnique({ where: key, select: { id: true } });
+  const review = await prisma.productReview.upsert({
+    where: key,
     create: {
       tenantId: input.tenantId,
       productId: input.productId,
@@ -83,7 +85,7 @@ export async function createProductReview(input: {
     update: { rating, body, authorName }, // status intentionally untouched
     select: { id: true },
   });
-  return { ok: true, reviewId: review.id };
+  return { ok: true, reviewId: review.id, isNew: existing === null };
 }
 
 /** This buyer's existing review of a product (to prefill the form), or null. */

@@ -1,13 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  getBuyerPaymentByOrderId,
-  markBuyerPaymentPaid,
-  notifyTenant,
-  listSoldOutProductsForOrder,
-} from "@invoxai/db";
-import { formatRupees } from "@invoxai/utils/money";
+import { getBuyerPaymentByOrderId, markBuyerPaymentPaid } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../../lib/gateway";
 import { verifyPaymentSignatureWithKeys } from "../../../../lib/razorpay";
+import { notifySaleEffects } from "../../../../lib/notify-sale";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,34 +54,13 @@ export async function POST(request: NextRequest) {
   // Best-effort seller notifications — only on a NEWLY-paid order (so a refreshed
   // callback can't duplicate them), and never allowed to fail the confirmation.
   if (!result.alreadyProcessed) {
-    try {
-      await notifyTenant(payment.tenantId, {
-        type: "sale",
-        title: "New sale",
-        body: `${payment.itemTitle ?? "Order"} — ${formatRupees(payment.amountPaise)}`,
-        link: "/orders",
-      });
-      if (result.commission === "due") {
-        await notifyTenant(payment.tenantId, {
-          type: "wallet_low",
-          title: "Wallet low — commission due",
-          body: "A sale's commission couldn't be collected. Top up your wallet to clear it.",
-          link: "/wallet",
-        });
-      }
-      // Out-of-stock alerts: any product this sale took to zero stock.
-      const soldOut = await listSoldOutProductsForOrder(payment.id);
-      for (const pr of soldOut) {
-        await notifyTenant(payment.tenantId, {
-          type: "out_of_stock",
-          title: "Out of stock",
-          body: `“${pr.title}” just sold out — restock it to keep selling.`,
-          link: "/products",
-        });
-      }
-    } catch {
-      // Swallow: a notification failure must not affect the payment outcome.
-    }
+    await notifySaleEffects({
+      tenantId: payment.tenantId,
+      buyerPaymentId: payment.id,
+      itemTitle: payment.itemTitle,
+      amountPaise: payment.amountPaise,
+      commission: result.commission,
+    });
   }
 
   return NextResponse.json({ ok: true });

@@ -971,9 +971,13 @@ export async function isUpiAutoConfirmBlocked(tenantId: string): Promise<boolean
   return (due._sum.amountPaise ?? 0) > threshold;
 }
 
+/** Order summary returned on a confirm/hold, so the caller can fire seller
+ *  notifications (sale / out-of-stock / "to confirm") without a re-query. */
+type UpiOrderSummary = { buyerPaymentId: string; itemTitle: string | null; amountPaise: number };
+
 export type UpiSubmitResult =
-  | { ok: true; confirmed: true; alreadyProcessed: boolean; commission: "paid" | "due" | "none" }
-  | { ok: true; confirmed: false; pending: true }
+  | ({ ok: true; confirmed: true; alreadyProcessed: boolean; commission: "paid" | "due" | "none" } & UpiOrderSummary)
+  | ({ ok: true; confirmed: false; pending: true; alreadyProcessed: boolean } & UpiOrderSummary)
   | { ok: false; reason: "not_found" | "expired" | "duplicate" };
 
 /**
@@ -995,15 +999,21 @@ export async function autoConfirmOrHoldUpiOrder(
 
   const order = await prisma.buyerPayment.findFirst({
     where: { id: buyerPaymentId, tenantId, paymentMethod: "UPI_MANUAL" },
-    select: { id: true, status: true, amountPaise: true, upiRef: true, expiresAt: true },
+    select: { id: true, status: true, amountPaise: true, itemTitle: true, upiRef: true, expiresAt: true },
   });
   if (!order) return { ok: false, reason: "not_found" };
+  const summary: UpiOrderSummary = {
+    buyerPaymentId: order.id,
+    itemTitle: order.itemTitle,
+    amountPaise: order.amountPaise,
+  };
   if (order.status === "PAID")
-    return { ok: true, confirmed: true, alreadyProcessed: true, commission: "none" };
+    return { ok: true, confirmed: true, alreadyProcessed: true, commission: "none", ...summary };
   if (order.status !== "PENDING") return { ok: false, reason: "expired" };
   if (order.expiresAt && order.expiresAt.getTime() < now.getTime())
     return { ok: false, reason: "expired" };
-  if (order.upiRef) return { ok: true, confirmed: false, pending: true }; // already submitted
+  if (order.upiRef)
+    return { ok: true, confirmed: false, pending: true, alreadyProcessed: true, ...summary }; // already submitted
 
   // Decide auto vs hold from config + dues BEFORE the tx (a dues race here is
   // inconsequential — it only nudges one borderline order to the manual queue).
@@ -1032,7 +1042,8 @@ export async function autoConfirmOrHoldUpiOrder(
       });
       if (stamp.count === 0) return { ok: false, reason: "expired" };
 
-      if (!shouldAuto) return { ok: true, confirmed: false, pending: true };
+      if (!shouldAuto)
+        return { ok: true, confirmed: false, pending: true, alreadyProcessed: false, ...summary };
 
       const res = await claimPendingAndApply(tx, tenantId, order.id, now);
       if (!res.ok) return { ok: false, reason: "not_found" };
@@ -1041,6 +1052,7 @@ export async function autoConfirmOrHoldUpiOrder(
         confirmed: true,
         alreadyProcessed: res.alreadyProcessed,
         commission: res.commission,
+        ...summary,
       };
     });
   } catch (e) {

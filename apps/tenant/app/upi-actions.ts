@@ -1,8 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
-import { autoConfirmOrHoldUpiOrder } from "@invoxai/db";
+import { autoConfirmOrHoldUpiOrder, notifyTenant } from "@invoxai/db";
+import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../lib/resolve";
+import { notifySaleEffects } from "../lib/notify-sale";
 import { UTR_RE, type SubmitUpiRefResult } from "../lib/upi";
 
 /**
@@ -37,5 +39,27 @@ export async function submitUpiRef(
     // expired / not_found → the session is gone; offer a restart.
     return { ok: false, error: "This payment session expired. Please start again.", expired: true };
   }
+
+  // Best-effort seller notifications (never block the buyer). Fire once: on the
+  // first auto-confirm (the sale) or the first hold (a payment to confirm).
+  if (res.confirmed) {
+    if (!res.alreadyProcessed) {
+      await notifySaleEffects({
+        tenantId: tenant.id,
+        buyerPaymentId: res.buyerPaymentId,
+        itemTitle: res.itemTitle,
+        amountPaise: res.amountPaise,
+        commission: res.commission,
+      });
+    }
+  } else if (!res.alreadyProcessed) {
+    await notifyTenant(tenant.id, {
+      type: "upi_pending",
+      title: "UPI payment to confirm",
+      body: `${res.itemTitle ?? "An order"} — ${formatRupees(res.amountPaise)}. Check your UPI app, then confirm it.`,
+      link: "/orders",
+    }).catch(() => {});
+  }
+
   return { ok: true, confirmed: res.confirmed };
 }

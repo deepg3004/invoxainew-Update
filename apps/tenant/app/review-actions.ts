@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { createProductReview } from "@invoxai/db";
+import { createProductReview, notifyTenant } from "@invoxai/db";
 import { resolveTenantByHost } from "../lib/resolve";
 import { getSessionUser } from "../lib/auth";
 import type { SubmitReviewResult } from "../lib/reviews";
@@ -13,6 +13,7 @@ import type { SubmitReviewResult } from "../lib/reviews";
  */
 export async function submitProductReview(input: {
   productId: string;
+  productTitle: string;
   rating: number;
   body: string;
   authorName: string;
@@ -41,6 +42,17 @@ export async function submitProductReview(input: {
           ? "You can only review a product you’ve purchased."
           : "Please choose a rating from 1 to 5 stars.",
     };
+  }
+
+  // Notify the seller on a NEW review only (not on edits). Best-effort.
+  if (res.isNew) {
+    const rating = Math.max(1, Math.min(5, Math.round(input.rating)));
+    await notifyTenant(tenant.id, {
+      type: "new_review",
+      title: "New review",
+      body: `${"★".repeat(rating)} on ${input.productTitle || "a product"}`,
+      link: "/reviews",
+    }).catch(() => {});
   }
   return { ok: true };
 }
