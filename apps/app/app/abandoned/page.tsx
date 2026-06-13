@@ -17,12 +17,12 @@ function timeAgo(d: Date): string {
 export default async function AbandonedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; size?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const { page: rawPage } = await searchParams;
+  const { page: rawPage, size: rawSize } = await searchParams;
   const total = await countAbandonedCheckouts(tenant.id);
-  const { page, totalPages, skip, take } = pageSlice(total, rawPage, 10);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
   const carts = await listAbandonedCheckouts(tenant.id, { skip, take });
   const firstOnPage = total === 0 ? 0 : skip + 1;
   const lastOnPage = skip + carts.length;
@@ -117,7 +117,7 @@ export default async function AbandonedPage({
           firstOnPage={firstOnPage}
           lastOnPage={lastOnPage}
           total={total}
-          hrefFor={(p) => (p > 1 ? `/abandoned?page=${p}` : "/abandoned")}
+          pageSize={pageSize}
           label="checkouts"
         />
       ) : null}

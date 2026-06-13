@@ -162,6 +162,7 @@ export {
   createAbuseReport,
   listAbuseReports,
   countOpenAbuseReports,
+  countAbuseReports,
   reviewAbuseReport,
 } from "./abuse";
 export {
@@ -336,6 +337,7 @@ export {
   getCourseReviews,
   getCourseRatingSummary,
   listTenantReviews,
+  countTenantReviews,
   setReviewStatus,
   type CreateReviewResult,
   type RatingSummary,

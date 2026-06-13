@@ -11,24 +11,17 @@ export const dynamic = "force-dynamic";
 export default async function TenantsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; size?: string }>;
 }) {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
-  const { q, page: rawPage } = await searchParams;
+  const { q, page: rawPage, size: rawSize } = await searchParams;
   const total = await countTenantsAdmin(q);
-  const { page, totalPages, skip, take } = pageSlice(total, rawPage, 10);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
   const tenants = await listTenantsAdmin({ search: q, skip, take });
   const firstOnPage = total === 0 ? 0 : skip + 1;
   const lastOnPage = skip + tenants.length;
-  const hrefFor = (p: number) => {
-    const sp = new URLSearchParams();
-    if (q) sp.set("q", q);
-    if (p > 1) sp.set("page", String(p));
-    const s = sp.toString();
-    return s ? `/tenants?${s}` : "/tenants";
-  };
 
   return (
     <AdminShell email={gate.user.email}>
@@ -137,7 +130,7 @@ export default async function TenantsPage({
           firstOnPage={firstOnPage}
           lastOnPage={lastOnPage}
           total={total}
-          hrefFor={hrefFor}
+          pageSize={pageSize}
           label="tenants"
         />
       ) : null}

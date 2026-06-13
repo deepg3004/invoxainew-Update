@@ -1,7 +1,17 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+/** Allowed rows-per-page options (the "custom page number" selector). */
+export const PAGE_SIZES = [10, 25, 50, 100] as const;
+const DEFAULT_SIZE = 10;
+
 /**
- * Shared list pagination — "Showing X–Y of N" + Prev/Next. Presentational only
- * (renders <a> links), so it works as a server component. The page computes the
- * slice and passes a `hrefFor(page)` builder that preserves its own query params.
+ * Shared list pagination — a rows-per-page selector + "Showing X–Y of N" +
+ * Prev/Next. Self-navigating: it reads the current path + query and rebuilds links
+ * preserving every other param (search, status tabs, …), so a page just computes
+ * its slice (via pageSlice) and drops <Pagination> in — no href builder needed.
  */
 export function Pagination({
   page,
@@ -9,7 +19,7 @@ export function Pagination({
   firstOnPage,
   lastOnPage,
   total,
-  hrefFor,
+  pageSize,
   label = "",
 }: {
   page: number;
@@ -17,22 +27,56 @@ export function Pagination({
   firstOnPage: number;
   lastOnPage: number;
   total: number;
-  hrefFor: (page: number) => string;
+  pageSize: number;
   label?: string;
 }) {
+  const pathname = usePathname();
+  const sp = useSearchParams();
+  const router = useRouter();
+
+  const hrefWith = (changes: Record<string, number | undefined>) => {
+    const next = new URLSearchParams(sp?.toString() ?? "");
+    for (const [k, v] of Object.entries(changes)) {
+      // Drop defaults (page 1, size 10) to keep URLs clean.
+      if (v === undefined || (k === "page" && v === 1) || (k === "size" && v === DEFAULT_SIZE)) {
+        next.delete(k);
+      } else {
+        next.set(k, String(v));
+      }
+    }
+    const s = next.toString();
+    return s ? `${pathname}?${s}` : pathname;
+  };
+
   const navCls = "rounded-lg border border-zinc-200 px-3 py-1.5 font-medium hover:bg-zinc-50";
   const disabledCls = "rounded-lg border border-zinc-200 px-3 py-1.5 text-muted/40";
 
   return (
-    <div className="mt-6 flex items-center justify-between text-sm text-muted">
-      <span>
-        Showing {firstOnPage}–{lastOnPage} of {total}
-        {label ? ` ${label}` : ""}
-      </span>
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
+      <div className="flex flex-wrap items-center gap-3">
+        <span>
+          Showing {firstOnPage}–{lastOnPage} of {total}
+          {label ? ` ${label}` : ""}
+        </span>
+        <label className="flex items-center gap-1.5">
+          <span className="text-xs">Rows</span>
+          <select
+            value={pageSize}
+            onChange={(e) => router.push(hrefWith({ size: Number(e.target.value), page: 1 }))}
+            className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 outline-none focus:border-brand"
+          >
+            {PAGE_SIZES.map((s) => (
+              <option key={s} value={s}>
+                {s} / page
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       {totalPages > 1 ? (
         <div className="flex items-center gap-2">
           {page > 1 ? (
-            <a href={hrefFor(page - 1)} className={navCls}>← Prev</a>
+            <Link href={hrefWith({ page: page - 1 })} className={navCls}>← Prev</Link>
           ) : (
             <span className={disabledCls}>← Prev</span>
           )}
@@ -40,7 +84,7 @@ export function Pagination({
             Page {page} of {totalPages}
           </span>
           {page < totalPages ? (
-            <a href={hrefFor(page + 1)} className={navCls}>Next →</a>
+            <Link href={hrefWith({ page: page + 1 })} className={navCls}>Next →</Link>
           ) : (
             <span className={disabledCls}>Next →</span>
           )}
@@ -51,12 +95,13 @@ export function Pagination({
 }
 
 /**
- * Compute a clamped page + slice for a fixed page size. `rawPage` is the raw
- * searchParam; `total` is the full count. Returns the page, totalPages, and the
- * skip/take for the DB query. (firstOnPage/lastOnPage are derived in the page once
- * the row count is known.)
+ * Compute a clamped page + slice from the raw `page`/`size` search params. The
+ * size is validated against PAGE_SIZES (default 10). Returns page, totalPages,
+ * skip/take for the DB query, and the resolved pageSize (pass to <Pagination>).
  */
-export function pageSlice(total: number, rawPage: string | undefined, pageSize = 10) {
+export function pageSlice(total: number, rawPage?: string, rawSize?: string) {
+  const sizeNum = Number(rawSize);
+  const pageSize = (PAGE_SIZES as readonly number[]).includes(sizeNum) ? sizeNum : DEFAULT_SIZE;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const page = Math.min(Math.max(1, Number.parseInt(rawPage ?? "1", 10) || 1), totalPages);
   return { page, totalPages, skip: (page - 1) * pageSize, take: pageSize, pageSize };

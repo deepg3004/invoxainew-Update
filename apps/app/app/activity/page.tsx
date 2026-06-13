@@ -25,12 +25,12 @@ function label(action: string): string {
 export default async function ActivityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; size?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const { page: rawPage } = await searchParams;
+  const { page: rawPage, size: rawSize } = await searchParams;
   const total = await countActivityLog(tenant.id);
-  const { page, totalPages, skip, take } = pageSlice(total, rawPage, 10);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
   const items = await listActivityLog(tenant.id, { skip, take });
   const firstOnPage = total === 0 ? 0 : skip + 1;
   const lastOnPage = skip + items.length;
@@ -66,7 +66,7 @@ export default async function ActivityPage({
           firstOnPage={firstOnPage}
           lastOnPage={lastOnPage}
           total={total}
-          hrefFor={(p) => (p > 1 ? `/activity?page=${p}` : "/activity")}
+          pageSize={pageSize}
           label="events"
         />
       ) : null}

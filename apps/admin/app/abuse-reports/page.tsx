@@ -1,7 +1,7 @@
 import { formatDateTimeShortIST } from "@invoxai/utils/date";
 import Link from "next/link";
-import { GlassCard, PageHeader } from "@invoxai/ui";
-import { listAbuseReports } from "@invoxai/db";
+import { GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listAbuseReports, countAbuseReports } from "@invoxai/db";
 import { requireAdmin } from "../../lib/auth";
 import { AdminShell } from "../components/AdminShell";
 import { NotAuthorized } from "../components/NotAuthorized";
@@ -36,16 +36,19 @@ function tabCls(active: boolean): string {
 export default async function AbuseReportsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; size?: string }>;
 }) {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
-  const { status: raw } = await searchParams;
+  const { status: raw, page: rawPage, size: rawSize } = await searchParams;
   const tab: Tab = (TABS as readonly string[]).includes(raw ?? "") ? (raw as Tab) : "NEW";
-  const reports = await listAbuseReports(
-    tab === "ALL" ? {} : { status: tab as Exclude<Tab, "ALL"> },
-  );
+  const statusFilter = tab === "ALL" ? undefined : (tab as Exclude<Tab, "ALL">);
+  const total = await countAbuseReports(statusFilter);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const reports = await listAbuseReports({ status: statusFilter, skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + reports.length;
 
   return (
     <AdminShell email={gate.user.email}>
@@ -139,6 +142,17 @@ export default async function AbuseReportsPage({
           ))}
         </div>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="reports"
+        />
+      ) : null}
     </AdminShell>
   );
 }

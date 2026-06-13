@@ -48,6 +48,11 @@ export function countOpenAbuseReports() {
   return prisma.abuseReport.count({ where: { status: "NEW" } });
 }
 
+/** Count of reports matching a status (drives the admin queue pagination). */
+export function countAbuseReports(status?: AbuseStatus) {
+  return prisma.abuseReport.count({ where: status ? { status } : undefined });
+}
+
 /** Admin triage: set status + optional note, stamped with the reviewer, and write
  *  an AdminAuditLog entry — all in one transaction. */
 export function reviewAbuseReport(input: {

@@ -28,12 +28,12 @@ const STATUS_STYLE: Record<string, string> = {
 export default async function NotificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; size?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const { page: rawPage } = await searchParams;
+  const { page: rawPage, size: rawSize } = await searchParams;
   const totalItems = await countNotifications(tenant.id);
-  const { page, totalPages, skip, take } = pageSlice(totalItems, rawPage, 10);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(totalItems, rawPage, rawSize);
   const [items, unread, prefRows, logs] = await Promise.all([
     listNotifications(tenant.id, { skip, take }),
     countUnreadNotifications(tenant.id),
@@ -116,7 +116,7 @@ export default async function NotificationsPage({
           firstOnPage={firstOnPage}
           lastOnPage={lastOnPage}
           total={totalItems}
-          hrefFor={(p) => (p > 1 ? `/notifications?page=${p}` : "/notifications")}
+          pageSize={pageSize}
           label="notifications"
         />
       ) : null}

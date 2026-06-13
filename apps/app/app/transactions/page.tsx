@@ -1,5 +1,5 @@
 import { formatDateIST } from "@invoxai/utils/date";
-import { Button, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader, StatCard, Pagination, pageSlice } from "@invoxai/ui";
 import {
   listTenantOrders,
   countTenantOrders,
@@ -12,13 +12,9 @@ import { RevenueChart } from "../components/RevenueChart";
 
 export const dynamic = "force-dynamic";
 
-// 10 rows per page (as requested).
-const PAGE_SIZE = 10;
-
-function buildHref(params: { q?: string; page?: number }): string {
+function buildHref(params: { q?: string }): string {
   const sp = new URLSearchParams();
   if (params.q) sp.set("q", params.q);
-  if (params.page && params.page > 1) sp.set("page", String(params.page));
   const qs = sp.toString();
   return qs ? `/transactions?${qs}` : "/transactions";
 }
@@ -26,10 +22,10 @@ function buildHref(params: { q?: string; page?: number }): string {
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; size?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const { q: rawQ, page: rawPage } = await searchParams;
+  const { q: rawQ, page: rawPage, size: rawSize } = await searchParams;
   const search = (rawQ ?? "").trim();
   const filter = { search: search || undefined };
 
@@ -38,15 +34,10 @@ export default async function TransactionsPage({
     getTenantSalesSummary(tenant.id),
     getAnalytics(tenant.id, 30),
   ]);
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const page = Math.min(Math.max(1, Number.parseInt(rawPage ?? "1", 10) || 1), totalPages);
-  const rows = await listTenantOrders(tenant.id, {
-    ...filter,
-    skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
-  });
-  const firstOnPage = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const lastOnPage = (page - 1) * PAGE_SIZE + rows.length;
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const rows = await listTenantOrders(tenant.id, { ...filter, skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + rows.length;
   const netPaise = summary.grossPaise - summary.commissionPaidPaise;
 
   const exportHref = `/orders/export${search ? `?q=${encodeURIComponent(search)}` : ""}`;
@@ -181,25 +172,15 @@ export default async function TransactionsPage({
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="mt-6 flex items-center justify-between text-sm text-muted">
-            <span>Showing {firstOnPage}–{lastOnPage} of {total}</span>
-            {totalPages > 1 ? (
-              <div className="flex items-center gap-2">
-                {page > 1 ? (
-                  <a href={buildHref({ q: search, page: page - 1 })} className="rounded-lg border border-zinc-200 px-3 py-1.5 font-medium hover:bg-zinc-50">← Prev</a>
-                ) : (
-                  <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-muted/40">← Prev</span>
-                )}
-                <span>Page {page} of {totalPages}</span>
-                {page < totalPages ? (
-                  <a href={buildHref({ q: search, page: page + 1 })} className="rounded-lg border border-zinc-200 px-3 py-1.5 font-medium hover:bg-zinc-50">Next →</a>
-                ) : (
-                  <span className="rounded-lg border border-zinc-200 px-3 py-1.5 text-muted/40">Next →</span>
-                )}
-              </div>
-            ) : null}
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            firstOnPage={firstOnPage}
+            lastOnPage={lastOnPage}
+            total={total}
+            pageSize={pageSize}
+            label="transactions"
+          />
         </>
       )}
     </div>

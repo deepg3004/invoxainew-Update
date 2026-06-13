@@ -1,5 +1,5 @@
 import {formatDateIST} from "@invoxai/utils/date";
-import { Button, GlassCard, PageHeader, StatCard, Pagination } from "@invoxai/ui";
+import { Button, GlassCard, PageHeader, StatCard, Pagination, pageSlice } from "@invoxai/ui";
 import {
   listTenantOrders,
   countTenantOrders,
@@ -37,8 +37,6 @@ function formatDate(d: Date | null): string {
   return formatDateIST(d);
 }
 
-const PAGE_SIZE = 10;
-
 /** Build an /orders URL preserving status + search + page (page omitted when 1). */
 function buildHref(params: { status?: string; q?: string; page?: number }): string {
   const sp = new URLSearchParams();
@@ -52,10 +50,10 @@ function buildHref(params: { status?: string; q?: string; page?: number }): stri
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string; size?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const { status: rawStatus, q: rawQ, page: rawPage } = await searchParams;
+  const { status: rawStatus, q: rawQ, page: rawPage, size: rawSize } = await searchParams;
   const activeStatus = STATUSES.includes(rawStatus as (typeof STATUSES)[number])
     ? (rawStatus as (typeof STATUSES)[number])
     : undefined;
@@ -69,18 +67,10 @@ export default async function OrdersPage({
     getTenantSalesSummary(tenant.id),
     listPendingUpiOrders(tenant.id),
   ]);
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const page = Math.min(
-    Math.max(1, Number.parseInt(rawPage ?? "1", 10) || 1),
-    totalPages,
-  );
-  const orders = await listTenantOrders(tenant.id, {
-    ...filter,
-    skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
-  });
-  const firstOnPage = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const lastOnPage = (page - 1) * PAGE_SIZE + orders.length;
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const orders = await listTenantOrders(tenant.id, { ...filter, skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + orders.length;
 
   const exportHref = `/orders/export${(() => {
     const sp = new URLSearchParams();
@@ -314,7 +304,7 @@ export default async function OrdersPage({
           firstOnPage={firstOnPage}
           lastOnPage={lastOnPage}
           total={total}
-          hrefFor={(p) => buildHref({ status: activeStatus, q: search, page: p })}
+          pageSize={pageSize}
           label="orders"
         />
         </>

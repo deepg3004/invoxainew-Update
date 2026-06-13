@@ -1,6 +1,6 @@
 import { formatDateIST } from "@invoxai/utils/date";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { listTenantReviews } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listTenantReviews, countTenantReviews } from "@invoxai/db";
 import { requireTenant } from "../../lib/tenant";
 import { setReviewStatusAction } from "./actions";
 
@@ -15,9 +15,18 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export default async function ReviewsPage() {
+export default async function ReviewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; size?: string }>;
+}) {
   const { tenant } = await requireTenant();
-  const reviews = await listTenantReviews(tenant.id);
+  const { page: rawPage, size: rawSize } = await searchParams;
+  const total = await countTenantReviews(tenant.id);
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const reviews = await listTenantReviews(tenant.id, { skip, take });
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + reviews.length;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -77,6 +86,17 @@ export default async function ReviewsPage() {
           ))}
         </div>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="reviews"
+        />
+      ) : null}
     </div>
   );
 }

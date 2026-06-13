@@ -136,12 +136,18 @@ export async function getProductRatingSummaries(
   return map;
 }
 
+/** Count of a seller's reviews (drives pagination). Scoped. */
+export function countTenantReviews(tenantId: string) {
+  return prisma.productReview.count({ where: { tenantId } });
+}
+
 /** All of a seller's reviews (product + course) for moderation, newest first. Scoped. */
-export function listTenantReviews(tenantId: string, take = 200) {
+export function listTenantReviews(tenantId: string, opts: { skip?: number; take?: number } = {}) {
   return prisma.productReview.findMany({
     where: { tenantId },
     orderBy: { createdAt: "desc" },
-    take,
+    skip: opts.skip,
+    take: opts.take ?? 200,
     select: {
       id: true,
       rating: true,
