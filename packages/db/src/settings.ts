@@ -25,10 +25,31 @@ export const PLATFORM_SETTING_KEYS = [
   "invoice_support_email",
   "brand_logo_url",
   "brand_favicon_url",
+  // Manual-UPI auto-confirm: when a seller's outstanding DUE commission exceeds
+  // this many paise, their instant UPI auto-confirm is paused (orders fall back
+  // to manual confirm) until they top up. Default ₹500 (see getUpiDueBlockPaise).
+  "upi_due_block_paise",
 ] as const;
 
 export type PlatformSettingKey = (typeof PLATFORM_SETTING_KEYS)[number];
 export type PlatformSettings = Partial<Record<PlatformSettingKey, string>>;
+
+/** Default DUE-commission ceiling (paise) above which instant UPI is paused. */
+export const UPI_DUE_BLOCK_DEFAULT_PAISE = 50000; // ₹500
+
+/**
+ * The DUE-commission ceiling (paise) above which a seller's instant UPI
+ * auto-confirm is paused. Admin-configurable via `upi_due_block_paise`; falls
+ * back to ₹500. A non-numeric / missing value uses the default.
+ */
+export async function getUpiDueBlockPaise(): Promise<number> {
+  const row = await prisma.platformSetting.findUnique({
+    where: { key: "upi_due_block_paise" },
+    select: { value: true },
+  });
+  const n = row ? Number.parseInt(row.value, 10) : NaN;
+  return Number.isFinite(n) && n >= 0 ? n : UPI_DUE_BLOCK_DEFAULT_PAISE;
+}
 
 /** All settings as a key→value map (only non-empty rows). */
 export async function getPlatformSettings(): Promise<PlatformSettings> {

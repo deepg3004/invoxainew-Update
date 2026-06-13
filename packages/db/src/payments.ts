@@ -1,5 +1,7 @@
 import { Prisma, type BuyerPayment } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 import { prisma } from "./client";
+import { getUpiDueBlockPaise } from "./settings";
 
 /**
  * Buyer payments + commission (C7).
@@ -376,10 +378,21 @@ export function countTenantOrders(tenantId: string, opts: OrderListOpts = {}) {
   return prisma.buyerPayment.count({ where: tenantOrdersWhere(tenantId, opts) });
 }
 
-/** Manual-UPI orders awaiting the seller's confirmation (PENDING). Scoped. */
+/**
+ * Manual-UPI orders awaiting the seller's manual confirmation: PENDING with a
+ * buyer-submitted reference (upiRef set). This is the fallback queue — an order
+ * only lands here when auto-confirm was off, the amount was above the seller's
+ * cap, or the seller was dues-blocked. Unsubmitted sessions (upiRef null) are
+ * not shown (they're live/expiring QR sessions, not awaiting a human). Scoped.
+ */
 export function listPendingUpiOrders(tenantId: string) {
   return prisma.buyerPayment.findMany({
-    where: { tenantId, status: "PENDING", paymentMethod: "UPI_MANUAL" },
+    where: {
+      tenantId,
+      status: "PENDING",
+      paymentMethod: "UPI_MANUAL",
+      upiRef: { not: null },
+    },
     orderBy: { createdAt: "desc" },
     take: 100,
     include: { paymentPage: { select: { title: true } } },
@@ -782,33 +795,354 @@ async function applyPaidEffects(
 }
 
 /**
- * Manual-UPI: the SELLER confirms a buyer-submitted UPI payment. Atomically
- * claims the order PENDING→PAID (scoped by tenant + id, so a seller can only
- * confirm their own order and a double-tap can't double-charge), then runs the
- * same idempotent side-effects as a Razorpay sale. The buyer already paid the
- * seller's UPI directly — InvoxAI never held the money; this only records the
- * sale + takes commission from the seller's wallet.
+ * Atomically claim a PENDING order →PAID (scoped by tenant + id, so a forged id
+ * can't touch another tenant's order and a double-tap can't double-charge), then
+ * run the shared idempotent paid-effects (stock/coupon/enrolment/commission).
+ * Operates on the caller's transaction. Shared by BOTH the manual seller-confirm
+ * path (confirmManualBuyerPayment) and the buyer-triggered auto-confirm path
+ * (autoConfirmOrHoldUpiOrder), so the exactly-once money logic can't drift.
+ */
+async function claimPendingAndApply(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  buyerPaymentId: string,
+  now: Date,
+): Promise<BuyerPaidResult> {
+  const claim = await tx.buyerPayment.updateMany({
+    where: { id: buyerPaymentId, tenantId, status: "PENDING" },
+    data: { status: "PAID", paidAt: now },
+  });
+  const payment = await tx.buyerPayment.findFirst({
+    where: { id: buyerPaymentId, tenantId },
+  });
+  if (claim.count === 0) {
+    return payment
+      ? { ok: true, alreadyProcessed: true, commission: "none" }
+      : { ok: false, reason: "not_found" };
+  }
+  if (!payment) return { ok: false, reason: "not_found" };
+  return applyPaidEffects(tx, payment, now);
+}
+
+/**
+ * Manual-UPI: the SELLER confirms a buyer-submitted UPI payment (the dues-blocked
+ * / auto-confirm-off fallback queue). Same exactly-once path as a Razorpay sale.
+ * The buyer already paid the seller's UPI directly — InvoxAI never held the money;
+ * this only records the sale + takes commission from the seller's wallet.
  */
 export async function confirmManualBuyerPayment(
   tenantId: string,
   buyerPaymentId: string,
 ): Promise<BuyerPaidResult> {
-  return prisma.$transaction(async (tx) => {
-    const now = new Date();
-    const claim = await tx.buyerPayment.updateMany({
-      where: { id: buyerPaymentId, tenantId, status: "PENDING" },
-      data: { status: "PAID", paidAt: now },
+  return prisma.$transaction((tx) =>
+    claimPendingAndApply(tx, tenantId, buyerPaymentId, new Date()),
+  );
+}
+
+// ── Manual-UPI auto-confirm sessions (unique-amount nonce + expiry) ────────────
+
+/** Cart line shape for a multi-item UPI session (mirrors createCartOrder). */
+type UpiSessionItem = {
+  productId: string;
+  titleSnapshot: string;
+  unitPricePaise: number;
+  quantity: number;
+};
+
+export type UpiSessionResult =
+  | { ok: true; id: string; payAmountPaise: number; expiresAt: Date }
+  | { ok: false; reason: "saturated" };
+
+// Nonce range (paise): the buyer overpays the seller by 1..99 paise (≤ ₹0.99) so
+// each live session has a unique payable amount. 99 slots × the short TTL is ample
+// headroom at creator scale; a collision just retries, and true saturation (all
+// slots taken for one base price) returns { saturated }.
+const UPI_NONCE_MAX_PAISE = 99;
+
+/**
+ * Create a manual-UPI auto-confirm SESSION: a PENDING/UPI_MANUAL order with a
+ * UNIQUE payable amount = `amountPaise` (true sale price) + a small nonce, and an
+ * `expiresAt` TTL. `amountPaise` stays the commission/receipt/refund base (the
+ * nonce lives only in `payAmountPaise`, what the buyer is told to pay — the few
+ * paise go straight to the seller, never InvoxAI). Sweeps stale sessions first to
+ * free their amounts, then retries on the (tenant, payAmountPaise) partial unique
+ * index until it lands a free amount. Reused by all buyer surfaces. Tenant is
+ * always passed by the server (never the client), so it can't cross tenants.
+ */
+export async function createUpiSession(input: {
+  tenantId: string;
+  amountPaise: number; // base, server-trusted (post-discount)
+  ttlMinutes: number;
+  itemTitle: string;
+  paymentPageId?: string | null;
+  productId?: string | null;
+  courseId?: string | null;
+  quantity?: number;
+  couponId?: string | null;
+  couponCode?: string | null;
+  discountPaise?: number;
+  items?: UpiSessionItem[] | null;
+  buyerProfileId?: string | null;
+  buyerEmail?: string | null;
+  buyerContact?: string | null;
+  utm?: UtmFields | null;
+}): Promise<UpiSessionResult> {
+  await expireStaleUpiOrders(input.tenantId); // free stale amounts before allocating
+  const expiresAt = new Date(Date.now() + input.ttlMinutes * 60_000);
+
+  for (let attempt = 0; attempt < 16; attempt++) {
+    const nonce = 1 + Math.floor(Math.random() * UPI_NONCE_MAX_PAISE);
+    const payAmountPaise = input.amountPaise + nonce;
+    try {
+      const row = await prisma.buyerPayment.create({
+        data: {
+          razorpayOrderId: `upi_${randomUUID()}`,
+          tenantId: input.tenantId,
+          paymentPageId: input.paymentPageId ?? null,
+          productId: input.productId ?? null,
+          courseId: input.courseId ?? null,
+          quantity: input.quantity ?? 1,
+          itemTitle: input.itemTitle,
+          amountPaise: input.amountPaise, // TRUE sale price — commission/receipt base
+          payAmountPaise, // what the buyer pays = base + nonce
+          couponId: input.couponId ?? null,
+          couponCode: input.couponCode ?? null,
+          discountPaise: input.discountPaise ?? 0,
+          status: "PENDING",
+          paymentMethod: "UPI_MANUAL",
+          expiresAt,
+          buyerProfileId: input.buyerProfileId ?? null,
+          buyerEmail: input.buyerEmail ?? null,
+          buyerContact: input.buyerContact ?? null,
+          ...utmData(input.utm),
+          ...(input.items && input.items.length > 0
+            ? {
+                orderItems: {
+                  create: input.items.map((it) => ({
+                    productId: it.productId,
+                    titleSnapshot: it.titleSnapshot,
+                    unitPricePaise: it.unitPricePaise,
+                    quantity: it.quantity,
+                  })),
+                },
+              }
+            : {}),
+        },
+        select: { id: true },
+      });
+      return { ok: true, id: row.id, payAmountPaise, expiresAt };
+    } catch (e) {
+      // (tenant, payAmountPaise) collided with another live session — retry.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") continue;
+      throw e;
+    }
+  }
+  return { ok: false, reason: "saturated" };
+}
+
+/**
+ * Lazy expiry: sweep a tenant's UN-SUBMITTED (upiRef null) PENDING UPI sessions
+ * whose TTL has passed → EXPIRED, freeing their unique amounts. Submitted orders
+ * (upiRef set, awaiting auto/manual confirm) are never expired. Called before
+ * allocating an amount and before a confirm, so no cron is required.
+ */
+export function expireStaleUpiOrders(tenantId: string) {
+  return prisma.buyerPayment.updateMany({
+    where: {
+      tenantId,
+      status: "PENDING",
+      paymentMethod: "UPI_MANUAL",
+      upiRef: null,
+      expiresAt: { lt: new Date() },
+    },
+    data: { status: "EXPIRED" },
+  });
+}
+
+/** True when a tenant's outstanding DUE commission exceeds the platform ceiling. */
+export async function isUpiAutoConfirmBlocked(tenantId: string): Promise<boolean> {
+  const [due, threshold] = await Promise.all([
+    prisma.commissionCharge.aggregate({
+      where: { tenantId, status: "DUE" },
+      _sum: { amountPaise: true },
+    }),
+    getUpiDueBlockPaise(),
+  ]);
+  return (due._sum.amountPaise ?? 0) > threshold;
+}
+
+export type UpiSubmitResult =
+  | { ok: true; confirmed: true; alreadyProcessed: boolean; commission: "paid" | "due" | "none" }
+  | { ok: true; confirmed: false; pending: true }
+  | { ok: false; reason: "not_found" | "expired" | "duplicate" };
+
+/**
+ * Buyer submits their UPI reference for a session. Stamps the reference (a partial
+ * unique index rejects a reference already used by another order → `duplicate`),
+ * then EITHER auto-confirms instantly (claim PENDING→PAID + commission, reusing
+ * the exact shared path as a Razorpay sale) when the seller has auto-confirm on,
+ * the amount is within their cap, and they're not dues-blocked; OR leaves the
+ * order PENDING with the reference for manual seller confirmation (the existing
+ * queue). Tenant-scoped. Never refuses the buyer — always confirms or holds.
+ */
+export async function autoConfirmOrHoldUpiOrder(
+  tenantId: string,
+  buyerPaymentId: string,
+  utr: string,
+): Promise<UpiSubmitResult> {
+  await expireStaleUpiOrders(tenantId);
+  const now = new Date();
+
+  const order = await prisma.buyerPayment.findFirst({
+    where: { id: buyerPaymentId, tenantId, paymentMethod: "UPI_MANUAL" },
+    select: { id: true, status: true, amountPaise: true, upiRef: true, expiresAt: true },
+  });
+  if (!order) return { ok: false, reason: "not_found" };
+  if (order.status === "PAID")
+    return { ok: true, confirmed: true, alreadyProcessed: true, commission: "none" };
+  if (order.status !== "PENDING") return { ok: false, reason: "expired" };
+  if (order.expiresAt && order.expiresAt.getTime() < now.getTime())
+    return { ok: false, reason: "expired" };
+  if (order.upiRef) return { ok: true, confirmed: false, pending: true }; // already submitted
+
+  // Decide auto vs hold from config + dues BEFORE the tx (a dues race here is
+  // inconsequential — it only nudges one borderline order to the manual queue).
+  const [cfg, blocked] = await Promise.all([
+    prisma.sellerUpi.findUnique({
+      where: { tenantId },
+      select: { autoConfirm: true, autoConfirmMaxPaise: true, enabled: true },
+    }),
+    isUpiAutoConfirmBlocked(tenantId),
+  ]);
+  const shouldAuto =
+    !!cfg &&
+    cfg.enabled &&
+    cfg.autoConfirm &&
+    (cfg.autoConfirmMaxPaise == null || order.amountPaise <= cfg.autoConfirmMaxPaise) &&
+    !blocked;
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Stamp the reference only if still a live unsubmitted session (guards a
+      // race with a concurrent sweep / double-submit). The unique index throws
+      // P2002 here if this reference is already used elsewhere → caught below.
+      const stamp = await tx.buyerPayment.updateMany({
+        where: { id: order.id, tenantId, status: "PENDING", upiRef: null },
+        data: { upiRef: utr },
+      });
+      if (stamp.count === 0) return { ok: false, reason: "expired" };
+
+      if (!shouldAuto) return { ok: true, confirmed: false, pending: true };
+
+      const res = await claimPendingAndApply(tx, tenantId, order.id, now);
+      if (!res.ok) return { ok: false, reason: "not_found" };
+      return {
+        ok: true,
+        confirmed: true,
+        alreadyProcessed: res.alreadyProcessed,
+        commission: res.commission,
+      };
     });
-    const payment = await tx.buyerPayment.findFirst({
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return { ok: false, reason: "duplicate" };
+    }
+    throw e;
+  }
+}
+
+export type CancelUpiResult =
+  | { ok: true; alreadyProcessed: boolean; commissionReversedPaise: number }
+  | { ok: false; reason: "not_found" };
+
+/**
+ * Seller cancels an auto-confirmed UPI order ("payment not received"). Atomically
+ * claims PAID→CANCELLED (tenant + UPI scoped, idempotent), reverses the FULL
+ * commission (CREDIT the wallet if it was PAID — with a dedicated `cancel_<id>`
+ * reference distinct from the `commission_<id>` debit — else zero the DUE charge),
+ * and reverses the side-effects (restock, decrement coupon redemption, delete the
+ * enrolment). Because access reveal is gated on status PAID, the CANCELLED flip
+ * revokes the buyer's access/receipt. Mirrors recordRefund's reversal at full
+ * amount; no gateway refund (the buyer paid the seller's UPI directly).
+ */
+export async function cancelManualUpiOrder(
+  tenantId: string,
+  buyerPaymentId: string,
+): Promise<CancelUpiResult> {
+  return prisma.$transaction(async (tx) => {
+    const claim = await tx.buyerPayment.updateMany({
+      where: { id: buyerPaymentId, tenantId, status: "PAID", paymentMethod: "UPI_MANUAL" },
+      data: { status: "CANCELLED" },
+    });
+    const order = await tx.buyerPayment.findFirst({
       where: { id: buyerPaymentId, tenantId },
+      include: {
+        commission: true,
+        orderItems: { select: { productId: true, quantity: true } },
+      },
     });
     if (claim.count === 0) {
-      return payment
-        ? { ok: true, alreadyProcessed: true, commission: "none" }
+      return order
+        ? { ok: true, alreadyProcessed: true, commissionReversedPaise: 0 }
         : { ok: false, reason: "not_found" };
     }
-    if (!payment) return { ok: false, reason: "not_found" };
-    return applyPaidEffects(tx, payment, now);
+    if (!order) return { ok: false, reason: "not_found" };
+
+    // 1. Reverse the full commission.
+    let commissionReversed = 0;
+    if (order.commission && order.commission.amountPaise > 0) {
+      commissionReversed = order.commission.amountPaise;
+      if (order.commission.status === "PAID") {
+        const wallet = await tx.wallet.upsert({
+          where: { tenantId },
+          create: { tenantId, balancePaise: commissionReversed },
+          update: { balancePaise: { increment: commissionReversed } },
+        });
+        await tx.walletTransaction.create({
+          data: {
+            walletId: wallet.id,
+            tenantId,
+            direction: "CREDIT",
+            amountPaise: commissionReversed,
+            balanceAfter: wallet.balancePaise,
+            reason: "Commission reversal (UPI order cancelled)",
+            referenceType: "upi_cancel",
+            referenceId: `cancel_${order.id}`,
+          },
+        });
+      } else {
+        await tx.commissionCharge.update({
+          where: { id: order.commission.id },
+          data: { amountPaise: 0 },
+        });
+      }
+    }
+
+    // 2. Reverse side-effects (inverse of applyPaidEffects). Restock can rarely
+    // over-credit (applyPaidEffects clamps decrement at 0) — accepted, same as the
+    // documented oversell window; it's stock, not money.
+    const lines = order.orderItems.filter((l) => l.productId);
+    const restock =
+      lines.length > 0
+        ? lines.map((l) => ({ productId: l.productId as string, quantity: l.quantity }))
+        : order.productId
+          ? [{ productId: order.productId, quantity: order.quantity }]
+          : [];
+    for (const { productId, quantity } of restock) {
+      await tx.product.updateMany({
+        where: { id: productId, stockQty: { not: null } },
+        data: { stockQty: { increment: quantity } },
+      });
+    }
+    if (order.couponId) {
+      await tx.coupon.updateMany({
+        where: { id: order.couponId, redeemedCount: { gt: 0 } },
+        data: { redeemedCount: { decrement: 1 } },
+      });
+    }
+    await tx.enrolment.deleteMany({ where: { buyerPaymentId: order.id } });
+
+    return { ok: true, alreadyProcessed: false, commissionReversedPaise: commissionReversed };
   });
 }
 

@@ -425,6 +425,8 @@ enum BuyerPaymentStatus {
   PENDING // manual UPI: buyer submitted a reference, awaiting seller confirmation
   PAID
   FAILED
+  EXPIRED // manual UPI: payment session timed out before the buyer submitted a ref
+  CANCELLED // manual UPI: was auto-confirmed PAID, then the seller reversed it ("not received")
 }
 
 /// How a buyer paid. RAZORPAY = seller's connected gateway (auto-verified via
@@ -725,6 +727,13 @@ model SellerUpi {
   upiId       String   @map("upi_id") // e.g. name@okhdfc
   displayName String?  @map("display_name") // optional payee name shown to buyers
   enabled     Boolean  @default(true)
+  // Auto-confirm: when on, the moment the buyer submits a payment reference the
+  // order is marked PAID + access granted + commission charged (no seller step).
+  // `autoConfirmMaxPaise` caps it (orders above fall back to manual confirm; null
+  // = no cap). `sessionTtlMinutes` is the QR/payment-session validity window.
+  autoConfirm        Boolean @default(true) @map("auto_confirm")
+  autoConfirmMaxPaise Int?   @map("auto_confirm_max_paise")
+  sessionTtlMinutes  Int     @default(10) @map("session_ttl_minutes")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -793,6 +802,15 @@ model BuyerPayment {
   // RAZORPAY orders these stay default/null; the auto-verify path is unchanged.
   paymentMethod     PaymentMethod      @default(RAZORPAY) @map("payment_method")
   upiRef            String?            @map("upi_ref")
+  // Manual UPI auto-confirm session: `payAmountPaise` is the unique amount the
+  // buyer is told to pay = amountPaise (true sale price) + a small nonce, so an
+  // incoming UPI credit maps to exactly one order. NEVER the commission/receipt
+  // base (that stays amountPaise). `expiresAt` is the payment-session TTL; an
+  // unsubmitted (upiRef null) session past it is swept to EXPIRED. Both null for
+  // Razorpay rows. A partial unique index enforces (tenant, payAmountPaise)
+  // uniqueness among live PENDING UPI sessions (see migration).
+  payAmountPaise    Int?               @map("pay_amount_paise")
+  expiresAt         DateTime?          @map("expires_at")
   // C8: set when the buyer was logged in at checkout, to attribute the order.
   buyerProfileId    String?            @map("buyer_profile_id") @db.Uuid
   buyerEmail        String?            @map("buyer_email")
