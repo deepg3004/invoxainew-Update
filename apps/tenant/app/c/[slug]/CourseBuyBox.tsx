@@ -4,7 +4,7 @@ import { useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
-import { startCourseCheckout, submitCourseUpi, previewCourseCoupon } from "./actions";
+import { startCourseCheckout, startCourseUpiSession, previewCourseCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
 
@@ -193,9 +193,9 @@ export function CourseBuyBox({
       {method === "upi" && upi ? (
         <UpiPayPanel
           upi={upi}
-          amountPaise={total}
           title={course.title}
-          onSubmit={(upiRef) => submitCourseUpi(course.id, { email, contact }, upiRef, applied?.code)}
+          onStart={() => startCourseUpiSession(course.id, { email, contact }, applied?.code)}
+          onConfirmed={() => setStatus("paid")}
           onSubmitted={() => setUpiDone(true)}
         />
       ) : null}

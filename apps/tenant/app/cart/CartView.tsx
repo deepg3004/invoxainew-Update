@@ -5,7 +5,7 @@ import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
 import { useCart, setQty, removeFromCart, clearCart } from "../../lib/cart";
-import { startCartCheckout, submitCartUpi, previewCartCoupon } from "./actions";
+import { startCartCheckout, startCartUpiSession, previewCartCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../UpiPayPanel";
 
@@ -297,16 +297,18 @@ export function CartView({
       {method === "upi" && upi ? (
         <UpiPayPanel
           upi={upi}
-          amountPaise={total}
           title={items.length === 1 ? items[0]!.title : `${items[0]!.title} + ${items.length - 1} more`}
-          onSubmit={(upiRef) =>
-            submitCartUpi(
+          onStart={() =>
+            startCartUpiSession(
               items.map((i) => ({ productId: i.productId, qty: i.qty })),
               { email, contact },
-              upiRef,
               applied?.code,
             )
           }
+          onConfirmed={() => {
+            clearCart();
+            setStatus("paid");
+          }}
           onSubmitted={() => {
             clearCart();
             setUpiDone(true);

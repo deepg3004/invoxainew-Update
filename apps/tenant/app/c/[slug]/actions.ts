@@ -8,6 +8,7 @@ import {
   getEnrolment,
   isTenantSuspended,
   getEnabledSellerUpi,
+  createUpiSession,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
@@ -15,8 +16,7 @@ import { getSessionUser } from "../../../lib/auth";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { readUtmCookie } from "../../../lib/utm";
-import { UTR_RE } from "../../../lib/upi";
-import type { SubmitUpiResult } from "../../UpiPayPanel";
+import type { StartUpiSessionResult } from "../../../lib/upi";
 
 export type StartCourseResult =
   | { ok: false; error: string }
@@ -121,18 +121,18 @@ export async function startCourseCheckout(
 }
 
 /**
- * Manual-UPI checkout for a course. Mirrors startCourseCheckout's server-trusted
- * validation (tenant/host, email-required-for-access, already-enrolled guard,
- * coupon re-applied), but records a PENDING / UPI_MANUAL BuyerPayment with the
- * buyer-submitted reference instead of a Razorpay order. On the seller's confirm
- * the shared paid-effects grant the Enrolment (same as a Razorpay sale).
+ * Start a manual-UPI session for a course. Mirrors startCourseCheckout's
+ * server-trusted validation (tenant/host, email-required-for-access,
+ * already-enrolled guard, coupon re-applied) to compute the base amount, then
+ * reserves a unique-amount UPI session. The buyer pays + submits their reference
+ * via the shared submitUpiRef; on confirm the shared paid-effects grant the
+ * enrolment (same as a Razorpay sale).
  */
-export async function submitCourseUpi(
+export async function startCourseUpiSession(
   courseId: string,
   buyer: { email?: string; contact?: string },
-  upiRef: string,
   couponCode?: string,
-): Promise<SubmitUpiResult> {
+): Promise<StartUpiSessionResult> {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
   if (!tenant) return { ok: false, error: "This store is unavailable." };
@@ -165,11 +165,6 @@ export async function submitCourseUpi(
   const upi = await getEnabledSellerUpi(tenant.id);
   if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
 
-  const ref = (upiRef ?? "").trim();
-  if (!UTR_RE.test(ref)) {
-    return { ok: false, error: "Enter the UPI transaction reference (UTR) from your payment app." };
-  }
-
   let amountPaise = course.pricePaise;
   const code = (couponCode ?? "").trim();
   let couponId: string | null = null;
@@ -184,24 +179,29 @@ export async function submitCourseUpi(
     amountPaise -= discountPaise;
   }
 
-  await createBuyerPayment({
-    razorpayOrderId: `upi_${crypto.randomUUID()}`,
+  const session = await createUpiSession({
     tenantId: tenant.id,
+    amountPaise,
+    ttlMinutes: upi.sessionTtlMinutes,
     courseId: course.id,
     itemTitle: course.title,
-    amountPaise,
     couponId,
     couponCode: couponSnapshot,
     discountPaise,
-    status: "PENDING",
-    paymentMethod: "UPI_MANUAL",
-    upiRef: ref,
     buyerProfileId: user?.id ?? null,
     buyerEmail,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
   });
-  return { ok: true };
+  if (!session.ok) {
+    return { ok: false, error: "Too many payments in progress right now — please try again in a moment." };
+  }
+  return {
+    ok: true,
+    buyerPaymentId: session.id,
+    payAmountPaise: session.payAmountPaise,
+    expiresAt: session.expiresAt.toISOString(),
+  };
 }
 
 export type PreviewCouponResult =

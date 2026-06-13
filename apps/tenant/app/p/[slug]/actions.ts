@@ -6,14 +6,14 @@ import {
   applyCoupon,
   isTenantSuspended,
   getEnabledSellerUpi,
+  createUpiSession,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { readUtmCookie } from "../../../lib/utm";
 import { couponErrorMessage } from "../../../lib/coupon-message";
-import { UTR_RE } from "../../../lib/upi";
-import type { SubmitUpiResult } from "../../UpiPayPanel";
+import type { StartUpiSessionResult } from "../../../lib/upi";
 
 export type StartProductResult =
   | { ok: false; error: string }
@@ -118,20 +118,18 @@ export async function startProductCheckout(
 }
 
 /**
- * Manual-UPI checkout for a store product. Mirrors startProductCheckout's
- * server-trusted validation (qty, stock, coupon re-applied), but instead of a
- * Razorpay order it records a PENDING / UPI_MANUAL BuyerPayment carrying the
- * buyer-submitted reference for the seller to confirm. The charged amount is
- * computed HERE (never trusting the client); nothing is marked paid and no
- * commission is charged until the seller confirms (confirmManualBuyerPayment).
+ * Start a manual-UPI session for a store product. Mirrors startProductCheckout's
+ * server-trusted validation (qty, stock, coupon re-applied) to compute the base
+ * amount, then reserves a unique-amount UPI session (createUpiSession). The buyer
+ * pays + submits their reference via the shared submitUpiRef; nothing is paid /
+ * no commission until then.
  */
-export async function submitProductUpi(
+export async function startProductUpiSession(
   productId: string,
   quantity: number,
   buyer: { email?: string; contact?: string },
-  upiRef: string,
   couponCode?: string,
-): Promise<SubmitUpiResult> {
+): Promise<StartUpiSessionResult> {
   const qty = Math.floor(Number(quantity));
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
     return { ok: false, error: "Choose a quantity between 1 and 99." };
@@ -157,11 +155,6 @@ export async function submitProductUpi(
   const upi = await getEnabledSellerUpi(product.tenantId);
   if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
 
-  const ref = (upiRef ?? "").trim();
-  if (!UTR_RE.test(ref)) {
-    return { ok: false, error: "Enter the UPI transaction reference (UTR) from your payment app." };
-  }
-
   // Server-trusted subtotal + authoritative coupon (same as startProductCheckout).
   let amountPaise = product.pricePaise * qty;
   const code = (couponCode ?? "").trim();
@@ -178,25 +171,30 @@ export async function submitProductUpi(
   }
 
   const user = await getSessionUser();
-  await createBuyerPayment({
-    razorpayOrderId: `upi_${crypto.randomUUID()}`,
+  const session = await createUpiSession({
     tenantId: product.tenantId,
+    amountPaise,
+    ttlMinutes: upi.sessionTtlMinutes,
     productId: product.id,
     quantity: qty,
     itemTitle: product.title,
-    amountPaise,
     couponId,
     couponCode: couponSnapshot,
     discountPaise,
-    status: "PENDING",
-    paymentMethod: "UPI_MANUAL",
-    upiRef: ref,
     buyerProfileId: user?.id ?? null,
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
   });
-  return { ok: true };
+  if (!session.ok) {
+    return { ok: false, error: "Too many payments in progress right now — please try again in a moment." };
+  }
+  return {
+    ok: true,
+    buyerPaymentId: session.id,
+    payAmountPaise: session.payAmountPaise,
+    expiresAt: session.expiresAt.toISOString(),
+  };
 }
 
 export type PreviewCouponResult =

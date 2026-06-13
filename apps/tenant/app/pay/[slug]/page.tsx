@@ -77,7 +77,6 @@ export default async function PayPage({
           <PayBox
             paymentPageId={page.id}
             title={page.title}
-            amountPaise={page.amountPaise}
             razorpayReady={razorpayReady}
             upi={
               upi

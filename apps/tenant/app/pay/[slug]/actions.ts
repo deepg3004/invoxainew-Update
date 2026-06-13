@@ -4,13 +4,14 @@ import {
   getActivePaymentPageById,
   createBuyerPayment,
   getEnabledSellerUpi,
+  createUpiSession,
   isTenantSuspended,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { readUtmCookie } from "../../../lib/utm";
-import { UTR_RE } from "../../../lib/upi";
+import type { StartUpiSessionResult } from "../../../lib/upi";
 
 export type StartBuyerResult =
   | { ok: false; error: string }
@@ -76,19 +77,16 @@ export async function startBuyerCheckout(
   };
 }
 
-export type SubmitUpiResult = { ok: true } | { ok: false; error: string };
-
 /**
- * Buyer submits proof of a manual-UPI payment for a payment page. The buyer has
- * paid the seller's UPI directly (money never touches InvoxAI); we record a
- * PENDING order with the submitted reference for the seller to confirm. Amount +
- * tenant are server-trusted from the page; nothing is marked paid here and no
- * commission is charged until the seller confirms (slice 3).
+ * Start a manual-UPI payment session for a payment page (the buyer then pays the
+ * unique amount + submits their reference via the shared submitUpiRef). Amount +
+ * tenant are server-trusted from the page. Nothing is paid / no commission until
+ * the reference is submitted and the order auto-confirms (or the seller confirms).
  */
-export async function submitUpiPayment(
+export async function startPayUpiSession(
   paymentPageId: string,
-  input: { email?: string; contact?: string; upiRef: string },
-): Promise<SubmitUpiResult> {
+  buyer: { email?: string; contact?: string },
+): Promise<StartUpiSessionResult> {
   const page = await getActivePaymentPageById(paymentPageId);
   if (!page) return { ok: false, error: "This payment page is unavailable." };
   if (await isTenantSuspended(page.tenantId)) {
@@ -97,25 +95,25 @@ export async function submitUpiPayment(
   const upi = await getEnabledSellerUpi(page.tenantId);
   if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
 
-  const ref = (input.upiRef ?? "").trim();
-  if (!UTR_RE.test(ref)) {
-    return { ok: false, error: "Enter the UPI transaction reference (UTR) from your payment app." };
-  }
-
   const user = await getSessionUser();
-  await createBuyerPayment({
-    razorpayOrderId: `upi_${crypto.randomUUID()}`,
+  const session = await createUpiSession({
     tenantId: page.tenantId,
+    amountPaise: page.amountPaise,
+    ttlMinutes: upi.sessionTtlMinutes,
     paymentPageId: page.id,
     itemTitle: page.title,
-    amountPaise: page.amountPaise,
-    status: "PENDING",
-    paymentMethod: "UPI_MANUAL",
-    upiRef: ref,
     buyerProfileId: user?.id ?? null,
-    buyerEmail: input.email ?? user?.email ?? null,
-    buyerContact: input.contact ?? null,
+    buyerEmail: buyer.email ?? user?.email ?? null,
+    buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
   });
-  return { ok: true };
+  if (!session.ok) {
+    return { ok: false, error: "Too many payments in progress right now — please try again in a moment." };
+  }
+  return {
+    ok: true,
+    buyerPaymentId: session.id,
+    payAmountPaise: session.payAmountPaise,
+    expiresAt: session.expiresAt.toISOString(),
+  };
 }

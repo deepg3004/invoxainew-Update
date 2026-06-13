@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Script from "next/script";
 import { PaymentSuccess } from "@invoxai/ui";
-import { startBuyerCheckout, submitUpiPayment } from "./actions";
+import { startBuyerCheckout, startPayUpiSession } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
 
@@ -27,13 +27,11 @@ function tabCls(active: boolean): string {
 export function PayBox({
   paymentPageId,
   title,
-  amountPaise,
   razorpayReady,
   upi,
 }: {
   paymentPageId: string;
   title: string;
-  amountPaise: number;
   razorpayReady: boolean;
   upi: { upiId: string; payeeName: string } | null;
 }) {
@@ -154,9 +152,9 @@ export function PayBox({
       {method === "upi" && upi ? (
         <UpiPayPanel
           upi={upi}
-          amountPaise={amountPaise}
           title={title}
-          onSubmit={(upiRef) => submitUpiPayment(paymentPageId, { email, contact, upiRef })}
+          onStart={() => startPayUpiSession(paymentPageId, { email, contact })}
+          onConfirmed={() => setStatus("paid")}
           onSubmitted={() => setUpiDone(true)}
         />
       ) : null}

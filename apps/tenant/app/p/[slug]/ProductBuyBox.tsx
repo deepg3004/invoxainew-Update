@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Script from "next/script";
 import { formatRupees } from "@invoxai/utils/money";
 import { PaymentSuccess } from "@invoxai/ui";
-import { startProductCheckout, submitProductUpi, previewProductCoupon } from "./actions";
+import { startProductCheckout, startProductUpiSession, previewProductCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { AddToCartButton } from "../../AddToCartButton";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
@@ -237,11 +237,11 @@ export function ProductBuyBox({
           {method === "upi" && upi ? (
             <UpiPayPanel
               upi={upi}
-              amountPaise={total}
               title={product.title}
-              onSubmit={(upiRef) =>
-                submitProductUpi(productId, qty, { email, contact }, upiRef, applied?.code)
+              onStart={() =>
+                startProductUpiSession(productId, qty, { email, contact }, applied?.code)
               }
+              onConfirmed={() => setStatus("paid")}
               onSubmitted={() => setUpiDone(true)}
             />
           ) : null}
