@@ -231,6 +231,11 @@ model Product {
   // Gated post-purchase access link (community invite / download URL). Revealed
   // to the buyer ONLY on a PAID order (getBuyerOrder) — never on public pages.
   accessUrl   String?       @map("access_url")
+  // Hosted digital download: the PRIVATE storage object key + original filename.
+  // Delivered to the buyer ONLY via a short-lived signed URL on a PAID order; the
+  // key is never exposed on public pages.
+  downloadKey  String?      @map("download_key")
+  downloadName String?      @map("download_name")
   status      ProductStatus @default(DRAFT)
   stockQty    Int?          @map("stock_qty")
   sortOrder   Int           @default(0) @map("sort_order")

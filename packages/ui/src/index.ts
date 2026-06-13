@@ -12,3 +12,4 @@ export { PaymentSuccess } from "./PaymentSuccess";
 export { Skeleton, PageLoading } from "./Skeleton";
 export { PageHeader } from "./PageHeader";
 export { ImageUpload, type ImageUploadResult } from "./ImageUpload";
+export { FileUpload, type FileUploadResult } from "./FileUpload";

@@ -7,6 +7,9 @@ require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Digital-download uploads go through a seller server action (auth-gated), so
+  // raise the default 1 MB server-action body limit to fit a ≤25 MB file.
+  experimental: { serverActions: { bodySizeLimit: "30mb" } },
   // Workspace packages ship raw TS — let Next transpile them.
   transpilePackages: [
     "@invoxai/ui",

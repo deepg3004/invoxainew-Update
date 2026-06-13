@@ -2,11 +2,11 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { ImageUpload } from "@invoxai/ui";
+import { ImageUpload, FileUpload } from "@invoxai/ui";
 import { paiseToRupeeString } from "@invoxai/utils/money";
 import type { ProductKind } from "@invoxai/db";
 import type { ProductFormState } from "./actions";
-import { uploadTenantImageAction } from "../upload-actions";
+import { uploadTenantImageAction, uploadDownloadAction } from "../upload-actions";
 
 export interface ProductValues {
   slug: string;
@@ -21,6 +21,8 @@ export interface ProductValues {
   stockQty: number | null;
   sortOrder: number;
   accessUrl: string | null;
+  downloadKey: string | null;
+  downloadName: string | null;
 }
 
 type Action = (prev: ProductFormState, form: FormData) => Promise<ProductFormState>;
@@ -157,6 +159,20 @@ export function ProductForm({
           download link, revealed to the buyer after they pay.
         </span>
       </label>
+
+      <div className="block">
+        <span className="text-sm font-medium text-zinc-900">Digital file</span>
+        <div className="mt-1.5">
+          <FileUpload
+            keyName="downloadKey"
+            nameName="downloadName"
+            defaultKey={initial?.downloadKey ?? ""}
+            defaultName={initial?.downloadName ?? ""}
+            action={uploadDownloadAction}
+            recommend="Optional — upload the file buyers download after paying (any type, under 25 MB). Stored privately; delivered via a secure link on the receipt."
+          />
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">

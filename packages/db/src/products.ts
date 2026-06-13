@@ -14,6 +14,34 @@ import { prisma } from "./client";
  * additionally require status = PUBLISHED so drafts/archived items stay private.
  */
 
+/**
+ * Public-storefront projection. Lists EXACTLY the fields the public Server
+ * Components and the buyer checkout/cart pricing actions read — and deliberately
+ * NOT the gated, post-purchase-only fields: `downloadKey`/`downloadName` (the
+ * private storage object key + filename) and `accessUrl`. Those are revealed to a
+ * buyer solely on a PAID order (see getBuyerOrder), never on a public page.
+ *
+ * Defense in depth: every current public consumer already projects an explicit
+ * allow-list before anything reaches a client component, so nothing leaks today.
+ * Pinning the select here means a FUTURE edit that forwards a whole product row
+ * to a client component still cannot accidentally ship the storage key.
+ *
+ * Prisma.validator preserves the literal so query result types stay precise.
+ */
+const PUBLIC_PRODUCT_SELECT = Prisma.validator<Prisma.ProductSelect>()({
+  id: true,
+  tenantId: true,
+  slug: true,
+  title: true,
+  description: true,
+  pricePaise: true,
+  compareAtPaise: true,
+  imageUrl: true,
+  kind: true,
+  stockQty: true,
+  updatedAt: true,
+});
+
 export type CreateProductResult =
   | { ok: true; id: string }
   | { ok: false; reason: "slug_taken" };
@@ -32,6 +60,8 @@ export async function createProduct(input: {
   stockQty?: number | null;
   sortOrder?: number;
   accessUrl?: string | null;
+  downloadKey?: string | null;
+  downloadName?: string | null;
   status?: ProductStatus;
 }): Promise<CreateProductResult> {
   try {
@@ -45,6 +75,8 @@ export async function createProduct(input: {
         compareAtPaise: input.compareAtPaise ?? null,
         bumpEnabled: input.bumpEnabled ?? false,
         bumpBlurb: input.bumpBlurb ?? null,
+        downloadKey: input.downloadKey ?? null,
+        downloadName: input.downloadName ?? null,
         imageUrl: input.imageUrl ?? null,
         kind: input.kind,
         stockQty: input.stockQty ?? null,
@@ -81,6 +113,7 @@ export function listPublishedProducts(tenantId: string) {
   return prisma.product.findMany({
     where: { tenantId, status: "PUBLISHED" },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    select: PUBLIC_PRODUCT_SELECT,
   });
 }
 
@@ -88,13 +121,17 @@ export function listPublishedProducts(tenantId: string) {
 export function getPublishedProduct(tenantId: string, slug: string) {
   return prisma.product.findFirst({
     where: { tenantId, slug, status: "PUBLISHED" },
+    select: PUBLIC_PRODUCT_SELECT,
   });
 }
 
 /** A PUBLISHED product by id — used by the buyer checkout action so the price
  *  and stock are read server-trusted from the DB, never from the client. */
 export function getPublishedProductById(id: string) {
-  return prisma.product.findFirst({ where: { id, status: "PUBLISHED" } });
+  return prisma.product.findFirst({
+    where: { id, status: "PUBLISHED" },
+    select: PUBLIC_PRODUCT_SELECT,
+  });
 }
 
 /** PUBLISHED products by id for one tenant — a single batched lookup for cart
@@ -103,6 +140,7 @@ export function getPublishedProductById(id: string) {
 export function listPublishedProductsByIds(tenantId: string, ids: string[]) {
   return prisma.product.findMany({
     where: { tenantId, id: { in: ids }, status: "PUBLISHED" },
+    select: PUBLIC_PRODUCT_SELECT,
   });
 }
 
@@ -121,6 +159,8 @@ export function updateProduct(
     stockQty?: number | null;
     sortOrder?: number;
     accessUrl?: string | null;
+    downloadKey?: string | null;
+    downloadName?: string | null;
   },
 ) {
   // Scope the update to the owner via updateMany (where includes tenantId).
@@ -133,6 +173,8 @@ export function updateProduct(
       compareAtPaise: data.compareAtPaise ?? null,
       bumpEnabled: data.bumpEnabled ?? false,
       bumpBlurb: data.bumpBlurb ?? null,
+      downloadKey: data.downloadKey ?? null,
+      downloadName: data.downloadName ?? null,
       imageUrl: data.imageUrl ?? null,
       kind: data.kind,
       stockQty: data.stockQty ?? null,

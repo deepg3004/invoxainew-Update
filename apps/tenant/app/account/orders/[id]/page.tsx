@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getBuyerOrder, getBuyerReviewForProduct } from "@invoxai/db";
+import { createSignedDownloadUrl } from "@invoxai/auth/server";
 import { formatRupees } from "@invoxai/utils/money";
 import { safeUrl } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../../../lib/resolve";
@@ -62,6 +63,32 @@ export default async function OrderReceipt({
   pushLink(order.product?.title, order.product?.accessUrl);
   pushLink(order.paymentPage?.title, order.paymentPage?.accessUrl);
   for (const li of order.orderItems) pushLink(li.product?.title ?? li.titleSnapshot, li.product?.accessUrl);
+
+  // Hosted digital downloads: mint a short-lived signed URL per file (the order is
+  // already PAID + buyer-scoped, so this is the trust boundary; the key is never
+  // exposed). Fresh URLs each visit.
+  const downloadable: { title: string; key: string }[] = [];
+  if (order.product?.downloadKey) {
+    downloadable.push({ title: order.product.downloadName || order.product.title, key: order.product.downloadKey });
+  }
+  for (const li of order.orderItems) {
+    if (li.product?.downloadKey) {
+      downloadable.push({
+        title: li.product.downloadName || li.product.title || li.titleSnapshot,
+        key: li.product.downloadKey,
+      });
+    }
+  }
+  const downloads = (
+    await Promise.all(
+      downloadable.map(async (d) => {
+        // Ownership-scoped: the signer refuses any key outside this tenant's
+        // prefix, so a seller-forged downloadKey can't serve another tenant's file.
+        const href = await createSignedDownloadUrl(d.key, 3600, tenant.id);
+        return href ? { title: d.title, href } : null;
+      }),
+    )
+  ).filter((d): d is { title: string; href: string } => d !== null);
 
   // Verified-purchase reviews: the distinct products in this order (single-product
   // + cart lines) the buyer can rate, each prefilled with their existing review.
@@ -231,6 +258,26 @@ export default async function OrderReceipt({
           </p>
         ) : null}
       </div>
+
+      {downloads.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+          <h2 className="text-sm font-semibold text-zinc-900">Your downloads</h2>
+          <p className="mt-1 text-xs text-muted">
+            Thanks for your purchase — your files are ready (links refresh each visit).
+          </p>
+          <div className="mt-3 space-y-2">
+            {downloads.map((d, i) => (
+              <a
+                key={i}
+                href={d.href}
+                className="block w-full rounded-lg bg-brand-gradient px-4 py-2.5 text-center text-sm font-medium text-white shadow-glow"
+              >
+                Download: {d.title} ↓
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {accessLinks.length > 0 ? (
         <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-5">

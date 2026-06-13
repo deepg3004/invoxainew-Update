@@ -67,6 +67,94 @@ const EXT_BY_TYPE: Record<string, string> = {
   "image/gif": "gif",
 };
 
+// ── Private downloads (hosted digital files) ─────────────────────────────────
+
+/** PRIVATE Storage bucket for paid digital downloads. Never public — files are
+ *  delivered only via short-lived signed URLs to the buyer who paid. */
+export const DOWNLOADS_BUCKET = "downloads";
+const MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024; // 25 MB (matches the server-action body limit)
+
+export type FileUploadResult =
+  | { ok: true; key: string; name: string }
+  | { ok: false; error: string };
+
+/** Create the private downloads bucket if missing (idempotent). */
+async function ensureDownloadsBucket(sb: SupabaseClient): Promise<void> {
+  const { error } = await sb.storage.createBucket(DOWNLOADS_BUCKET, {
+    public: false,
+    fileSizeLimit: String(MAX_DOWNLOAD_BYTES),
+  });
+  // "already exists" is the normal path; anything else is fatal.
+  if (error && !/exist/i.test(error.message)) throw new Error(error.message);
+}
+
+/**
+ * Validate + store a seller's digital file (any type, ≤25 MB) in the PRIVATE
+ * downloads bucket, returning the object KEY (never a URL — the key is never
+ * exposed to buyers) + the original filename. SERVER ONLY (service-role); the
+ * caller MUST auth-gate (requireTenant). The key is randomised under `keyPrefix`.
+ */
+export async function uploadPrivateFileFromForm(
+  fd: FormData,
+  keyPrefix: string,
+): Promise<FileUploadResult> {
+  const file = fd.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "No file provided." };
+  if (file.size === 0) return { ok: false, error: "The file is empty." };
+  if (file.size > MAX_DOWNLOAD_BYTES) return { ok: false, error: "File must be under 25 MB." };
+
+  const name = (file.name || "download").slice(0, 200);
+  const dot = name.lastIndexOf(".");
+  const ext =
+    (dot > 0 ? name.slice(dot + 1) : "bin").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) ||
+    "bin";
+  const prefix = keyPrefix.replace(/[^a-zA-Z0-9/_-]/g, "").replace(/^\/+|\/+$/g, "") || "misc";
+  const key = `${prefix}/${crypto.randomUUID()}.${ext}`;
+
+  try {
+    const sb = createServiceClient();
+    await ensureDownloadsBucket(sb);
+    const bytes = await file.arrayBuffer();
+    const { error } = await sb.storage.from(DOWNLOADS_BUCKET).upload(key, Buffer.from(bytes), {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+    if (error) return { ok: false, error: "Upload failed. Please try again." };
+    return { ok: true, key, name };
+  } catch {
+    return { ok: false, error: "Upload failed. Please try again." };
+  }
+}
+
+/**
+ * A short-lived signed URL to download a private file by its key, or null.
+ * Generated SERVER-SIDE only, on a PAID + buyer-scoped page — the key itself is
+ * never sent to the browser, only this expiring URL.
+ *
+ * Ownership boundary (defense-in-depth): pass `expectTenantId` and the key MUST
+ * live under that tenant's `tenant/<id>/` prefix or we refuse to sign (returns
+ * null). The seller-set `downloadKey` is client-forgeable, so this is the last
+ * line that stops a seller from pointing their product at ANOTHER tenant's
+ * private object and serving it to their own buyers via a valid signed URL.
+ */
+export async function createSignedDownloadUrl(
+  key: string,
+  expiresSec = 3600,
+  expectTenantId?: string,
+): Promise<string | null> {
+  if (!key) return null;
+  if (expectTenantId && !key.startsWith(`tenant/${expectTenantId}/`)) return null;
+  try {
+    const sb = createServiceClient();
+    const { data, error } = await sb.storage
+      .from(DOWNLOADS_BUCKET)
+      .createSignedUrl(key, expiresSec);
+    return error ? null : (data?.signedUrl ?? null);
+  } catch {
+    return null;
+  }
+}
+
 export type ImageUploadResult = { ok: true; url: string } | { ok: false; error: string };
 
 /**

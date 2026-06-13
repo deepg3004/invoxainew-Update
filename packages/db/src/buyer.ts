@@ -75,13 +75,31 @@ export function getBuyerOrder(input: {
       // accessUrl (community invite / download) is revealed here ONLY — the query
       // is already scoped to status PAID + this buyer, so it can't leak pre-pay
       // or across buyers.
-      product: { select: { id: true, slug: true, title: true, accessUrl: true } },
+      product: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          accessUrl: true,
+          downloadKey: true,
+          downloadName: true,
+        },
+      },
       orderItems: {
         select: {
           titleSnapshot: true,
           unitPricePaise: true,
           quantity: true,
-          product: { select: { id: true, slug: true, title: true, accessUrl: true } },
+          product: {
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              accessUrl: true,
+              downloadKey: true,
+              downloadName: true,
+            },
+          },
         },
       },
     },

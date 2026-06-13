@@ -31,10 +31,13 @@ interface ParsedProduct {
   stockQty: number | null;
   sortOrder: number;
   accessUrl: string | null;
+  downloadKey: string | null;
+  downloadName: string | null;
 }
 
 function parseProductFields(
   form: FormData,
+  tenantId: string,
 ): { ok: true; value: ParsedProduct } | { ok: false; message: string } {
   const title = String(form.get("title") ?? "").trim();
   if (!title) return { ok: false, message: "Title is required." };
@@ -93,6 +96,16 @@ function parseProductFields(
     return { ok: false, message: "Access link must start with http:// or https://" };
   }
 
+  // Set by the FileUpload widget (server-returned key). The hidden field is
+  // client-forgeable, so ENFORCE the ownership boundary here: a stored key must
+  // live under THIS tenant's `tenant/<id>/` prefix (the prefix the upload action
+  // generates). Reject anything else so a seller can't point their product at
+  // another tenant's private object. (The signer re-checks this too.)
+  const downloadKey = String(form.get("downloadKey") ?? "").trim().slice(0, 300) || null;
+  if (downloadKey && !downloadKey.startsWith(`tenant/${tenantId}/`)) {
+    return { ok: false, message: "Couldn't attach that file — please re-upload it." };
+  }
+
   const description = String(form.get("description") ?? "").trim() || null;
   return {
     ok: true,
@@ -103,6 +116,8 @@ function parseProductFields(
       compareAtPaise,
       bumpEnabled: form.get("bumpEnabled") === "on",
       bumpBlurb: String(form.get("bumpBlurb") ?? "").trim().slice(0, 140) || null,
+      downloadKey,
+      downloadName: String(form.get("downloadName") ?? "").trim().slice(0, 200) || null,
       imageUrl: imageRaw || null,
       kind,
       stockQty,
@@ -130,7 +145,7 @@ export async function createProductAction(
     return { error: "Link must be 1–50 chars: lowercase letters, digits, hyphens." };
   }
 
-  const parsed = parseProductFields(form);
+  const parsed = parseProductFields(form, tenant.id);
   if (!parsed.ok) return { error: parsed.message };
 
   const publish = form.get("publish") === "on";
@@ -152,7 +167,7 @@ export async function updateProductAction(
   form: FormData,
 ): Promise<ProductFormState> {
   const { tenant } = await requireTenant();
-  const parsed = parseProductFields(form);
+  const parsed = parseProductFields(form, tenant.id);
   if (!parsed.ok) return { error: parsed.message };
 
   await updateProduct(tenant.id, id, parsed.value);
