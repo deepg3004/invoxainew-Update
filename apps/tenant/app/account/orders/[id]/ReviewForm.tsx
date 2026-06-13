@@ -1,21 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { submitProductReview } from "../../../review-actions";
+import { submitReview } from "../../../review-actions";
 
 /**
- * Verified-purchase review form for one product on the buyer's order receipt.
- * Prefilled when they've already reviewed it (editing keeps the review's
- * moderation status server-side). The order page only renders this for products
- * in this buyer's own PAID order, and the action re-verifies the purchase.
+ * Verified review form for one product OR course. Prefilled when the buyer already
+ * reviewed it (editing keeps the review's moderation status server-side). The
+ * caller only renders this for an eligible buyer (own PAID order / enrolment), and
+ * the action re-verifies eligibility regardless.
  */
 export function ReviewForm({
-  productId,
-  productTitle,
+  kind,
+  subjectId,
+  subjectTitle,
   initial,
 }: {
-  productId: string;
-  productTitle: string;
+  kind: "product" | "course";
+  subjectId: string;
+  subjectTitle: string;
   initial: { rating: number; body: string | null; authorName: string | null } | null;
 }) {
   const [rating, setRating] = useState(initial?.rating ?? 0);
@@ -34,9 +36,10 @@ export function ReviewForm({
     setError(null);
     setSaving(true);
     try {
-      const res = await submitProductReview({
-        productId,
-        productTitle,
+      const res = await submitReview({
+        kind,
+        subjectId,
+        subjectTitle,
         rating,
         body: body.trim(),
         authorName: authorName.trim(),
@@ -53,7 +56,7 @@ export function ReviewForm({
   if (saved) {
     return (
       <p className="text-sm font-medium text-green-700">
-        Thanks for reviewing {productTitle}! ✓
+        Thanks for reviewing {subjectTitle}! ✓
       </p>
     );
   }
@@ -62,7 +65,7 @@ export function ReviewForm({
 
   return (
     <div>
-      <p className="text-sm font-medium text-zinc-900">{productTitle}</p>
+      <p className="text-sm font-medium text-zinc-900">{subjectTitle}</p>
       <div className="mt-1 flex items-center gap-1" onMouseLeave={() => setHover(0)}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button

@@ -129,12 +129,14 @@ export async function getProductRatingSummaries(
     _avg: { rating: true },
     _count: { _all: true },
   });
-  return new Map(
-    rows.map((r) => [r.productId, { count: r._count._all, avg: r._avg.rating ?? 0 }]),
-  );
+  const map = new Map<string, RatingSummary>();
+  for (const r of rows) {
+    if (r.productId) map.set(r.productId, { count: r._count._all, avg: r._avg.rating ?? 0 });
+  }
+  return map;
 }
 
-/** All of a seller's reviews (for moderation), newest first. Tenant-scoped. */
+/** All of a seller's reviews (product + course) for moderation, newest first. Scoped. */
 export function listTenantReviews(tenantId: string, take = 200) {
   return prisma.productReview.findMany({
     where: { tenantId },
@@ -147,13 +149,14 @@ export function listTenantReviews(tenantId: string, take = 200) {
       authorName: true,
       status: true,
       createdAt: true,
-      product: { select: { title: true, slug: true } },
+      product: { select: { title: true } },
+      course: { select: { title: true } },
     },
   });
 }
 
 /** Hide/show a review (seller moderation). Tenant-scoped, so a forged id can't
- *  touch another seller's reviews. */
+ *  touch another seller's reviews. Works for product AND course reviews. */
 export function setReviewStatus(
   tenantId: string,
   reviewId: string,
@@ -163,4 +166,101 @@ export function setReviewStatus(
     where: { id: reviewId, tenantId },
     data: { status },
   });
+}
+
+// ── Course reviews (verified by enrolment) ────────────────────────────────────
+
+/** Is this buyer enrolled in the course? (verified for a course review) */
+async function hasEnrolled(
+  tenantId: string,
+  courseId: string,
+  profileId: string,
+  email: string | null,
+): Promise<boolean> {
+  const attribution: object[] = [{ buyerProfileId: profileId }];
+  if (email) attribution.push({ buyerEmail: email });
+  const enrolment = await prisma.enrolment.findFirst({
+    where: { tenantId, courseId, OR: attribution },
+    select: { id: true },
+  });
+  return enrolment !== null;
+}
+
+/**
+ * Create or update this buyer's review of a course. Verifies ENROLMENT server-side
+ * (the course equivalent of a verified purchase — enrolment is granted on PAID),
+ * so only an enrolled learner can review. Editing keeps the moderation status.
+ */
+export async function createCourseReview(input: {
+  tenantId: string;
+  courseId: string;
+  buyerProfileId: string;
+  buyerEmail?: string | null;
+  rating: number;
+  body?: string | null;
+  authorName?: string | null;
+}): Promise<CreateReviewResult> {
+  const rating = Math.round(Number(input.rating));
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { ok: false, reason: "invalid" };
+  }
+  const enrolled = await hasEnrolled(
+    input.tenantId,
+    input.courseId,
+    input.buyerProfileId,
+    input.buyerEmail ?? null,
+  );
+  if (!enrolled) return { ok: false, reason: "not_purchased" };
+
+  const body = (input.body ?? "").trim().slice(0, 2000) || null;
+  const authorName = (input.authorName ?? "").trim().slice(0, 80) || null;
+  const key = {
+    courseId_buyerProfileId: {
+      courseId: input.courseId,
+      buyerProfileId: input.buyerProfileId,
+    },
+  };
+  const existing = await prisma.productReview.findUnique({ where: key, select: { id: true } });
+  const review = await prisma.productReview.upsert({
+    where: key,
+    create: {
+      tenantId: input.tenantId,
+      courseId: input.courseId,
+      buyerProfileId: input.buyerProfileId,
+      rating,
+      body,
+      authorName,
+    },
+    update: { rating, body, authorName },
+    select: { id: true },
+  });
+  return { ok: true, reviewId: review.id, isNew: existing === null };
+}
+
+/** This buyer's existing review of a course (to prefill the form), or null. */
+export function getBuyerReviewForCourse(courseId: string, buyerProfileId: string) {
+  return prisma.productReview.findUnique({
+    where: { courseId_buyerProfileId: { courseId, buyerProfileId } },
+    select: { rating: true, body: true, authorName: true, status: true },
+  });
+}
+
+/** Published reviews for a course, newest first (public course page). */
+export function getCourseReviews(courseId: string, take = 50) {
+  return prisma.productReview.findMany({
+    where: { courseId, status: "PUBLISHED" },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { id: true, rating: true, body: true, authorName: true, createdAt: true },
+  });
+}
+
+/** Average rating + count for a course (PUBLISHED only). */
+export async function getCourseRatingSummary(courseId: string): Promise<RatingSummary> {
+  const agg = await prisma.productReview.aggregate({
+    where: { courseId, status: "PUBLISHED" },
+    _avg: { rating: true },
+    _count: { _all: true },
+  });
+  return { count: agg._count._all, avg: agg._avg.rating ?? 0 };
 }

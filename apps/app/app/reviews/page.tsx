@@ -42,7 +42,12 @@ export default async function ReviewsPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <Stars rating={r.rating} />
-                    <span className="text-sm font-medium text-zinc-900">{r.product.title}</span>
+                    <span className="text-sm font-medium text-zinc-900">
+                      {r.product?.title ?? r.course?.title ?? "—"}
+                    </span>
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-muted">
+                      {r.course ? "Course" : "Product"}
+                    </span>
                     {r.status === "HIDDEN" ? (
                       <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-muted">
                         Hidden

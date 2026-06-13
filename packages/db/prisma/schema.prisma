@@ -253,8 +253,12 @@ model Product {
 model ProductReview {
   id             String       @id @default(uuid()) @db.Uuid
   tenantId       String       @map("tenant_id") @db.Uuid
-  productId      String       @map("product_id") @db.Uuid
-  product        Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // A review is for EITHER a product OR a course (exactly one set; enforced in the
+  // app). Product reviews verify a PAID order; course reviews verify an enrolment.
+  productId      String?      @map("product_id") @db.Uuid
+  product        Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  courseId       String?      @map("course_id") @db.Uuid
+  course         Course?      @relation(fields: [courseId], references: [id], onDelete: Cascade)
   buyerProfileId String       @map("buyer_profile_id") @db.Uuid
   authorName     String?      @map("author_name")
   rating         Int // 1..5
@@ -264,7 +268,9 @@ model ProductReview {
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
   @@unique([productId, buyerProfileId])
+  @@unique([courseId, buyerProfileId])
   @@index([productId, status])
+  @@index([courseId, status])
   @@index([tenantId, createdAt])
   @@map("product_reviews")
 }
@@ -354,6 +360,7 @@ model Course {
   lessons       Lesson[]
   enrolments    Enrolment[]
   buyerPayments BuyerPayment[]
+  reviews       ProductReview[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, status])

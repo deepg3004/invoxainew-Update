@@ -7,12 +7,18 @@ import {
   getEnabledSellerUpi,
   getTenantTracking,
   getEnrolment,
+  getCourseRatingSummary,
+  getCourseReviews,
+  getBuyerReviewForCourse,
 } from "@invoxai/db";
+import { formatDateIST } from "@invoxai/utils/date";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { cachedCourse } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { CourseBuyBox } from "./CourseBuyBox";
 import { MoreFromStore } from "../../MoreFromStore";
+import { Stars } from "../../Stars";
+import { ReviewForm } from "../../account/orders/[id]/ReviewForm";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -61,11 +67,13 @@ export default async function CoursePage({
   const course = await cachedCourse(tenant.id, slug);
   if (!course) notFound();
 
-  const [gateway, upi, tracking, user] = await Promise.all([
+  const [gateway, upi, tracking, user, rating, reviews] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
     getSessionUser(),
+    getCourseRatingSummary(course.id),
+    getCourseReviews(course.id),
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
@@ -79,6 +87,8 @@ export default async function CoursePage({
         email: user.email ?? null,
       })
     : null;
+  // Enrolled learners can review the course (prefilled with their existing review).
+  const myReview = enrolment && user ? await getBuyerReviewForCourse(course.id, user.id) : null;
 
   return (
     <main className="mx-auto max-w-md px-6 py-12">
@@ -101,6 +111,15 @@ export default async function CoursePage({
       ) : null}
 
       <h1 className="mt-4 text-2xl font-bold">{course.title}</h1>
+      {rating.count > 0 ? (
+        <a href="#reviews" className="mt-1 flex items-center gap-2 text-sm">
+          <Stars value={rating.avg} />
+          <span className="font-medium text-zinc-900">{rating.avg.toFixed(1)}</span>
+          <span className="text-muted">
+            ({rating.count} review{rating.count === 1 ? "" : "s"})
+          </span>
+        </a>
+      ) : null}
       {course.description ? (
         <p className="mt-2 whitespace-pre-line text-muted">{course.description}</p>
       ) : null}
@@ -138,14 +157,31 @@ export default async function CoursePage({
 
       <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
         {enrolment ? (
-          <div className="text-center">
-            <p className="text-sm font-medium text-green-700">✓ You’re enrolled in this course.</p>
-            <Link
-              href={`/account/learn/${course.slug}`}
-              className="mt-3 inline-block w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white"
-            >
-              Go to course →
-            </Link>
+          <div>
+            <div className="text-center">
+              <p className="text-sm font-medium text-green-700">✓ You’re enrolled in this course.</p>
+              <Link
+                href={`/account/learn/${course.slug}`}
+                className="mt-3 inline-block w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white"
+              >
+                Go to course →
+              </Link>
+            </div>
+            <div className="mt-5 border-t border-zinc-200 pt-5">
+              <p className="text-sm font-semibold text-zinc-900">Rate this course</p>
+              <div className="mt-3">
+                <ReviewForm
+                  kind="course"
+                  subjectId={course.id}
+                  subjectTitle={course.title}
+                  initial={
+                    myReview
+                      ? { rating: myReview.rating, body: myReview.body, authorName: myReview.authorName }
+                      : null
+                  }
+                />
+              </div>
+            </div>
           </div>
         ) : (
           <>
@@ -176,6 +212,35 @@ export default async function CoursePage({
           </>
         )}
       </div>
+
+      {reviews.length > 0 ? (
+        <section id="reviews" className="mt-8">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-zinc-900">Reviews</h2>
+            <Stars value={rating.avg} />
+            <span className="text-sm text-muted">
+              {rating.avg.toFixed(1)} · {rating.count}
+            </span>
+          </div>
+          <ul className="mt-3 space-y-3">
+            {reviews.map((r) => (
+              <li key={r.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Stars value={r.rating} className="text-sm" />
+                  <span className="text-xs text-muted">{formatDateIST(r.createdAt)}</span>
+                </div>
+                {r.body ? (
+                  <p className="mt-2 whitespace-pre-line text-sm text-zinc-700">{r.body}</p>
+                ) : null}
+                <p className="mt-1.5 text-xs text-muted">
+                  {r.authorName || "Verified learner"} ·{" "}
+                  <span className="font-medium text-green-700">✓ Enrolled</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <MoreFromStore tenantId={tenant.id} />
     </main>

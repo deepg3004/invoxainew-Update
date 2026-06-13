@@ -265,8 +265,9 @@ export default async function OrderReceipt({
               return (
                 <ReviewForm
                   key={pr.id}
-                  productId={pr.id}
-                  productTitle={pr.title}
+                  kind="product"
+                  subjectId={pr.id}
+                  subjectTitle={pr.title}
                   initial={
                     ex ? { rating: ex.rating, body: ex.body, authorName: ex.authorName } : null
                   }
