@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, after, type NextRequest } from "next/server";
 import { getBuyerPaymentByOrderId, markBuyerPaymentPaid } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../../lib/gateway";
 import { verifyPaymentSignatureWithKeys } from "../../../../lib/razorpay";
@@ -51,16 +51,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: result.reason }, { status: 409 });
   }
 
-  // Best-effort seller notifications — only on a NEWLY-paid order (so a refreshed
-  // callback can't duplicate them), and never allowed to fail the confirmation.
+  // Best-effort seller/buyer notifications — only on a NEWLY-paid order (so a
+  // refreshed callback can't duplicate them). Run AFTER the response via after():
+  // notification + email work (now retried) must never delay or fail the buyer's
+  // confirmation. notifySaleEffects never throws.
   if (!result.alreadyProcessed) {
-    await notifySaleEffects({
-      tenantId: payment.tenantId,
-      buyerPaymentId: payment.id,
-      itemTitle: payment.itemTitle,
-      amountPaise: payment.amountPaise,
-      commission: result.commission,
-    });
+    after(() =>
+      notifySaleEffects({
+        tenantId: payment.tenantId,
+        buyerPaymentId: payment.id,
+        itemTitle: payment.itemTitle,
+        amountPaise: payment.amountPaise,
+        commission: result.commission,
+      }),
+    );
   }
 
   return NextResponse.json({ ok: true });

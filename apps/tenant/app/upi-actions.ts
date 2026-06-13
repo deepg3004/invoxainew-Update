@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { autoConfirmOrHoldUpiOrder, notifyTenant } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../lib/resolve";
@@ -40,25 +41,30 @@ export async function submitUpiRef(
     return { ok: false, error: "This payment session expired. Please start again.", expired: true };
   }
 
-  // Best-effort seller notifications (never block the buyer). Fire once: on the
-  // first auto-confirm (the sale) or the first hold (a payment to confirm).
+  // Best-effort seller/buyer notifications — run AFTER the response (after()) so the
+  // notification + email work (now retried) never delays the buyer. Fire once: on
+  // the first auto-confirm (the sale) or the first hold (a payment to confirm).
   if (res.confirmed) {
     if (!res.alreadyProcessed) {
-      await notifySaleEffects({
+      const summary = {
         tenantId: tenant.id,
         buyerPaymentId: res.buyerPaymentId,
         itemTitle: res.itemTitle,
         amountPaise: res.amountPaise,
         commission: res.commission,
-      });
+      };
+      after(() => notifySaleEffects(summary));
     }
   } else if (!res.alreadyProcessed) {
-    await notifyTenant(tenant.id, {
-      type: "upi_pending",
-      title: "UPI payment to confirm",
-      body: `${res.itemTitle ?? "An order"} — ${formatRupees(res.amountPaise)}. Check your UPI app, then confirm it.`,
-      link: "/orders",
-    }).catch(() => {});
+    const body = `${res.itemTitle ?? "An order"} — ${formatRupees(res.amountPaise)}. Check your UPI app, then confirm it.`;
+    after(() =>
+      notifyTenant(tenant.id, {
+        type: "upi_pending",
+        title: "UPI payment to confirm",
+        body,
+        link: "/orders",
+      }).catch(() => {}),
+    );
   }
 
   return { ok: true, confirmed: res.confirmed };

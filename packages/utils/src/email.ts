@@ -30,6 +30,9 @@ export type SendEmailInput = {
   replyTo?: string;
 };
 
+const MAX_ATTEMPTS = 3;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const env = serverEnv();
   if (!env.RESEND_API_KEY) {
@@ -38,32 +41,50 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   const to = input.to.trim();
   if (!to) return { status: "skipped", reason: "no recipient" };
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: input.from ?? env.EMAIL_FROM,
-        to: [to],
-        subject: input.subject,
-        html: input.html,
-        ...(input.text ? { text: input.text } : {}),
-        ...(input.replyTo ? { reply_to: input.replyTo } : {}),
-      }),
-    });
+  const body = JSON.stringify({
+    from: input.from ?? env.EMAIL_FROM,
+    to: [to],
+    subject: input.subject,
+    html: input.html,
+    ...(input.text ? { text: input.text } : {}),
+    ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+  });
 
-    if (!res.ok) {
+  // Retry transient failures only — a rate-limit (429), a Resend 5xx, or a network
+  // error can succeed on a retry; a 4xx (bad key, invalid recipient) cannot, so we
+  // fail fast on those. Backoff: 400ms, 1200ms. Callers run this off the request
+  // path (after()), so the wait never delays the buyer.
+  let lastError = "unknown error";
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body,
+      });
+
+      if (res.ok) {
+        const json = (await res.json().catch(() => ({}))) as { id?: string };
+        return { status: "sent", providerMessageId: json.id ?? "" };
+      }
+
       const detail = await res.text().catch(() => "");
-      return { status: "failed", error: `resend ${res.status}: ${detail.slice(0, 300)}` };
+      lastError = `resend ${res.status}: ${detail.slice(0, 300)}`;
+      const retriable = res.status === 429 || res.status >= 500;
+      if (!retriable || attempt === MAX_ATTEMPTS) {
+        return { status: "failed", error: lastError };
+      }
+    } catch (e) {
+      // Network/abort error — retriable.
+      lastError = e instanceof Error ? e.message : String(e);
+      if (attempt === MAX_ATTEMPTS) return { status: "failed", error: lastError };
     }
-    const json = (await res.json().catch(() => ({}))) as { id?: string };
-    return { status: "sent", providerMessageId: json.id ?? "" };
-  } catch (e) {
-    return { status: "failed", error: e instanceof Error ? e.message : String(e) };
+    await sleep(attempt * 400);
   }
+  return { status: "failed", error: lastError };
 }
 
 /** Minimal HTML escape for interpolating user/seller-controlled strings into the
