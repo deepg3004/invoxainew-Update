@@ -11,6 +11,7 @@
     "./date": "./src/date.ts",
     "./crypto": "./src/crypto.ts",
     "./email": "./src/email.ts",
+    "./notifications": "./src/notifications.ts",
     "./redis": "./src/redis.ts",
     "./blocks": "./src/blocks.ts",
     "./states": "./src/states.ts"

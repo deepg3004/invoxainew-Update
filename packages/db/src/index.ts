@@ -137,6 +137,13 @@ export {
   getOrderNotifyContext,
 } from "./notifications";
 export {
+  listNotificationTemplates,
+  upsertNotificationTemplate,
+  getNotificationPreferences,
+  setNotificationPreference,
+  getEmailDispatchConfig,
+} from "./notif-config";
+export {
   normalizeDomain,
   addDomain,
   listDomains,

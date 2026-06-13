@@ -3,9 +3,11 @@ import {
   listSoldOutProductsForOrder,
   getOrderNotifyContext,
   recordNotificationLog,
+  getEmailDispatchConfig,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { sendEmail, escapeHtml, type SendEmailResult } from "@invoxai/utils/email";
+import { getNotifEvent, renderTemplate } from "@invoxai/utils/notifications";
 
 /**
  * Best-effort seller notifications fired after a NEWLY-PAID order — the sale, a
@@ -65,52 +67,80 @@ async function sendSaleEmails(input: {
 }): Promise<void> {
   const ctx = await getOrderNotifyContext(input.buyerPaymentId);
   if (!ctx) return;
+  const cfg = await getEmailDispatchConfig(input.tenantId);
 
   const storeName = ctx.tenant.name?.trim() || ctx.tenant.username;
-  const item = ctx.itemTitle ?? "Your order";
-  const amount = formatRupees(input.amountPaise);
-  const storeUrl = `https://${ctx.tenant.username}.invoxai.io`;
+  const vars: Record<string, string> = {
+    storeName,
+    item: ctx.itemTitle ?? "Your order",
+    amount: formatRupees(input.amountPaise),
+  };
 
-  // Buyer receipt.
-  if (ctx.buyerEmail) {
-    const subject = `Your purchase from ${storeName}`;
-    const result = await sendEmail({
-      to: ctx.buyerEmail,
-      subject,
-      html: emailShell({
-        heading: "Thanks for your purchase 🎉",
-        intro: `Your payment to ${escapeHtml(storeName)} was successful.`,
-        rows: [
-          ["Item", escapeHtml(item)],
-          ["Amount paid", amount],
-        ],
-        button: { label: `Visit ${escapeHtml(storeName)}`, url: storeUrl },
-        footer: "You're receiving this because you made a purchase on this store.",
-      }),
-    });
-    await logSend(input.tenantId, "buyer.receipt", ctx.buyerEmail, subject, result);
+  await dispatchEmail({
+    tenantId: input.tenantId,
+    eventKey: "buyer.receipt",
+    to: ctx.buyerEmail,
+    vars,
+    buttonUrl: `https://${ctx.tenant.username}.invoxai.io`,
+    cfg,
+  });
+  await dispatchEmail({
+    tenantId: input.tenantId,
+    eventKey: "seller.sale",
+    to: ctx.tenant.owner?.email ?? null,
+    vars,
+    buttonUrl: "https://app.invoxai.io/orders",
+    cfg,
+  });
+}
+
+/**
+ * Dispatch one catalog event's email: respect the tenant's preference (a disabled
+ * event is logged "skipped", never sent), render subject + body from the admin
+ * template (or the code default), and log the result. The structured rows + button
+ * + footer chrome come from the catalog so a template edit can't break the layout.
+ */
+async function dispatchEmail(args: {
+  tenantId: string;
+  eventKey: string;
+  to: string | null;
+  vars: Record<string, string>;
+  buttonUrl: string;
+  cfg: { template(k: string): { subject: string; body: string } | null; enabled(k: string): boolean };
+}): Promise<void> {
+  const event = getNotifEvent(args.eventKey);
+  if (!event || !args.to) return;
+
+  if (!args.cfg.enabled(args.eventKey)) {
+    await recordNotificationLog({
+      tenantId: args.tenantId,
+      eventType: args.eventKey,
+      recipient: args.to,
+      status: "skipped",
+      error: "disabled by tenant preference",
+    }).catch(() => {});
+    return;
   }
 
-  // Seller sale alert.
-  const sellerEmail = ctx.tenant.owner?.email;
-  if (sellerEmail) {
-    const subject = `New sale: ${amount}`;
-    const result = await sendEmail({
-      to: sellerEmail,
-      subject,
-      html: emailShell({
-        heading: "You made a sale 💸",
-        intro: `A buyer just paid on ${escapeHtml(storeName)}.`,
-        rows: [
-          ["Item", escapeHtml(item)],
-          ["Amount", amount],
-        ],
-        button: { label: "View order", url: "https://app.invoxai.io/orders" },
-        footer: "Manage email alerts in your InvoxAI dashboard.",
-      }),
-    });
-    await logSend(input.tenantId, "seller.sale", sellerEmail, subject, result);
-  }
+  const tpl = args.cfg.template(args.eventKey);
+  const subject = renderTemplate(tpl?.subject ?? event.defaultSubject, args.vars);
+  const intro = renderTemplate(tpl?.body ?? event.defaultBody, args.vars);
+
+  const result = await sendEmail({
+    to: args.to,
+    subject,
+    html: emailShell({
+      heading: event.heading,
+      intro: escapeHtml(intro),
+      rows: [
+        ["Item", escapeHtml(args.vars.item ?? "")],
+        ["Amount", args.vars.amount ?? ""],
+      ],
+      button: { label: event.buttonLabel, url: args.buttonUrl },
+      footer: event.footer,
+    }),
+  });
+  await logSend(args.tenantId, args.eventKey, args.to, subject, result);
 }
 
 /** Persist one send attempt (best-effort — a log failure is swallowed). */

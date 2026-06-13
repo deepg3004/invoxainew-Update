@@ -1175,6 +1175,40 @@ model NotificationLog {
   @@map("notification_logs")
 }
 
+/// Phase 14 (slice 3): an admin-editable copy override for a notification event +
+/// channel. Platform-GLOBAL (no tenant) — set in the admin app behind requireAdmin
+/// (writes an AdminAuditLog). When no row exists for an event, the send path falls
+/// back to the code catalog's default subject/body (@invoxai/utils/notifications).
+/// Only subject + body are editable; the layout chrome stays in code. deny-anon RLS.
+model NotificationTemplate {
+  id        String   @id @default(uuid()) @db.Uuid
+  eventKey  String   @map("event_key")
+  channel   String   @default("email")
+  subject   String
+  body      String
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([eventKey, channel])
+  @@map("notification_templates")
+}
+
+/// Phase 14 (slice 3): a per-tenant on/off toggle for a notification event +
+/// channel. No row = enabled (the default). Sellers manage these on their
+/// dashboard; the send path skips an event whose preference is disabled. Scalar
+/// tenant_id + SQL FK + deny-anon RLS (SellerUpi pattern).
+model NotificationPreference {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  eventKey  String   @map("event_key")
+  channel   String   @default("email")
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, eventKey, channel])
+  @@map("notification_preferences")
+}
+
 /// Raw idempotency + audit log of every Razorpay webhook we accept. `eventId`
 /// is Razorpay's event id with a UNIQUE constraint — the webhook records the
 /// event first and a duplicate delivery trips the constraint, so the handler
