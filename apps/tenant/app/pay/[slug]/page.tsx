@@ -67,8 +67,29 @@ export default async function PayPage({
         <p className="mt-2 text-muted">{page.description}</p>
       ) : null}
 
+      {page.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={page.imageUrl}
+          alt={page.title}
+          className="mt-4 aspect-video w-full rounded-xl border border-zinc-200 object-cover"
+        />
+      ) : null}
+
       <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
-        <div className="text-3xl font-bold">{formatRupees(page.amountPaise)}</div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-3xl font-bold">{formatRupees(page.amountPaise)}</span>
+          {page.compareAtPaise != null && page.compareAtPaise > page.amountPaise ? (
+            <>
+              <span className="text-lg text-muted line-through">
+                {formatRupees(page.compareAtPaise)}
+              </span>
+              <span className="rounded-full bg-green-50 px-2 py-0.5 text-sm font-medium text-green-700">
+                {Math.round((1 - page.amountPaise / page.compareAtPaise) * 100)}% off
+              </span>
+            </>
+          ) : null}
+        </div>
         <p className="mt-1 text-xs text-muted">
           Paid securely to {tenant.name ?? tenant.username}.
         </p>
@@ -77,6 +98,7 @@ export default async function PayPage({
           <PayBox
             paymentPageId={page.id}
             title={page.title}
+            amountPaise={page.amountPaise}
             razorpayReady={razorpayReady}
             upi={
               upi

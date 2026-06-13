@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Script from "next/script";
 import { PaymentSuccess } from "@invoxai/ui";
-import { startBuyerCheckout, startPayUpiSession } from "./actions";
+import { formatRupees } from "@invoxai/utils/money";
+import { startBuyerCheckout, startPayUpiSession, previewPayCoupon } from "./actions";
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
+import { readCouponCookie } from "../../../lib/coupon-cookie";
 
 declare global {
   interface Window {
@@ -27,11 +29,13 @@ function tabCls(active: boolean): string {
 export function PayBox({
   paymentPageId,
   title,
+  amountPaise,
   razorpayReady,
   upi,
 }: {
   paymentPageId: string;
   title: string;
+  amountPaise: number;
   razorpayReady: boolean;
   upi: { upiId: string; payeeName: string } | null;
 }) {
@@ -41,12 +45,59 @@ export function PayBox({
   const [status, setStatus] = useState<Status>("idle");
   const [upiDone, setUpiDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [applied, setApplied] = useState<{ code: string; discountPaise: number } | null>(null);
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+
+  const discount = applied ? Math.min(applied.discountPaise, amountPaise) : 0;
+  const total = Math.max(0, amountPaise - discount);
+
+  async function applyPromo() {
+    setApplying(true);
+    setCouponMsg(null);
+    try {
+      const res = await previewPayCoupon(paymentPageId, code);
+      if (res.ok) {
+        setApplied({ code: res.code, discountPaise: res.discountPaise });
+        setCode(res.code);
+      } else {
+        setApplied(null);
+        setCouponMsg(res.error);
+      }
+    } catch {
+      setCouponMsg("Couldn’t check that code. Try again.");
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  // Share-link coupon: auto-apply a ?coupon=… captured to the cookie. Once, on mount.
+  useEffect(() => {
+    const c = readCouponCookie();
+    if (!c) return;
+    setCode(c);
+    let cancelled = false;
+    (async () => {
+      setApplying(true);
+      try {
+        const res = await previewPayCoupon(paymentPageId, c);
+        if (!cancelled && res.ok) setApplied({ code: res.code, discountPaise: res.discountPaise });
+      } finally {
+        if (!cancelled) setApplying(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function payRazorpay() {
     setError(null);
     setStatus("starting");
     try {
-      const result = await startBuyerCheckout(paymentPageId, { email, contact });
+      const result = await startBuyerCheckout(paymentPageId, { email, contact }, applied?.code);
       if (!result.ok) {
         setError(result.error);
         setStatus("idle");
@@ -135,6 +186,30 @@ export function PayBox({
         />
       </div>
 
+      {/* Promo code */}
+      <div className="mt-3 flex gap-2">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="Promo code"
+          className={`flex-1 uppercase ${inputCls}`}
+        />
+        <button
+          type="button"
+          onClick={applyPromo}
+          disabled={applying || code.trim() === ""}
+          className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:border-brand/40 disabled:opacity-50"
+        >
+          {applying ? "…" : "Apply"}
+        </button>
+      </div>
+      {couponMsg ? <p className="mt-1.5 text-xs text-red-600">{couponMsg}</p> : null}
+      {discount > 0 ? (
+        <p className="mt-1.5 text-xs font-medium text-green-700">
+          Code {applied?.code} applied — {formatRupees(discount)} off
+        </p>
+      ) : null}
+
       {error ? (
         <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
       ) : null}
@@ -145,7 +220,7 @@ export function PayBox({
           disabled={status === "starting"}
           className="mt-3 w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white disabled:opacity-50"
         >
-          {status === "starting" ? "Starting…" : "Pay now"}
+          {status === "starting" ? "Starting…" : `Pay ${formatRupees(total)}`}
         </button>
       ) : null}
 
@@ -153,7 +228,7 @@ export function PayBox({
         <UpiPayPanel
           upi={upi}
           title={title}
-          onStart={() => startPayUpiSession(paymentPageId, { email, contact })}
+          onStart={() => startPayUpiSession(paymentPageId, { email, contact }, applied?.code)}
           onConfirmed={() => setStatus("paid")}
           onSubmitted={() => setUpiDone(true)}
         />

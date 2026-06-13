@@ -35,6 +35,10 @@ export default async function EditPaymentPage({
             title: page.title,
             description: page.description,
             amountPaise: page.amountPaise,
+            compareAtPaise: page.compareAtPaise,
+            imageUrl: page.imageUrl,
+            accessUrl: page.accessUrl,
+            kind: page.kind,
           }}
         />
       </GlassCard>

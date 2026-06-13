@@ -71,7 +71,7 @@ export function getBuyerOrder(input: {
       OR: attribution,
     },
     include: {
-      paymentPage: { select: { title: true } },
+      paymentPage: { select: { title: true, accessUrl: true } },
       // accessUrl (community invite / download) is revealed here ONLY — the query
       // is already scoped to status PAID + this buyer, so it can't leak pre-pay
       // or across buyers.

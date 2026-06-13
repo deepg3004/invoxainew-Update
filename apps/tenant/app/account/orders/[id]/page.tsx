@@ -60,6 +60,7 @@ export default async function OrderReceipt({
     if (href) accessLinks.push({ title: title || "Access link", href });
   };
   pushLink(order.product?.title, order.product?.accessUrl);
+  pushLink(order.paymentPage?.title, order.paymentPage?.accessUrl);
   for (const li of order.orderItems) pushLink(li.product?.title ?? li.titleSnapshot, li.product?.accessUrl);
 
   // Verified-purchase reviews: the distinct products in this order (single-product

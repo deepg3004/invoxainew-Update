@@ -1,4 +1,4 @@
-import { Prisma, type BuyerPayment } from "@prisma/client";
+import { Prisma, type BuyerPayment, type ProductKind } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { prisma } from "./client";
 import { getUpiDueBlockPaise } from "./settings";
@@ -31,6 +31,10 @@ export async function createPaymentPage(input: {
   title: string;
   description?: string | null;
   amountPaise: number;
+  compareAtPaise?: number | null;
+  imageUrl?: string | null;
+  accessUrl?: string | null;
+  kind?: ProductKind;
 }): Promise<CreatePageResult> {
   try {
     const page = await prisma.paymentPage.create({
@@ -40,6 +44,10 @@ export async function createPaymentPage(input: {
         title: input.title,
         description: input.description ?? null,
         amountPaise: input.amountPaise,
+        compareAtPaise: input.compareAtPaise ?? null,
+        imageUrl: input.imageUrl ?? null,
+        accessUrl: input.accessUrl ?? null,
+        kind: input.kind ?? "DIGITAL",
       },
       select: { id: true },
     });
@@ -81,7 +89,15 @@ export function getActivePaymentPageById(id: string) {
 export function updatePaymentPage(
   tenantId: string,
   id: string,
-  data: { title: string; description?: string | null; amountPaise: number },
+  data: {
+    title: string;
+    description?: string | null;
+    amountPaise: number;
+    compareAtPaise?: number | null;
+    imageUrl?: string | null;
+    accessUrl?: string | null;
+    kind?: ProductKind;
+  },
 ) {
   // Scope the update to the owner via updateMany (where includes tenantId).
   return prisma.paymentPage.updateMany({
@@ -90,6 +106,10 @@ export function updatePaymentPage(
       title: data.title,
       description: data.description ?? null,
       amountPaise: data.amountPaise,
+      compareAtPaise: data.compareAtPaise ?? null,
+      imageUrl: data.imageUrl ?? null,
+      accessUrl: data.accessUrl ?? null,
+      kind: data.kind ?? "DIGITAL",
     },
   });
 }

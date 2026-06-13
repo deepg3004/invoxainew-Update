@@ -8,6 +8,7 @@ import {
   setPaymentPageActive,
   getSellerGateway,
   getEnabledSellerUpi,
+  type ProductKind,
 } from "@invoxai/db";
 import { rupeeStringToPaise } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -15,17 +16,64 @@ import { requireTenant } from "../../lib/tenant";
 export type PageFormState = { error?: string };
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
+const KINDS: ProductKind[] = ["DIGITAL", "PHYSICAL", "SERVICE"];
 
-function parsePageFields(form: FormData):
-  | { ok: true; title: string; description: string | null; amountPaise: number }
-  | { ok: false; message: string } {
+interface ParsedPage {
+  title: string;
+  description: string | null;
+  amountPaise: number;
+  compareAtPaise: number | null;
+  imageUrl: string | null;
+  accessUrl: string | null;
+  kind: ProductKind;
+}
+
+function parsePageFields(
+  form: FormData,
+): { ok: true; value: ParsedPage } | { ok: false; message: string } {
   const title = String(form.get("title") ?? "").trim();
   if (!title) return { ok: false, message: "Title is required." };
   const amount = rupeeStringToPaise(String(form.get("amount") ?? ""));
   if (!amount.ok) return { ok: false, message: `Amount: ${amount.message}` };
   if (amount.paise <= 0) return { ok: false, message: "Amount must be greater than ₹0." };
+
+  // Optional compare-at (must be above the amount, else there's no deal to show).
+  const compareRaw = String(form.get("compareAt") ?? "").trim();
+  let compareAtPaise: number | null = null;
+  if (compareRaw) {
+    const cmp = rupeeStringToPaise(compareRaw);
+    if (!cmp.ok) return { ok: false, message: `Compare-at price: ${cmp.message}` };
+    if (cmp.paise <= amount.paise) {
+      return { ok: false, message: "Compare-at price must be higher than the amount." };
+    }
+    compareAtPaise = cmp.paise;
+  }
+
+  const imageRaw = String(form.get("imageUrl") ?? "").trim();
+  if (imageRaw && !/^https?:\/\/\S+$/.test(imageRaw)) {
+    return { ok: false, message: "Image URL must start with http:// or https://" };
+  }
+  const accessRaw = String(form.get("accessUrl") ?? "").trim();
+  if (accessRaw && !/^https?:\/\/\S+$/.test(accessRaw)) {
+    return { ok: false, message: "Access link must start with http:// or https://" };
+  }
+
+  const kindRaw = String(form.get("kind") ?? "DIGITAL");
+  const kind = KINDS.includes(kindRaw as ProductKind) ? (kindRaw as ProductKind) : "DIGITAL";
+
   const description = String(form.get("description") ?? "").trim() || null;
-  return { ok: true, title, description, amountPaise: amount.paise };
+  return {
+    ok: true,
+    value: {
+      title,
+      description,
+      amountPaise: amount.paise,
+      compareAtPaise,
+      imageUrl: imageRaw || null,
+      accessUrl: accessRaw || null,
+      kind,
+    },
+  };
 }
 
 export async function createPaymentPageAction(
@@ -55,9 +103,7 @@ export async function createPaymentPageAction(
   const result = await createPaymentPage({
     tenantId: tenant.id,
     slug,
-    title: fields.title,
-    description: fields.description,
-    amountPaise: fields.amountPaise,
+    ...fields.value,
   });
   if (!result.ok) return { error: `The link "/pay/${slug}" is already in use.` };
 
@@ -74,11 +120,7 @@ export async function updatePaymentPageAction(
   const fields = parsePageFields(form);
   if (!fields.ok) return { error: fields.message };
 
-  await updatePaymentPage(tenant.id, id, {
-    title: fields.title,
-    description: fields.description,
-    amountPaise: fields.amountPaise,
-  });
+  await updatePaymentPage(tenant.id, id, fields.value);
   revalidatePath("/pay-pages");
   redirect("/pay-pages");
 }
