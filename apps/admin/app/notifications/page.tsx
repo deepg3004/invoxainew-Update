@@ -1,7 +1,7 @@
 import { formatDateTimeShortIST } from "@invoxai/utils/date";
 import Link from "next/link";
 import { GlassCard, PageHeader } from "@invoxai/ui";
-import { getWalletAttention, listRecentPaymentEvents } from "@invoxai/db";
+import { getWalletAttention, listRecentPaymentEvents, listAbuseReports } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
 import { AdminShell } from "../components/AdminShell";
@@ -13,9 +13,10 @@ export default async function AdminNotificationsPage() {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
-  const [attention, events] = await Promise.all([
+  const [attention, events, openAbuse] = await Promise.all([
     getWalletAttention(),
     listRecentPaymentEvents(),
+    listAbuseReports({ status: "NEW", take: 10 }),
   ]);
   const unprocessed = events.filter((e) => !e.processedAt);
 
@@ -40,6 +41,25 @@ export default async function AdminNotificationsPage() {
                 <span className="text-muted">
                   wallet {formatRupees(a.balancePaise)}
                   {a.commissionDuePaise > 0 ? ` · ${formatRupees(a.commissionDuePaise)} due` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </GlassCard>
+
+      <GlassCard className="mt-4" title={`Open abuse reports (${openAbuse.length})`}>
+        {openAbuse.length === 0 ? (
+          <p className="text-sm text-emerald-700">No open reports ✓</p>
+        ) : (
+          <ul className="divide-y divide-zinc-100">
+            {openAbuse.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                <Link href="/abuse-reports" className="font-medium text-brand-strong hover:underline">
+                  {r.tenant.name?.trim() || r.tenant.username}
+                </Link>
+                <span className="text-xs font-medium text-red-700">
+                  {r.reason} · {formatDateTimeShortIST(r.createdAt)}
                 </span>
               </li>
             ))}

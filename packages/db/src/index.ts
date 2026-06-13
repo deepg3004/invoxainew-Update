@@ -158,6 +158,12 @@ export {
   type SetPrimaryResult,
 } from "./domains";
 export {
+  createAbuseReport,
+  listAbuseReports,
+  countOpenAbuseReports,
+  reviewAbuseReport,
+} from "./abuse";
+export {
   createProduct,
   listProducts,
   getProductById,

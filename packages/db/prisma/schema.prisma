@@ -89,6 +89,8 @@ model Tenant {
   notifications Notification[]
   // Custom domains (Final Plan §38): the seller's connected domains.
   domains       TenantDomain[]
+  // Phase 16: abuse/scam reports filed against this store.
+  abuseReports  AbuseReport[]
   // Lead forms + CRM (Final Plan §12): capture forms and their submissions.
   leadForms     LeadForm[]
   leadSubmissions LeadSubmission[]
@@ -1046,6 +1048,38 @@ model AdminAuditLog {
 
   @@index([tenantId, createdAt])
   @@map("admin_audit_logs")
+}
+
+enum AbuseStatus {
+  NEW
+  REVIEWING
+  ACTIONED
+  DISMISSED
+}
+
+/// Phase 16: a public abuse/scam report against a tenant store. Filed anonymously
+/// from the storefront (/report-abuse, host-resolved tenant) and triaged by admins,
+/// who can then suspend the tenant / disable content via the existing admin tools.
+/// `tenantId` is a denormalised scalar; the FK + deny-anon RLS are in the migration
+/// (the report is INSERTED server-side via Prisma, never by the anon client). Review
+/// actions are written to AdminAuditLog.
+model AbuseReport {
+  id            String      @id @default(uuid()) @db.Uuid
+  tenantId      String      @map("tenant_id") @db.Uuid
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reason        String // category, e.g. "fraud" | "prohibited" | "offensive" | "spam" | "other"
+  detail        String?
+  reporterEmail String?     @map("reporter_email")
+  pageUrl       String?     @map("page_url")
+  status        AbuseStatus @default(NEW)
+  adminNote     String?     @map("admin_note")
+  reviewedBy    String?     @map("reviewed_by")
+  reviewedAt    DateTime?   @map("reviewed_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@index([tenantId])
+  @@map("abuse_reports")
 }
 
 /// Order fulfillment lifecycle (C10), set by the seller and shown to the buyer.

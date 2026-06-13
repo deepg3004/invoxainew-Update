@@ -47,6 +47,13 @@ export default async function RootLayout({
         <PageViewBeacon />
         {announcement ? <AnnouncementBar text={announcement} href={annHref} /> : null}
         {children}
+        {tenant && !tenant.suspendedAt ? (
+          <footer className="border-t border-zinc-200/70 py-5 text-center text-xs text-zinc-400">
+            <a href="/report-abuse" className="hover:text-zinc-600 hover:underline">
+              Report this store
+            </a>
+          </footer>
+        ) : null}
       </body>
     </html>
   );
