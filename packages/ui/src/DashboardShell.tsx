@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   Clock,
   Star,
+  Store,
   Plug,
   Receipt,
   FileText,
@@ -46,6 +47,7 @@ export const SELLER_NAV: NavGroup[] = [
     items: [
       { href: "/ai-pages", label: "AI pages", icon: Sparkles },
       { href: "/bio", label: "Bio link", icon: Link2 },
+      { href: "/storefront", label: "Storefront", icon: Store },
     ],
   },
   {

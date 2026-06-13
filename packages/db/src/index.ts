@@ -5,6 +5,7 @@ export {
   upsertProfile,
   getTenantByOwnerId,
   setTenantStateCode,
+  setStoreAnnouncement,
   getTenantByUsername,
   isUsernameTaken,
   createTenantForOwner,

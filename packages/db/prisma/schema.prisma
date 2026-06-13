@@ -47,6 +47,10 @@ model Tenant {
   // GST place-of-supply: the seller's 2-digit state code (e.g. "19" = West
   // Bengal). Drives IGST vs CGST+SGST on the platform invoices billed to them.
   stateCode String?  @map("state_code")
+  // Storefront announcement bar (optional): a short promo message shown across the
+  // seller's storefront, with an optional link. Blank = no bar.
+  announcement     String? @map("announcement")
+  announcementLink String? @map("announcement_link")
   // Phase 3 admin: when set, the storefront + checkout are blocked (suspended).
   suspendedAt DateTime? @map("suspended_at")
   ownerId   String   @unique @db.Uuid

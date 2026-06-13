@@ -43,6 +43,17 @@ export function setTenantStateCode(tenantId: string, stateCode: string | null) {
   });
 }
 
+/** Set (or clear) the seller's storefront announcement bar. Scoped by owner upstream. */
+export function setStoreAnnouncement(
+  tenantId: string,
+  input: { announcement: string | null; announcementLink: string | null },
+) {
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: { announcement: input.announcement, announcementLink: input.announcementLink },
+  });
+}
+
 /** Public lookup by username (used to render a tenant's public site). */
 export function getTenantByUsername(username: string) {
   return prisma.tenant.findUnique({ where: { username } });
