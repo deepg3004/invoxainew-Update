@@ -7,6 +7,7 @@ import {
   listAbuseReports,
   refreshRiskAlerts,
   listRiskAlerts,
+  listPendingVerifications,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
@@ -26,11 +27,12 @@ export default async function AdminNotificationsPage() {
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
   await refreshRiskAlerts();
-  const [attention, events, openAbuse, openRisk] = await Promise.all([
+  const [attention, events, openAbuse, openRisk, pendingVerif] = await Promise.all([
     getWalletAttention(),
     listRecentPaymentEvents(),
     listAbuseReports({ status: "NEW", take: 10 }),
     listRiskAlerts("OPEN", 10),
+    listPendingVerifications(10),
   ]);
   const unprocessed = events.filter((e) => !e.processedAt);
 
@@ -55,6 +57,25 @@ export default async function AdminNotificationsPage() {
                 <span className="text-muted">
                   wallet {formatRupees(a.balancePaise)}
                   {a.commissionDuePaise > 0 ? ` · ${formatRupees(a.commissionDuePaise)} due` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </GlassCard>
+
+      <GlassCard className="mt-4" title={`Verification requests (${pendingVerif.length})`}>
+        {pendingVerif.length === 0 ? (
+          <p className="text-sm text-emerald-700">No pending verifications ✓</p>
+        ) : (
+          <ul className="divide-y divide-zinc-100">
+            {pendingVerif.map((t) => (
+              <li key={t.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                <Link href={`/tenants/${t.id}`} className="font-medium text-brand-strong hover:underline">
+                  {t.name?.trim() || t.username}
+                </Link>
+                <span className="text-xs text-muted">
+                  {t.verificationSubmittedAt ? formatDateTimeShortIST(t.verificationSubmittedAt) : ""}
                 </span>
               </li>
             ))}

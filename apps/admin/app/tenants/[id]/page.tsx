@@ -12,7 +12,7 @@ import { maskKeyId } from "@invoxai/utils/crypto";
 import { requireAdmin } from "../../../lib/auth";
 import { AdminShell } from "../../components/AdminShell";
 import { NotAuthorized } from "../../components/NotAuthorized";
-import { toggleSuspendAction, markChargebackAction } from "./actions";
+import { toggleSuspendAction, markChargebackAction, reviewVerificationAction } from "./actions";
 import { WalletAdjustForm } from "./WalletAdjustForm";
 
 export const dynamic = "force-dynamic";
@@ -136,6 +136,43 @@ export default async function TenantDetail({
               {suspended ? "Un-suspend store" : "Suspend store"}
             </button>
           </form>
+        </div>
+
+        <div className="mt-5 border-t border-amber-200 pt-4">
+          <p className="text-sm font-medium text-muted">
+            Verification —{" "}
+            <span className="font-semibold text-zinc-900">
+              {t.verificationStatus.charAt(0) + t.verificationStatus.slice(1).toLowerCase()}
+            </span>
+          </p>
+          {t.verificationNote ? (
+            <p className="mt-1 whitespace-pre-line rounded-md bg-white/60 px-3 py-2 text-xs text-zinc-700">
+              {t.verificationNote}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-muted">No submission from this seller.</p>
+          )}
+          {t.verificationStatus === "PENDING" ? (
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <form action={reviewVerificationAction.bind(null, t.id, "REJECTED")} className="flex items-end gap-2">
+                <input
+                  name="reviewNote"
+                  placeholder="Reason (optional, shown to seller)"
+                  className="min-w-56 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+                />
+                <button className="rounded-lg bg-red-700 px-3 py-1.5 text-sm font-medium text-white">Reject</button>
+              </form>
+              <form action={reviewVerificationAction.bind(null, t.id, "VERIFIED")}>
+                <button className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white">Approve</button>
+              </form>
+            </div>
+          ) : t.verificationStatus === "VERIFIED" ? (
+            <form action={reviewVerificationAction.bind(null, t.id, "REJECTED")} className="mt-3">
+              <button className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-muted hover:text-red-700">
+                Revoke verification
+              </button>
+            </form>
+          ) : null}
         </div>
 
         <div className="mt-5 border-t border-amber-200 pt-4">

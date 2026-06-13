@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { setTenantSuspended, adminAdjustWallet, markChargeback } from "@invoxai/db";
+import { setTenantSuspended, adminAdjustWallet, markChargeback, reviewVerification } from "@invoxai/db";
 import { rupeeStringToPaise } from "@invoxai/utils/money";
 import { requireAdmin } from "../../../lib/auth";
 
@@ -23,6 +23,24 @@ export async function toggleSuspendAction(
     reason,
   });
   revalidatePath(`/tenants/${id}`);
+}
+
+/** Approve / reject a seller's verification submission (audited). */
+export async function reviewVerificationAction(
+  tenantId: string,
+  decision: "VERIFIED" | "REJECTED",
+  form: FormData,
+) {
+  const gate = await requireAdmin();
+  if (!gate.ok) return;
+  const reviewNote = String(form.get("reviewNote") ?? "").trim() || null;
+  await reviewVerification({
+    tenantId,
+    decision,
+    reviewNote,
+    adminEmail: gate.user.email ?? "unknown",
+  });
+  revalidatePath(`/tenants/${tenantId}`);
 }
 
 /** Mark a chargeback on an order (form action). Reverses commission + audits. */

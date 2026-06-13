@@ -170,6 +170,14 @@ export {
   dismissRiskAlert,
 } from "./risk";
 export {
+  getVerification,
+  submitVerification,
+  reviewVerification,
+  listPendingVerifications,
+  countPendingVerifications,
+} from "./verification";
+export type { VerificationStatus } from "@prisma/client";
+export {
   createCommunity,
   listCommunities,
   getCommunityById,

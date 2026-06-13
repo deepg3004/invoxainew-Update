@@ -72,7 +72,17 @@ export default async function StorePage({
           <p className="text-sm font-medium uppercase tracking-wide text-muted">
             {tenant.username}.invoxai.io
           </p>
-          <h1 className="mt-1 text-3xl font-bold">{tenant.name ?? tenant.username}</h1>
+          <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold">
+            {tenant.name ?? tenant.username}
+            {tenant.verificationStatus === "VERIFIED" ? (
+              <span
+                title="Verified by InvoxAI"
+                className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
+              >
+                ✓ Verified
+              </span>
+            ) : null}
+          </h1>
         </div>
         <div className="flex gap-4">
           <CartLink />

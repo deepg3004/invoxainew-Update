@@ -71,6 +71,15 @@ export default async function TenantsPage({
                       SUSPENDED
                     </span>
                   ) : null}
+                  {t.verificationStatus === "VERIFIED" ? (
+                    <span className="ml-2 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                      ✓ VERIFIED
+                    </span>
+                  ) : t.verificationStatus === "PENDING" ? (
+                    <span className="ml-2 rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                      PENDING
+                    </span>
+                  ) : null}
                   {t.name ? <div className="text-xs text-muted">{t.name}</div> : null}
                 </td>
                 <td className="px-4 py-3 text-muted">{t.owner.email ?? "—"}</td>

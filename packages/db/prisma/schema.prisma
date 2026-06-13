@@ -53,6 +53,14 @@ model Tenant {
   announcementLink String? @map("announcement_link")
   // Phase 3 admin: when set, the storefront + checkout are blocked (suspended).
   suspendedAt DateTime? @map("suspended_at")
+  // Phase 16: seller verification (trust badge). Seller submits details → PENDING;
+  // admin approves (VERIFIED, badge on storefront) or rejects. Denormalised here so
+  // the storefront badge needs no extra query (tenant is already host-resolved).
+  verificationStatus      VerificationStatus @default(UNVERIFIED) @map("verification_status")
+  verificationNote        String?            @map("verification_note") // seller's submission
+  verificationReviewNote  String?            @map("verification_review_note") // admin note
+  verificationSubmittedAt DateTime?          @map("verification_submitted_at")
+  verifiedAt              DateTime?          @map("verified_at")
   ownerId   String   @unique @db.Uuid
   owner     Profile  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
@@ -1125,6 +1133,13 @@ model RiskAlert {
   @@unique([tenantId, type])
   @@index([status])
   @@map("risk_alerts")
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
 }
 
 enum CommunityStatus {
