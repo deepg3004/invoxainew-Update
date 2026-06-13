@@ -1,4 +1,4 @@
-import { Badge, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
+import { Badge, GlassCard, PageHeader, StatCard, Pagination, pageSlice } from "@invoxai/ui";
 import { listContacts } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -17,10 +17,10 @@ function timeAgo(d: Date): string {
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; size?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const [contacts, { q: rawQ }] = await Promise.all([
+  const [contacts, { q: rawQ, page: rawPage, size: rawSize }] = await Promise.all([
     listContacts(tenant.id),
     searchParams,
   ]);
@@ -34,6 +34,13 @@ export default async function ContactsPage({
           (c.phone?.toLowerCase().includes(q) ?? false),
       )
     : contacts;
+
+  // The merged contact list is in memory; paginate the (filtered) array for display.
+  const total = filtered.length;
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const paged = filtered.slice(skip, skip + take);
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + paged.length;
 
   const buyers = contacts.filter((c) => c.isBuyer).length;
 
@@ -68,7 +75,7 @@ export default async function ContactsPage({
         </GlassCard>
       ) : (
         <GlassCard className="mt-6 divide-y divide-zinc-100 p-0">
-          {filtered.map((c) => (
+          {paged.map((c) => (
             <div
               key={c.email.toLowerCase()}
               className="flex flex-wrap items-center justify-between gap-3 p-4"
@@ -113,6 +120,17 @@ export default async function ContactsPage({
           ))}
         </GlassCard>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="contacts"
+        />
+      ) : null}
     </div>
   );
 }

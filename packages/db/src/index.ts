@@ -289,6 +289,7 @@ export {
   getRevenueReport,
   getWalletAttention,
   searchBuyerPayments,
+  countBuyerPaymentsSearch,
   listRecentPaymentEvents,
   type PlatformOverview,
   type AdminWalletResult,

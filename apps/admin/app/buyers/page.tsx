@@ -1,7 +1,7 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
-import { Button, GlassCard, PageHeader } from "@invoxai/ui";
-import { searchBuyerPayments } from "@invoxai/db";
+import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { searchBuyerPayments, countBuyerPaymentsSearch } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireAdmin } from "../../lib/auth";
 import { AdminShell } from "../components/AdminShell";
@@ -17,13 +17,17 @@ function fmtDate(d: Date | null): string {
 export default async function BuyersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; size?: string }>;
 }) {
   const gate = await requireAdmin();
   if (!gate.ok) return <NotAuthorized email={gate.user.email} />;
 
-  const { q } = await searchParams;
-  const results = q ? await searchBuyerPayments(q) : [];
+  const { q, page: rawPage, size: rawSize } = await searchParams;
+  const total = q ? await countBuyerPaymentsSearch(q) : 0;
+  const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
+  const results = q ? await searchBuyerPayments(q, { skip, take }) : [];
+  const firstOnPage = total === 0 ? 0 : skip + 1;
+  const lastOnPage = skip + results.length;
 
   return (
     <AdminShell email={gate.user.email}>
@@ -94,6 +98,17 @@ export default async function BuyersPage({
           </table>
         </div>
       )}
+      {total > 0 ? (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          firstOnPage={firstOnPage}
+          lastOnPage={lastOnPage}
+          total={total}
+          pageSize={pageSize}
+          label="payments"
+        />
+      ) : null}
     </AdminShell>
   );
 }

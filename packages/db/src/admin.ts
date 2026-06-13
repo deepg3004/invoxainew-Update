@@ -194,23 +194,35 @@ export async function getWalletAttention(lowThresholdPaise = 5000): Promise<Atte
 }
 
 /** Cross-tenant buyer-payment search by email/contact (admin support). */
-export function searchBuyerPayments(query: string, take = 50) {
+function buyerSearchWhere(q: string) {
+  return {
+    OR: [
+      { buyerEmail: { contains: q, mode: "insensitive" as const } },
+      { buyerContact: { contains: q } },
+    ],
+  };
+}
+
+export function searchBuyerPayments(query: string, opts: { skip?: number; take?: number } = {}) {
   const q = query.trim();
   if (!q) return Promise.resolve([]);
   return prisma.buyerPayment.findMany({
-    where: {
-      OR: [
-        { buyerEmail: { contains: q, mode: "insensitive" } },
-        { buyerContact: { contains: q } },
-      ],
-    },
+    where: buyerSearchWhere(q),
     orderBy: { createdAt: "desc" },
-    take,
+    skip: opts.skip,
+    take: opts.take ?? 50,
     include: {
       tenant: { select: { id: true, username: true } },
       paymentPage: { select: { title: true } },
     },
   });
+}
+
+/** Count of buyer payments matching the support search (drives pagination). */
+export function countBuyerPaymentsSearch(query: string): Promise<number> {
+  const q = query.trim();
+  if (!q) return Promise.resolve(0);
+  return prisma.buyerPayment.count({ where: buyerSearchWhere(q) });
 }
 
 /** Recent accepted webhook events with processing state (Phase 1.5). */
