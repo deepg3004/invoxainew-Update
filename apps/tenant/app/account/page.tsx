@@ -4,12 +4,15 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@invoxai/ui";
 import { formatRupees } from "@invoxai/utils/money";
+import { safeUrl } from "@invoxai/utils/blocks";
 import {
   upsertProfile,
   ensureBuyerAccount,
   listBuyerOrders,
+  listBuyerDeliverables,
   listEnrolledCourses,
 } from "@invoxai/db";
+import { createSignedDownloadUrl } from "@invoxai/auth/server";
 import { getSessionUser } from "../../lib/auth";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { LinkifiedText } from "../LinkifiedText";
@@ -37,7 +40,7 @@ export default async function BuyerCorner() {
   await upsertProfile({ id: user.id, email: user.email ?? null, fullName });
   await ensureBuyerAccount(tenant.id, user.id);
 
-  const [orders, courses] = await Promise.all([
+  const [orders, courses, deliverables] = await Promise.all([
     listBuyerOrders({
       tenantId: tenant.id,
       profileId: user.id,
@@ -48,7 +51,52 @@ export default async function BuyerCorner() {
       profileId: user.id,
       email: user.email ?? null,
     }),
+    listBuyerDeliverables({
+      tenantId: tenant.id,
+      profileId: user.id,
+      email: user.email ?? null,
+    }),
   ]);
+
+  // "My Library": aggregate deliverables across ALL paid orders, de-duplicated,
+  // so a repeat buyer re-finds a file/link without opening each receipt. Hosted
+  // files get a fresh signed URL minted SERVER-SIDE (the storage key never
+  // reaches the browser); the signer is tenant-scoped so a key can only ever be
+  // served within this store. Access links are safeUrl-sanitized.
+  const dlByKey = new Map<string, { title: string; key: string }>();
+  const accessByHref = new Map<string, { title: string; href: string }>();
+  const addDownload = (
+    title: string | undefined,
+    name: string | null | undefined,
+    key: string | null | undefined,
+  ) => {
+    if (key && !dlByKey.has(key)) dlByKey.set(key, { title: name || title || "Download", key });
+  };
+  const addAccess = (title: string | undefined, url: string | null | undefined) => {
+    const href = safeUrl(url);
+    if (href && !accessByHref.has(href)) {
+      accessByHref.set(href, { title: title || "Access link", href });
+    }
+  };
+  for (const o of deliverables) {
+    addDownload(o.product?.title, o.product?.downloadName, o.product?.downloadKey);
+    addAccess(o.product?.title, o.product?.accessUrl);
+    addAccess(o.paymentPage?.title, o.paymentPage?.accessUrl);
+    for (const li of o.orderItems) {
+      const t = li.product?.title ?? li.titleSnapshot;
+      addDownload(t, li.product?.downloadName, li.product?.downloadKey);
+      addAccess(t, li.product?.accessUrl);
+    }
+  }
+  const downloads = (
+    await Promise.all(
+      [...dlByKey.values()].map(async (d) => {
+        const href = await createSignedDownloadUrl(d.key, 3600, tenant.id);
+        return href ? { title: d.title, href } : null;
+      }),
+    )
+  ).filter((d): d is { title: string; href: string } => d !== null);
+  const accessLinks = [...accessByHref.values()];
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -66,6 +114,54 @@ export default async function BuyerCorner() {
           </button>
         </form>
       </div>
+
+      {downloads.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Your downloads
+          </h2>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {downloads.map((d, i) => (
+              <a
+                key={i}
+                href={d.href}
+                className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-surface p-3 transition hover:border-brand/40"
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-lg text-emerald-700">
+                  ↓
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{d.title}</span>
+                <span className="shrink-0 text-xs text-cyan">Download →</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {accessLinks.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Your access links
+          </h2>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {accessLinks.map((l, i) => (
+              <a
+                key={i}
+                href={l.href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-surface p-3 transition hover:border-brand/40"
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-lg text-emerald-700">
+                  →
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{l.title}</span>
+                <span className="shrink-0 text-xs text-cyan">Open →</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {courses.length > 0 ? (
         <div className="mt-8">

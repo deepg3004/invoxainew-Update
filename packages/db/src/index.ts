@@ -104,6 +104,7 @@ export {
 export {
   ensureBuyerAccount,
   listBuyerOrders,
+  listBuyerDeliverables,
   getBuyerOrder,
 } from "./buyer";
 export {

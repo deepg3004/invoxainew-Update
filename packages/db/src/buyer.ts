@@ -6,6 +6,12 @@ import { prisma } from "./client";
  * A buyer is a Profile (Supabase user) with a per-tenant BuyerAccount. Buyers
  * see ONLY their own orders, ALWAYS scoped by tenantId (hard rule) — there is no
  * helper here that returns orders across tenants or for another buyer.
+ *
+ * Attribution (used by every helper below): an order is this buyer's if its
+ * buyerProfileId matches OR its buyerEmail matches. The email match is
+ * case-INSENSITIVE — a guest order placed as "User@X.com" must still attribute
+ * to the buyer who later signs in with the Supabase-verified "user@x.com" (the
+ * same address). Case-sensitive matching would silently drop such guest orders.
  */
 
 /** Create the buyer↔tenant link on first Buyer Corner visit (idempotent). */
@@ -30,7 +36,7 @@ export function listBuyerOrders(input: {
 }) {
   const attribution: object[] = [{ buyerProfileId: input.profileId }];
   if (input.email) {
-    attribution.push({ buyerEmail: input.email });
+    attribution.push({ buyerEmail: { equals: input.email, mode: "insensitive" } });
   }
   return prisma.buyerPayment.findMany({
     where: {
@@ -43,6 +49,52 @@ export function listBuyerOrders(input: {
       paymentPage: { select: { title: true, slug: true } },
       orderItems: {
         select: { titleSnapshot: true, unitPricePaise: true, quantity: true },
+      },
+    },
+  });
+}
+
+/**
+ * Every PAID order's DELIVERABLES for this buyer — the data behind the "My
+ * Library" hub, so a repeat buyer can re-download a file or re-open an access
+ * link without digging through individual receipts.
+ *
+ * ACCESS CONTROL: identical scope to listBuyerOrders/getBuyerOrder — tenantId +
+ * status PAID + attribution (this buyer's profileId OR email). The gated fields
+ * (downloadKey/downloadName, accessUrl) are revealed here for the SAME reason
+ * the receipt may reveal them: the rows are already constrained to this buyer's
+ * PAID orders. The storage KEY is returned to the SERVER component only (to mint
+ * a signed URL); it is never sent to the browser. Newest first.
+ */
+export function listBuyerDeliverables(input: {
+  tenantId: string;
+  profileId: string;
+  email?: string | null;
+}) {
+  const attribution: object[] = [{ buyerProfileId: input.profileId }];
+  if (input.email) attribution.push({ buyerEmail: { equals: input.email, mode: "insensitive" } });
+  return prisma.buyerPayment.findMany({
+    where: {
+      tenantId: input.tenantId,
+      status: "PAID",
+      OR: attribution,
+    },
+    orderBy: { paidAt: "desc" },
+    select: {
+      id: true,
+      paidAt: true,
+      itemTitle: true,
+      product: {
+        select: { title: true, accessUrl: true, downloadKey: true, downloadName: true },
+      },
+      paymentPage: { select: { title: true, accessUrl: true } },
+      orderItems: {
+        select: {
+          titleSnapshot: true,
+          product: {
+            select: { title: true, accessUrl: true, downloadKey: true, downloadName: true },
+          },
+        },
       },
     },
   });
@@ -62,7 +114,7 @@ export function getBuyerOrder(input: {
   email?: string | null;
 }) {
   const attribution: object[] = [{ buyerProfileId: input.profileId }];
-  if (input.email) attribution.push({ buyerEmail: input.email });
+  if (input.email) attribution.push({ buyerEmail: { equals: input.email, mode: "insensitive" } });
   return prisma.buyerPayment.findFirst({
     where: {
       id: input.orderId,
