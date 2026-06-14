@@ -155,6 +155,22 @@ export async function createSignedDownloadUrl(
   }
 }
 
+/**
+ * Remove a private object from the downloads bucket by key. SERVER ONLY; the
+ * caller MUST auth-gate + verify ownership first (the key is a secret). Best-
+ * effort — a failure is swallowed (the DB row is the source of truth; an orphaned
+ * private object is inaccessible without its key anyway).
+ */
+export async function deletePrivateFile(key: string): Promise<void> {
+  if (!key) return;
+  try {
+    const sb = createServiceClient();
+    await sb.storage.from(DOWNLOADS_BUCKET).remove([key]);
+  } catch {
+    // swallow — orphaned private object is harmless.
+  }
+}
+
 export type ImageUploadResult = { ok: true; url: string } | { ok: false; error: string };
 
 /**

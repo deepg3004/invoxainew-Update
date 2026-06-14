@@ -6,7 +6,9 @@ import {
   getTenantAdminDetail,
   getTenantSalesSummary,
   listAdminAuditLog,
+  listKycDocuments,
 } from "@invoxai/db";
+import { createSignedDownloadUrl } from "@invoxai/auth/server";
 import { formatRupees } from "@invoxai/utils/money";
 import { maskKeyId } from "@invoxai/utils/crypto";
 import { requireAdmin } from "../../../lib/auth";
@@ -33,11 +35,29 @@ export default async function TenantDetail({
   const { id } = await params;
   const t = await getTenantAdminDetail(id);
   if (!t) notFound();
-  const [summary, audit] = await Promise.all([
+  const [summary, audit, kycDocs] = await Promise.all([
     getTenantSalesSummary(t.id),
     listAdminAuditLog(t.id),
+    listKycDocuments(t.id),
   ]);
   const suspended = Boolean(t.suspendedAt);
+
+  // Short-lived signed URLs so the reviewer can open each private KYC file. The
+  // storage key never reaches the browser — only this expiring URL.
+  const kycViews = await Promise.all(
+    kycDocs.map(async (d) => ({
+      id: d.id,
+      docType: d.docType,
+      fileName: d.fileName,
+      url: await createSignedDownloadUrl(d.storageKey, 600, d.tenantId),
+    })),
+  );
+  const KYC_TYPE_LABEL: Record<string, string> = {
+    identity: "Identity",
+    business: "Business / GST",
+    address: "Address",
+    other: "Other",
+  };
 
   return (
     <AdminShell email={gate.user.email}>
@@ -152,6 +172,41 @@ export default async function TenantDetail({
           ) : (
             <p className="mt-1 text-xs text-muted">No submission from this seller.</p>
           )}
+
+          <div className="mt-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              KYC documents ({kycViews.length})
+            </p>
+            {kycViews.length > 0 ? (
+              <ul className="mt-1 space-y-1">
+                {kycViews.map((d) => (
+                  <li key={d.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate">
+                      <span className="font-medium text-zinc-900">
+                        {KYC_TYPE_LABEL[d.docType] ?? d.docType}
+                      </span>
+                      <span className="text-muted"> · {d.fileName}</span>
+                    </span>
+                    {d.url ? (
+                      <a
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 font-medium text-brand-strong underline"
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <span className="shrink-0 text-xs text-muted">unavailable</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-xs text-muted">No documents uploaded.</p>
+            )}
+          </div>
+
           {t.verificationStatus === "PENDING" ? (
             <div className="mt-3 flex flex-wrap items-end gap-2">
               <form action={reviewVerificationAction.bind(null, t.id, "REJECTED")} className="flex items-end gap-2">

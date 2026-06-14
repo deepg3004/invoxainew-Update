@@ -21,3 +21,11 @@ export async function uploadDownloadAction(fd: FormData): Promise<FileUploadResu
   const { tenant } = await requireTenant();
   return uploadPrivateFileFromForm(fd, `tenant/${tenant.id}`);
 }
+
+/** Upload a KYC / verification document into PRIVATE storage under the tenant's
+ *  own `tenant/<id>/kyc/` prefix. Returns the opaque key + filename. The key
+ *  stays under the tenant prefix so the signed-URL guard can verify ownership. */
+export async function uploadKycDocAction(fd: FormData): Promise<FileUploadResult> {
+  const { tenant } = await requireTenant();
+  return uploadPrivateFileFromForm(fd, `tenant/${tenant.id}/kyc`);
+}

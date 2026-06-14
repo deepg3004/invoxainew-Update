@@ -178,6 +178,12 @@ export {
   reviewVerification,
   listPendingVerifications,
   countPendingVerifications,
+  addKycDocument,
+  listKycDocuments,
+  getKycDocument,
+  deleteKycDocument,
+  isKycDocType,
+  type KycDocType,
 } from "./verification";
 export type { VerificationStatus } from "@prisma/client";
 export {

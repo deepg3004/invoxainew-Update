@@ -105,6 +105,7 @@ model Tenant {
   communities          Community[]
   communityMemberships CommunityMembership[]
   communityMessages    CommunityMessage[]
+  kycDocuments         KycDocument[]
   // Lead forms + CRM (Final Plan §12): capture forms and their submissions.
   leadForms     LeadForm[]
   leadSubmissions LeadSubmission[]
@@ -1254,6 +1255,26 @@ model CommunityMessage {
   @@index([tenantId])
   @@index([parentId])
   @@map("community_messages")
+}
+
+/// Phase 16: a KYC / verification document a seller uploads to support their
+/// verification submission (ID, business registration, address proof…). The file
+/// lives in the PRIVATE downloads bucket under `tenant/<id>/kyc/`; `storageKey` is
+/// the object key — NEVER public. It's revealed only via a short-lived signed URL,
+/// server-side, to the owning seller or an admin reviewer. Verification status
+/// itself stays denormalised on the Tenant; these are the supporting attachments.
+/// RLS: deny-anon.
+model KycDocument {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  docType    String   @map("doc_type") // identity | business | address | other
+  fileName   String   @map("file_name")
+  storageKey String   @map("storage_key") // PRIVATE object key; never exposed as a URL
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("kyc_documents")
 }
 
 /// Order fulfillment lifecycle (C10), set by the seller and shown to the buyer.

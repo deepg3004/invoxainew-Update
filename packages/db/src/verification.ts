@@ -79,3 +79,56 @@ export function listPendingVerifications(take = 20) {
 export function countPendingVerifications() {
   return prisma.tenant.count({ where: { verificationStatus: "PENDING" } });
 }
+
+// ── KYC documents (verification attachments) ──────────────────────────────────
+//
+// Supporting files for a verification submission, stored in the PRIVATE downloads
+// bucket. `storageKey` is the object key, NEVER public — callers reveal a doc only
+// via a short-lived signed URL (server-side) to the owning seller or an admin.
+// Every read/write below is tenant-scoped.
+
+const KYC_DOC_TYPES = ["identity", "business", "address", "other"] as const;
+export type KycDocType = (typeof KYC_DOC_TYPES)[number];
+
+export function isKycDocType(v: string): v is KycDocType {
+  return (KYC_DOC_TYPES as readonly string[]).includes(v);
+}
+
+export function addKycDocument(input: {
+  tenantId: string;
+  docType: KycDocType;
+  fileName: string;
+  storageKey: string;
+}) {
+  return prisma.kycDocument.create({
+    data: {
+      tenantId: input.tenantId,
+      docType: input.docType,
+      fileName: input.fileName.slice(0, 200),
+      storageKey: input.storageKey,
+    },
+    select: { id: true },
+  });
+}
+
+/** A tenant's KYC documents, newest first. Used by BOTH the seller page (own
+ *  tenant) and the admin review (admin passes the reviewed tenant's id). */
+export function listKycDocuments(tenantId: string) {
+  return prisma.kycDocument.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/** One KYC document scoped by tenant — so a seller/admin can only act on a doc
+ *  that belongs to the tenant in context (returns the storageKey for signing or
+ *  storage cleanup). */
+export function getKycDocument(tenantId: string, id: string) {
+  return prisma.kycDocument.findFirst({ where: { id, tenantId } });
+}
+
+/** Delete a KYC document row, tenant-scoped. (Storage object cleanup is the
+ *  caller's job — it has the key from getKycDocument.) */
+export function deleteKycDocument(tenantId: string, id: string) {
+  return prisma.kycDocument.deleteMany({ where: { id, tenantId } });
+}
