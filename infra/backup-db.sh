@@ -61,3 +61,26 @@ mv "$TMP" "$OUT"
 find "$BACKUP_DIR" -name 'invoxai-*.sql.gz' -type f -mtime +"$RETENTION_DAYS" -delete
 
 echo "backup-db: wrote $OUT ($(du -h "$OUT" | cut -f1)); kept $(ls -1 "$BACKUP_DIR"/invoxai-*.sql.gz 2>/dev/null | wc -l) file(s)"
+
+# --- Optional offsite copy ---------------------------------------------------
+# The local backups live on the same VPS disk as everything else, so a disk loss
+# takes them with it. Push a copy to a remote you control (any rclone backend:
+# S3/B2/R2/Drive/SFTP…). One-time setup:
+#   apt-get install -y rclone
+#   rclone config                       # create a remote, e.g. "offsite"
+# then set INVOX_OFFSITE_REMOTE (env or a systemd drop-in), e.g.
+#   INVOX_OFFSITE_REMOTE=offsite:invoxai-backups
+# Left unset → this step is skipped, so the backup behaves exactly as before.
+OFFSITE_REMOTE="${INVOX_OFFSITE_REMOTE:-}"
+if [ -n "$OFFSITE_REMOTE" ]; then
+  if ! command -v rclone >/dev/null 2>&1; then
+    echo "backup-db: INVOX_OFFSITE_REMOTE set but rclone not installed (apt-get install -y rclone)" >&2
+    exit 1
+  fi
+  # `copy` is additive — it never deletes remote history, so offsite retention is
+  # your remote's policy, independent of the local RETENTION_DAYS window.
+  rclone copy "$BACKUP_DIR" "$OFFSITE_REMOTE" --include 'invoxai-*.sql.gz' --no-traverse
+  echo "backup-db: offsite copy to $OFFSITE_REMOTE complete"
+else
+  echo "backup-db: offsite copy skipped (set INVOX_OFFSITE_REMOTE to enable — see infra/BACKUP.md)"
+fi

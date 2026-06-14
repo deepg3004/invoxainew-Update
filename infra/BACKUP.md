@@ -55,9 +55,44 @@ recovery also needs Supabase Auth restored (via the Supabase dashboard/support).
 
 ## Offsite copy (recommended)
 
-Keep at least one copy off the VPS — e.g. nightly `rsync`/`scp` of
-`/root/invox-backups/` to another host, or push to object storage (S3/B2). A backup
-that only lives on the same server doesn't protect against losing that server.
+A backup that only lives on the same server doesn't protect against losing that
+server. `backup-db.sh` will push each backup to a remote you control when
+`INVOX_OFFSITE_REMOTE` is set; it uses [rclone](https://rclone.org), which supports
+S3 / Backblaze B2 / Cloudflare R2 / Google Drive / SFTP / etc. Left unset, the
+offsite step is skipped and the local backup is unchanged.
+
+One-time setup on the VPS:
+
+```bash
+apt-get install -y rclone
+rclone config            # create a remote, e.g. name it "offsite" (S3/B2/R2/Drive/SFTP)
+rclone mkdir offsite:invoxai-backups
+```
+
+Then point the backup at it via a systemd drop-in (so the timer's run has the env):
+
+```bash
+systemctl edit invox-backup.service
+# In the editor, add:
+#   [Service]
+#   Environment=INVOX_OFFSITE_REMOTE=offsite:invoxai-backups
+systemctl daemon-reload
+```
+
+Verify:
+
+```bash
+INVOX_OFFSITE_REMOTE=offsite:invoxai-backups bash /root/invoxai/infra/backup-db.sh
+rclone ls offsite:invoxai-backups        # should list the .sql.gz files
+```
+
+Notes:
+- The offsite step uses `rclone copy` (additive) — it never deletes remote history,
+  so the offsite retention is governed by your remote/bucket lifecycle policy, not the
+  local `INVOX_BACKUP_RETENTION_DAYS` window.
+- If `INVOX_OFFSITE_REMOTE` is set but rclone isn't installed, the run fails loudly
+  (so a misconfiguration surfaces in `systemctl status invox-backup`) — the local
+  backup is already written and promoted before this step, so it's never lost.
 
 ## Restore
 
