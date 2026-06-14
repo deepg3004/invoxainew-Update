@@ -10,6 +10,9 @@ import {
   createLesson,
   updateLesson,
   deleteLesson,
+  createSection,
+  renameSection,
+  deleteSection,
   getSellerGateway,
   type CourseStatus,
 } from "@invoxai/db";
@@ -162,6 +165,7 @@ function parseLessonFields(
         content: string | null;
         videoUrl: string | null;
         durationSec: number | null;
+        sectionId: string | null;
         isPreview: boolean;
         sortOrder: number;
       };
@@ -187,6 +191,7 @@ function parseLessonFields(
   }
 
   const isPreview = form.get("isPreview") === "on";
+  const sectionId = String(form.get("sectionId") ?? "").trim() || null;
   const orderRaw = String(form.get("sortOrder") ?? "").trim();
   let sortOrder = 0;
   if (orderRaw) {
@@ -198,7 +203,7 @@ function parseLessonFields(
   }
   return {
     ok: true,
-    value: { title, content, videoUrl: videoRaw || null, durationSec, isPreview, sortOrder },
+    value: { title, content, videoUrl: videoRaw || null, durationSec, sectionId, isPreview, sortOrder },
   };
 }
 
@@ -242,5 +247,35 @@ export async function deleteLessonAction(courseId: string, lessonId: string) {
   const course = await getCourseById(tenant.id, courseId);
   if (!course) return;
   await deleteLesson(tenant.id, courseId, lessonId);
+  revalidatePath(`/courses/${courseId}`);
+}
+
+// ── Sections / modules ───────────────────────────────────────────────────────
+
+export async function createSectionAction(courseId: string, form: FormData) {
+  const { tenant } = await requireTenant();
+  const course = await getCourseById(tenant.id, courseId);
+  if (!course) return;
+  const title = String(form.get("title") ?? "").trim().slice(0, 120);
+  if (!title) return;
+  await createSection(tenant.id, courseId, title);
+  revalidatePath(`/courses/${courseId}`);
+}
+
+export async function renameSectionAction(courseId: string, sectionId: string, form: FormData) {
+  const { tenant } = await requireTenant();
+  const course = await getCourseById(tenant.id, courseId);
+  if (!course) return;
+  const title = String(form.get("title") ?? "").trim().slice(0, 120);
+  if (!title) return;
+  await renameSection(tenant.id, sectionId, title);
+  revalidatePath(`/courses/${courseId}`);
+}
+
+export async function deleteSectionAction(courseId: string, sectionId: string) {
+  const { tenant } = await requireTenant();
+  const course = await getCourseById(tenant.id, courseId);
+  if (!course) return;
+  await deleteSection(tenant.id, sectionId);
   revalidatePath(`/courses/${courseId}`);
 }

@@ -391,6 +391,7 @@ model Course {
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
   lessons       Lesson[]
+  sections      CourseSection[]
   enrolments    Enrolment[]
   buyerPayments BuyerPayment[]
   reviews       ProductReview[]
@@ -417,12 +418,31 @@ model Lesson {
   durationSec Int?    @map("duration_sec")
   isPreview Boolean  @default(false) @map("is_preview")
   sortOrder Int      @default(0) @map("sort_order")
+  // Optional module/section grouping (Udemy-style curriculum). Null = ungrouped.
+  sectionId String?        @map("section_id") @db.Uuid
+  section   CourseSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   progress  LessonProgress[]
 
   @@index([courseId])
   @@map("lessons")
+}
+
+/// A curriculum module/section grouping a course's lessons (Udemy-style).
+/// Optional — lessons may be ungrouped. Ordered by sortOrder.
+model CourseSection {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title     String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  lessons   Lesson[]
+
+  @@index([courseId])
+  @@map("course_sections")
 }
 
 /// A buyer's completion of one lesson (Phase A: course progress). One row per

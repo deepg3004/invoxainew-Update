@@ -5,6 +5,8 @@ import {
   getPublishedCourseMeta,
   getEnrolment,
   listLessons,
+  listCourseSections,
+  groupLessonsBySection,
   getBuyerReviewForCourse,
   getCourseProgress,
 } from "@invoxai/db";
@@ -65,24 +67,29 @@ export default async function LearnPage({
     );
   }
 
-  const [lessons, myReview, done] = await Promise.all([
+  const [lessons, sections, myReview, done] = await Promise.all([
     listLessons(course.id),
+    listCourseSections(course.id),
     // Enrolled buyers can review the course (verified purchase). Prefilled when
     // they've already reviewed it.
     getBuyerReviewForCourse(course.id, user.id),
     getCourseProgress({ tenantId: tenant.id, courseId: course.id, profileId: user.id }),
   ]);
+  // Group into modules for the sidebar; `ordered` is the flattened display order
+  // that drives the active lesson + "next" (so navigation follows the curriculum).
+  const grouped = groupLessonsBySection(sections, lessons);
+  const ordered = grouped.flatMap((g) => g.lessons);
   const completed = lessons.filter((l) => done.has(l.id)).length;
   const pct = lessons.length ? Math.round((completed / lessons.length) * 100) : 0;
 
   // Active lesson: the one in ?lesson= (if valid), else the first incomplete, else the first.
   const activeId =
-    lessonParam && lessons.some((l) => l.id === lessonParam)
+    lessonParam && ordered.some((l) => l.id === lessonParam)
       ? lessonParam
-      : (lessons.find((l) => !done.has(l.id))?.id ?? lessons[0]?.id);
-  const activeIdx = lessons.findIndex((l) => l.id === activeId);
-  const active = activeIdx >= 0 ? lessons[activeIdx] : null;
-  const next = active && activeIdx < lessons.length - 1 ? lessons[activeIdx + 1] : null;
+      : (ordered.find((l) => !done.has(l.id))?.id ?? ordered[0]?.id);
+  const activeIdx = ordered.findIndex((l) => l.id === activeId);
+  const active = activeIdx >= 0 ? ordered[activeIdx] : null;
+  const next = active && activeIdx < ordered.length - 1 ? ordered[activeIdx + 1] : null;
 
   const reviewBlock = (
     <div className="rounded-xl border border-zinc-200 bg-surface p-5">
@@ -134,38 +141,60 @@ export default async function LearnPage({
             </div>
             <p className="mt-1 text-xs text-muted">{completed} / {lessons.length} lessons done</p>
           </div>
-          <ul className="mt-3 overflow-hidden rounded-xl border border-zinc-200 bg-surface">
-            {lessons.map((l, idx) => {
-              const isDone = done.has(l.id);
-              const isActive = l.id === activeId;
+          <div className="mt-3 space-y-3">
+            {grouped.map((g) => {
+              let n = 0; // running 1-based index within this group's display
               return (
-                <li key={l.id} className="border-t border-zinc-100 first:border-t-0">
-                  <Link
-                    href={`?lesson=${l.id}`}
-                    scroll={false}
-                    className={`flex items-center gap-2.5 px-3 py-2.5 text-sm ${
-                      isActive ? "bg-cyan/10" : "hover:bg-zinc-50"
-                    }`}
-                  >
-                    <span
-                      className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs ${
-                        isDone ? "bg-green-600 text-white" : "border border-zinc-300 text-muted"
-                      }`}
-                    >
-                      {isDone ? "✓" : idx + 1}
-                    </span>
-                    <span className={`flex-1 ${isActive ? "font-medium text-zinc-900" : "text-zinc-700"}`}>
-                      {l.title}
-                    </span>
-                    {l.videoUrl ? <span className="shrink-0 text-xs text-muted">▶</span> : null}
-                    {durLabel(l.durationSec) ? (
-                      <span className="shrink-0 text-xs text-muted">{durLabel(l.durationSec)}</span>
-                    ) : null}
-                  </Link>
-                </li>
+                <div
+                  key={g.section?.id ?? "ungrouped"}
+                  className="overflow-hidden rounded-xl border border-zinc-200 bg-surface"
+                >
+                  {g.section ? (
+                    <p className="border-b border-zinc-100 bg-zinc-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                      {g.section.title}
+                    </p>
+                  ) : sections.length > 0 ? (
+                    <p className="border-b border-zinc-100 bg-zinc-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                      More lessons
+                    </p>
+                  ) : null}
+                  <ul>
+                    {g.lessons.map((l) => {
+                      n += 1;
+                      const isDone = done.has(l.id);
+                      const isActive = l.id === activeId;
+                      return (
+                        <li key={l.id} className="border-t border-zinc-100 first:border-t-0">
+                          <Link
+                            href={`?lesson=${l.id}`}
+                            scroll={false}
+                            className={`flex items-center gap-2.5 px-3 py-2.5 text-sm ${
+                              isActive ? "bg-cyan/10" : "hover:bg-zinc-50"
+                            }`}
+                          >
+                            <span
+                              className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs ${
+                                isDone ? "bg-green-600 text-white" : "border border-zinc-300 text-muted"
+                              }`}
+                            >
+                              {isDone ? "✓" : n}
+                            </span>
+                            <span className={`flex-1 ${isActive ? "font-medium text-zinc-900" : "text-zinc-700"}`}>
+                              {l.title}
+                            </span>
+                            {l.videoUrl ? <span className="shrink-0 text-xs text-muted">▶</span> : null}
+                            {durLabel(l.durationSec) ? (
+                              <span className="shrink-0 text-xs text-muted">{durLabel(l.durationSec)}</span>
+                            ) : null}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </aside>
 
         {/* ── Lesson content pane ─────────────────────────────────────── */}

@@ -139,6 +139,7 @@ export function createLesson(input: {
   content?: string | null;
   videoUrl?: string | null;
   durationSec?: number | null;
+  sectionId?: string | null;
   isPreview?: boolean;
   sortOrder?: number;
 }) {
@@ -149,6 +150,7 @@ export function createLesson(input: {
       content: input.content ?? null,
       videoUrl: input.videoUrl ?? null,
       durationSec: input.durationSec ?? null,
+      sectionId: input.sectionId ?? null,
       isPreview: input.isPreview ?? false,
       sortOrder: input.sortOrder ?? 0,
     },
@@ -165,6 +167,7 @@ export function updateLesson(
     content?: string | null;
     videoUrl?: string | null;
     durationSec?: number | null;
+    sectionId?: string | null;
     isPreview: boolean;
     sortOrder: number;
   },
@@ -178,6 +181,7 @@ export function updateLesson(
       content: data.content ?? null,
       videoUrl: data.videoUrl ?? null,
       durationSec: data.durationSec ?? null,
+      sectionId: data.sectionId ?? null,
       isPreview: data.isPreview,
       sortOrder: data.sortOrder,
     },
@@ -188,6 +192,62 @@ export function deleteLesson(tenantId: string, courseId: string, lessonId: strin
   return prisma.lesson.deleteMany({
     where: { id: lessonId, courseId, course: { tenantId } },
   });
+}
+
+// ── Sections / modules (curriculum grouping) ─────────────────────────────────
+
+/** A course's sections in display order. */
+export function listCourseSections(courseId: string) {
+  return prisma.courseSection.findMany({
+    where: { courseId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
+
+/** Create a module/section. Caller verifies course ownership first; tenantId is
+ *  stamped + the courseId is trusted from that verified course. */
+export async function createSection(tenantId: string, courseId: string, title: string) {
+  const count = await prisma.courseSection.count({ where: { courseId } });
+  return prisma.courseSection.create({
+    data: { tenantId, courseId, title, sortOrder: count },
+    select: { id: true },
+  });
+}
+
+/** Rename a section — tenant-scoped via the course join (F3-style self-enforcement). */
+export function renameSection(tenantId: string, sectionId: string, title: string) {
+  return prisma.courseSection.updateMany({
+    where: { id: sectionId, course: { tenantId } },
+    data: { title },
+  });
+}
+
+/** Delete a section. Its lessons are NOT deleted — `section_id` is SET NULL
+ *  (they fall back to ungrouped). Tenant-scoped. */
+export function deleteSection(tenantId: string, sectionId: string) {
+  return prisma.courseSection.deleteMany({
+    where: { id: sectionId, course: { tenantId } },
+  });
+}
+
+/**
+ * Group lessons under their sections for the curriculum UI (landing/player/editor).
+ * Sections come in display order; lessons keep their order within each. Lessons
+ * with no (or a dangling) section fall into a trailing "ungrouped" bucket
+ * (section: null). Empty groups are dropped. Pure — safe on server or client.
+ */
+export function groupLessonsBySection<
+  L extends { sectionId: string | null },
+  S extends { id: string; title: string },
+>(sections: S[], lessons: L[]): { section: S | null; lessons: L[] }[] {
+  const known = new Set(sections.map((s) => s.id));
+  const groups: { section: S | null; lessons: L[] }[] = sections.map((s) => ({
+    section: s,
+    lessons: lessons.filter((l) => l.sectionId === s.id),
+  }));
+  const ungrouped = lessons.filter((l) => !l.sectionId || !known.has(l.sectionId));
+  if (ungrouped.length) groups.push({ section: null, lessons: ungrouped });
+  return groups.filter((g) => g.lessons.length > 0);
 }
 
 // ── Public storefront reads ───────────────────────────────────────────────────
@@ -220,6 +280,7 @@ export async function getPublishedCourse(tenantId: string, slug: string) {
           content: true,
           videoUrl: true,
           durationSec: true,
+          sectionId: true,
         },
       },
     },

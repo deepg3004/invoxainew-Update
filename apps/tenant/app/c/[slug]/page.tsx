@@ -11,6 +11,8 @@ import {
   getCourseReviews,
   getBuyerReviewForCourse,
   getCourseEnrolmentStats,
+  listCourseSections,
+  groupLessonsBySection,
 } from "@invoxai/db";
 import { formatDateIST } from "@invoxai/utils/date";
 import { toEmbedUrl } from "@invoxai/utils/blocks";
@@ -76,7 +78,7 @@ export default async function CoursePage({
   const course = await cachedCourse(tenant.id, slug);
   if (!course) notFound();
 
-  const [gateway, upi, tracking, user, rating, reviews, stats] = await Promise.all([
+  const [gateway, upi, tracking, user, rating, reviews, stats, sections] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
@@ -84,8 +86,10 @@ export default async function CoursePage({
     getCourseRatingSummary(course.id),
     getCourseReviews(course.id),
     getCourseEnrolmentStats(tenant.id, course.id),
+    listCourseSections(course.id),
   ]);
   const previewCount = course.lessons.filter((l) => l.isPreview).length;
+  const grouped = groupLessonsBySection(sections, course.lessons);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
 
@@ -170,40 +174,57 @@ export default async function CoursePage({
                   ? ` · ${previewCount} free preview${previewCount === 1 ? "" : "s"}`
                   : ""}
               </p>
-              <ul className="mt-3 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
-                {course.lessons.map((l, idx) => (
-                  <li key={l.id} className="p-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 text-right text-sm text-muted">{idx + 1}</span>
-                      <span className="flex-1 text-sm font-medium text-zinc-900">{l.title}</span>
-                      {l.videoUrl ? <span className="text-xs text-muted">▶</span> : null}
-                      {durLabel(l.durationSec) ? (
-                        <span className="text-xs text-muted">{durLabel(l.durationSec)}</span>
+              <div className="mt-3 space-y-4">
+                {grouped.map((g) => {
+                  let n = 0;
+                  return (
+                    <div key={g.section?.id ?? "ungrouped"}>
+                      {g.section ? (
+                        <h3 className="mb-2 text-sm font-semibold text-zinc-900">{g.section.title}</h3>
+                      ) : sections.length > 0 ? (
+                        <h3 className="mb-2 text-sm font-semibold text-zinc-900">More lessons</h3>
                       ) : null}
-                      {l.isPreview ? (
-                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
-                          Preview
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted">🔒</span>
-                      )}
+                      <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
+                        {g.lessons.map((l) => {
+                          n += 1;
+                          return (
+                            <li key={l.id} className="p-3">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 text-right text-sm text-muted">{n}</span>
+                                <span className="flex-1 text-sm font-medium text-zinc-900">{l.title}</span>
+                                {l.videoUrl ? <span className="text-xs text-muted">▶</span> : null}
+                                {durLabel(l.durationSec) ? (
+                                  <span className="text-xs text-muted">{durLabel(l.durationSec)}</span>
+                                ) : null}
+                                {l.isPreview ? (
+                                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
+                                    Preview
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted">🔒</span>
+                                )}
+                              </div>
+                              {/* Free preview: embed the video (if any), else show the preview text. */}
+                              {l.isPreview && l.videoUrl && toEmbedUrl(l.videoUrl) ? (
+                                <div className="mt-2 ml-7 aspect-video overflow-hidden rounded-lg border border-zinc-200 bg-black">
+                                  <iframe
+                                    src={toEmbedUrl(l.videoUrl)}
+                                    className="h-full w-full"
+                                    title={l.title}
+                                    allowFullScreen
+                                  />
+                                </div>
+                              ) : l.isPreview && l.content ? (
+                                <p className="mt-2 whitespace-pre-line pl-7 text-sm text-muted">{l.content}</p>
+                              ) : null}
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
-                    {/* Free preview: embed the video (if any), else show the preview text. */}
-                    {l.isPreview && l.videoUrl && toEmbedUrl(l.videoUrl) ? (
-                      <div className="mt-2 ml-7 aspect-video overflow-hidden rounded-lg border border-zinc-200 bg-black">
-                        <iframe
-                          src={toEmbedUrl(l.videoUrl)}
-                          className="h-full w-full"
-                          title={l.title}
-                          allowFullScreen
-                        />
-                      </div>
-                    ) : l.isPreview && l.content ? (
-                      <p className="mt-2 whitespace-pre-line pl-7 text-sm text-muted">{l.content}</p>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
+                  );
+                })}
+              </div>
             </section>
           ) : null}
 

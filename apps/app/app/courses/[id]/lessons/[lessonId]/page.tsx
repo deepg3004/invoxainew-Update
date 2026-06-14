@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { GlassCard, PageHeader } from "@invoxai/ui";
-import { getCourseById, getLesson } from "@invoxai/db";
+import { getCourseById, getLesson, listCourseSections } from "@invoxai/db";
 import { requireTenant } from "../../../../../lib/tenant";
 import { LessonForm } from "../../../LessonForm";
 import { updateLessonAction } from "../../../actions";
@@ -16,7 +16,10 @@ export default async function EditLessonPage({
   const { id, lessonId } = await params;
   const course = await getCourseById(tenant.id, id);
   if (!course) notFound();
-  const lesson = await getLesson(course.id, lessonId);
+  const [lesson, sections] = await Promise.all([
+    getLesson(course.id, lessonId),
+    listCourseSections(course.id),
+  ]);
   if (!lesson) notFound();
 
   const action = updateLessonAction.bind(null, course.id, lesson.id);
@@ -33,11 +36,13 @@ export default async function EditLessonPage({
           action={action}
           submitLabel="Save lesson"
           courseId={course.id}
+          sections={sections}
           initial={{
             title: lesson.title,
             content: lesson.content,
             videoUrl: lesson.videoUrl,
             durationSec: lesson.durationSec,
+            sectionId: lesson.sectionId,
             isPreview: lesson.isPreview,
             sortOrder: lesson.sortOrder,
           }}

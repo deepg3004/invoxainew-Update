@@ -9,6 +9,7 @@ export interface LessonValues {
   content: string | null;
   videoUrl: string | null;
   durationSec: number | null;
+  sectionId: string | null;
   isPreview: boolean;
   sortOrder: number;
 }
@@ -23,11 +24,13 @@ export function LessonForm({
   initial,
   submitLabel,
   courseId,
+  sections = [],
 }: {
   action: Action;
   initial?: LessonValues;
   submitLabel: string;
   courseId: string;
+  sections?: { id: string; title: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const isEdit = Boolean(initial);
@@ -92,6 +95,24 @@ export function LessonForm({
           className={inputCls}
         />
       </label>
+
+      {sections.length > 0 ? (
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700">Module</span>
+          <select
+            name="sectionId"
+            defaultValue={initial?.sectionId ?? ""}
+            className={inputCls}
+          >
+            <option value="">— No module (ungrouped) —</option>
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       <label className="flex items-center gap-2">
         <input
