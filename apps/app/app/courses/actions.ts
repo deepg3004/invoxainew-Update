@@ -23,11 +23,23 @@ const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
 
 interface ParsedCourse {
   title: string;
+  subtitle: string | null;
   description: string | null;
+  learnPoints: string[];
+  requirements: string[];
   pricePaise: number;
   compareAtPaise: number | null;
   imageUrl: string | null;
   sortOrder: number;
+}
+
+/** One non-empty line per item, trimmed + capped (for the learn/requirements textareas). */
+function parseLines(raw: string, maxItems = 20, maxLen = 200): string[] {
+  return String(raw)
+    .split("\n")
+    .map((s) => s.trim().slice(0, maxLen))
+    .filter(Boolean)
+    .slice(0, maxItems);
 }
 
 function parseCourseFields(
@@ -67,11 +79,17 @@ function parseCourseFields(
   }
 
   const description = String(form.get("description") ?? "").trim() || null;
+  const subtitle = String(form.get("subtitle") ?? "").trim().slice(0, 200) || null;
+  const learnPoints = parseLines(String(form.get("learnPoints") ?? ""));
+  const requirements = parseLines(String(form.get("requirements") ?? ""));
   return {
     ok: true,
     value: {
       title,
+      subtitle,
       description,
+      learnPoints,
+      requirements,
       pricePaise: price.paise,
       compareAtPaise,
       imageUrl: imageRaw || null,

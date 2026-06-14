@@ -54,7 +54,10 @@ export default async function EditCoursePage({
           initial={{
             slug: course.slug,
             title: course.title,
+            subtitle: course.subtitle,
             description: course.description,
+            learnPoints: course.learnPoints,
+            requirements: course.requirements,
             pricePaise: course.pricePaise,
             compareAtPaise: course.compareAtPaise,
             imageUrl: course.imageUrl,

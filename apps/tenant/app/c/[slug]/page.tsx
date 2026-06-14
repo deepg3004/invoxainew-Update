@@ -108,6 +108,9 @@ export default async function CoursePage({
         {/* ── Main column ─────────────────────────────────────────────── */}
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-bold leading-tight">{course.title}</h1>
+          {course.subtitle ? (
+            <p className="mt-2 text-lg text-zinc-700">{course.subtitle}</p>
+          ) : null}
           {course.description ? (
             <p className="mt-3 whitespace-pre-line leading-relaxed text-muted">{course.description}</p>
           ) : null}
@@ -133,6 +136,21 @@ export default async function CoursePage({
             Created by{" "}
             <span className="font-medium text-zinc-900">{tenant.name ?? tenant.username}</span>
           </p>
+
+          {/* What you'll learn */}
+          {course.learnPoints.length > 0 ? (
+            <section className="mt-8 rounded-xl border border-zinc-200 bg-surface p-5">
+              <h2 className="text-lg font-semibold text-zinc-900">What you'll learn</h2>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {course.learnPoints.map((p, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-zinc-700">
+                    <span className="mt-0.5 shrink-0 text-green-600">✓</span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {/* Curriculum */}
           {course.lessons.length > 0 ? (
@@ -161,6 +179,21 @@ export default async function CoursePage({
                     {l.isPreview && l.content ? (
                       <p className="mt-2 whitespace-pre-line pl-7 text-sm text-muted">{l.content}</p>
                     ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {/* Requirements */}
+          {course.requirements.length > 0 ? (
+            <section className="mt-8">
+              <h2 className="text-lg font-semibold text-zinc-900">Requirements</h2>
+              <ul className="mt-3 space-y-1.5">
+                {course.requirements.map((r, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-zinc-700">
+                    <span className="mt-0.5 shrink-0 text-muted">•</span>
+                    <span>{r}</span>
                   </li>
                 ))}
               </ul>

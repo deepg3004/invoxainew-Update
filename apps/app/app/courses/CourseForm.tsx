@@ -8,7 +8,10 @@ import type { CourseFormState } from "./actions";
 export interface CourseValues {
   slug: string;
   title: string;
+  subtitle: string | null;
   description: string | null;
+  learnPoints: string[];
+  requirements: string[];
   pricePaise: number;
   compareAtPaise: number | null;
   imageUrl: string | null;
@@ -73,6 +76,16 @@ export function CourseForm({
       </label>
 
       <label className="block">
+        <span className="text-sm font-medium text-zinc-700">Subtitle</span>
+        <input
+          name="subtitle"
+          defaultValue={initial?.subtitle ?? ""}
+          placeholder="A short one-line pitch shown under the title"
+          className={inputCls}
+        />
+      </label>
+
+      <label className="block">
         <span className="text-sm font-medium text-zinc-700">Description</span>
         <textarea
           name="description"
@@ -80,6 +93,30 @@ export function CourseForm({
           rows={3}
           className={inputCls}
         />
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-700">What you'll learn</span>
+        <textarea
+          name="learnPoints"
+          defaultValue={initial?.learnPoints.join("\n") ?? ""}
+          rows={4}
+          placeholder="One outcome per line, e.g.&#10;Build a React app from scratch&#10;Deploy to production"
+          className={inputCls}
+        />
+        <span className="mt-1 block text-xs text-muted">One bullet per line. Shown as a checklist on the course page.</span>
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-700">Requirements</span>
+        <textarea
+          name="requirements"
+          defaultValue={initial?.requirements.join("\n") ?? ""}
+          rows={3}
+          placeholder="One requirement per line, e.g.&#10;Basic JavaScript&#10;A laptop"
+          className={inputCls}
+        />
+        <span className="mt-1 block text-xs text-muted">One per line. Optional.</span>
       </label>
 
       <div className="grid grid-cols-2 gap-4">

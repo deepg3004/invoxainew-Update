@@ -375,7 +375,11 @@ model Course {
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   slug        String
   title       String
+  subtitle    String?
   description String?
+  // Udemy-style landing content (Phase: store/course redesign). Empty by default.
+  learnPoints  String[]    @map("learn_points")
+  requirements String[]
   pricePaise  Int          @map("price_paise")
   // Optional compare-at / original price for a sale (display only — buyers are
   // charged pricePaise). Shown struck through + a % off, like products.

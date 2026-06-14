@@ -26,7 +26,10 @@ export async function createCourse(input: {
   tenantId: string;
   slug: string;
   title: string;
+  subtitle?: string | null;
   description?: string | null;
+  learnPoints?: string[];
+  requirements?: string[];
   pricePaise: number;
   compareAtPaise?: number | null;
   imageUrl?: string | null;
@@ -39,7 +42,10 @@ export async function createCourse(input: {
         tenantId: input.tenantId,
         slug: input.slug,
         title: input.title,
+        subtitle: input.subtitle ?? null,
         description: input.description ?? null,
+        learnPoints: input.learnPoints ?? [],
+        requirements: input.requirements ?? [],
         pricePaise: input.pricePaise,
         compareAtPaise: input.compareAtPaise ?? null,
         imageUrl: input.imageUrl ?? null,
@@ -82,7 +88,10 @@ export function updateCourse(
   id: string,
   data: {
     title: string;
+    subtitle?: string | null;
     description?: string | null;
+    learnPoints?: string[];
+    requirements?: string[];
     pricePaise: number;
     compareAtPaise?: number | null;
     imageUrl?: string | null;
@@ -93,7 +102,10 @@ export function updateCourse(
     where: { id, tenantId },
     data: {
       title: data.title,
+      subtitle: data.subtitle ?? null,
       description: data.description ?? null,
+      learnPoints: data.learnPoints ?? [],
+      requirements: data.requirements ?? [],
       pricePaise: data.pricePaise,
       compareAtPaise: data.compareAtPaise ?? null,
       imageUrl: data.imageUrl ?? null,
