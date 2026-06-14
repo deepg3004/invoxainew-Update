@@ -287,9 +287,13 @@ export {
   getFeatureQuota,
   getTenantFeatureUsageSummary,
   consumeFeature,
+  listFeatureCharges,
+  countFeatureCharges,
+  sumFeatureChargesPaise,
   type ConsumeResult,
   type FeatureQuota,
   type FeatureUsageRow,
+  type FeatureChargeRow,
 } from "./feature";
 export {
   getPlatformOverview,

@@ -289,3 +289,73 @@ export async function consumeFeature(input: {
     return { ok: false, reason: "unavailable" };
   });
 }
+
+// ── Seller-facing reads ──────────────────────────────────────────────────────
+
+export type FeatureChargeRow = {
+  id: string;
+  featureKey: string;
+  name: string;
+  basePaise: number;
+  gstPaise: number;
+  totalPaise: number;
+  payVia: string;
+  referenceId: string;
+  createdAt: Date;
+};
+
+/**
+ * A tenant's feature-billing history (AI-page charges, etc.), newest first.
+ * `FeatureCharge` stores only the feature KEY, so we resolve human names from
+ * the rule table in one extra query. Tenant-scoped: a charge is only ever read
+ * by its owning tenant (the `[tenantId, createdAt]` index serves this directly).
+ */
+export async function listFeatureCharges(
+  tenantId: string,
+  opts: { take?: number; skip?: number } = {},
+): Promise<FeatureChargeRow[]> {
+  const take = Math.min(Math.max(opts.take ?? 50, 1), 100);
+  const skip = Math.max(opts.skip ?? 0, 0);
+
+  const rows = await prisma.featureCharge.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: "desc" },
+    take,
+    skip,
+  });
+
+  const keys = [...new Set(rows.map((r) => r.featureKey))];
+  const rules = keys.length
+    ? await prisma.featureRule.findMany({
+        where: { featureKey: { in: keys } },
+        select: { featureKey: true, name: true },
+      })
+    : [];
+  const nameByKey = new Map(rules.map((r) => [r.featureKey, r.name]));
+
+  return rows.map((r) => ({
+    id: r.id,
+    featureKey: r.featureKey,
+    name: nameByKey.get(r.featureKey) ?? r.featureKey,
+    basePaise: r.basePaise,
+    gstPaise: r.gstPaise,
+    totalPaise: r.totalPaise,
+    payVia: r.payVia,
+    referenceId: r.referenceId,
+    createdAt: r.createdAt,
+  }));
+}
+
+/** Count of a tenant's feature charges (for pagination). */
+export function countFeatureCharges(tenantId: string): Promise<number> {
+  return prisma.featureCharge.count({ where: { tenantId } });
+}
+
+/** Lifetime total a tenant has been charged for paid features (in paise). */
+export async function sumFeatureChargesPaise(tenantId: string): Promise<number> {
+  const agg = await prisma.featureCharge.aggregate({
+    where: { tenantId },
+    _sum: { totalPaise: true },
+  });
+  return agg._sum.totalPaise ?? 0;
+}
