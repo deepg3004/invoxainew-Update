@@ -32,6 +32,9 @@ importers:
       '@invoxai/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@invoxai/jobs':
+        specifier: workspace:*
+        version: link:../../packages/jobs
       '@invoxai/ui':
         specifier: workspace:*
         version: link:../../packages/ui

@@ -45,3 +45,41 @@ export async function enqueueSaleNotification(
     return false;
   }
 }
+
+export type QueueHealth = {
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
+  paused: number;
+};
+
+/**
+ * Live job counts for the notifications queue (admin observability). Returns null
+ * if the queue is unreachable (e.g. Redis down) so the caller can show a degraded
+ * state instead of throwing. Read-only.
+ */
+export async function getNotificationsQueueHealth(): Promise<QueueHealth | null> {
+  try {
+    const queue = await getQueue();
+    const c = await queue.getJobCounts(
+      "waiting",
+      "active",
+      "completed",
+      "failed",
+      "delayed",
+      "paused",
+    );
+    return {
+      waiting: c.waiting ?? 0,
+      active: c.active ?? 0,
+      completed: c.completed ?? 0,
+      failed: c.failed ?? 0,
+      delayed: c.delayed ?? 0,
+      paused: c.paused ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
