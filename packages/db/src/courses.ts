@@ -141,12 +141,15 @@ export function createLesson(input: {
 }
 
 export function updateLesson(
+  tenantId: string,
   courseId: string,
   lessonId: string,
   data: { title: string; content?: string | null; isPreview: boolean; sortOrder: number },
 ) {
+  // `course: { tenantId }` makes the db layer self-enforce ownership (F3) rather
+  // than relying solely on the action's getCourseById precheck.
   return prisma.lesson.updateMany({
-    where: { id: lessonId, courseId },
+    where: { id: lessonId, courseId, course: { tenantId } },
     data: {
       title: data.title,
       content: data.content ?? null,
@@ -156,8 +159,10 @@ export function updateLesson(
   });
 }
 
-export function deleteLesson(courseId: string, lessonId: string) {
-  return prisma.lesson.deleteMany({ where: { id: lessonId, courseId } });
+export function deleteLesson(tenantId: string, courseId: string, lessonId: string) {
+  return prisma.lesson.deleteMany({
+    where: { id: lessonId, courseId, course: { tenantId } },
+  });
 }
 
 // ── Public storefront reads ───────────────────────────────────────────────────

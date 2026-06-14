@@ -123,8 +123,11 @@ export function createCommunityPost(input: {
   });
 }
 
-export function deleteCommunityPost(communityId: string, postId: string) {
-  return prisma.communityPost.deleteMany({ where: { id: postId, communityId } });
+export function deleteCommunityPost(tenantId: string, communityId: string, postId: string) {
+  // `community: { tenantId }` makes the db layer self-enforce ownership (F3).
+  return prisma.communityPost.deleteMany({
+    where: { id: postId, communityId, community: { tenantId } },
+  });
 }
 
 // ── Public storefront reads ───────────────────────────────────────────────────

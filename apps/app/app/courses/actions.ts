@@ -183,7 +183,7 @@ export async function updateLessonAction(
   const parsed = parseLessonFields(form);
   if (!parsed.ok) return { error: parsed.message };
 
-  await updateLesson(courseId, lessonId, parsed.value);
+  await updateLesson(tenant.id, courseId, lessonId, parsed.value);
   revalidatePath(`/courses/${courseId}`);
   redirect(`/courses/${courseId}`);
 }
@@ -192,6 +192,6 @@ export async function deleteLessonAction(courseId: string, lessonId: string) {
   const { tenant } = await requireTenant();
   const course = await getCourseById(tenant.id, courseId);
   if (!course) return;
-  await deleteLesson(courseId, lessonId);
+  await deleteLesson(tenant.id, courseId, lessonId);
   revalidatePath(`/courses/${courseId}`);
 }

@@ -114,14 +114,17 @@ export async function submitLead(input: {
   });
   if (!form) return { ok: false };
 
+  // Cap every field: this endpoint is PUBLIC + anonymous and the columns are
+  // unbounded `text`, so without caps a visitor could POST multi-megabyte values
+  // to bloat the seller's submissions. Trim first, then clamp (F1).
   await prisma.leadSubmission.create({
     data: {
       tenantId: form.tenantId,
       formId: form.id,
-      name: input.name?.trim() || null,
-      email: input.email?.trim() || null,
-      phone: input.phone?.trim() || null,
-      message: input.message?.trim() || null,
+      name: input.name?.trim().slice(0, 200) || null,
+      email: input.email?.trim().slice(0, 200) || null,
+      phone: input.phone?.trim().slice(0, 40) || null,
+      message: input.message?.trim().slice(0, 4000) || null,
     },
   });
   return { ok: true };

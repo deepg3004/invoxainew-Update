@@ -94,7 +94,7 @@ export async function generateAiPageAction(
     return { error: "Couldn’t bill the AI page. Please try again." };
   }
   if (charge.charged === "wallet" && charge.referenceId) {
-    await setAiPageChargeRef(created.id, charge.referenceId);
+    await setAiPageChargeRef(tenant.id, created.id, charge.referenceId);
   }
 
   await logActivity(tenant.id, "page.generated", `/${slug}`).catch(() => {});

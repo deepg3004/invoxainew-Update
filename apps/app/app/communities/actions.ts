@@ -169,7 +169,7 @@ export async function deletePostAction(communityId: string, postId: string) {
   const { tenant } = await requireTenant();
   const community = await getCommunityById(tenant.id, communityId);
   if (!community) return;
-  await deleteCommunityPost(communityId, postId);
+  await deleteCommunityPost(tenant.id, communityId, postId);
   revalidatePath(`/communities/${communityId}`);
 }
 

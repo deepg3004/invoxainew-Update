@@ -46,9 +46,11 @@ export async function createAiPage(input: {
   }
 }
 
-/** Tag a page with its feature-charge reference (after a paid generation). */
-export function setAiPageChargeRef(id: string, chargeRef: string) {
-  return prisma.aiPage.update({ where: { id }, data: { chargeRef } });
+/** Tag a page with its feature-charge reference (after a paid generation).
+ *  Tenant-scoped like its siblings (updateAiPageContent/setAiPagePublished) so
+ *  the db layer self-enforces ownership rather than trusting the passed id (F2). */
+export function setAiPageChargeRef(tenantId: string, id: string, chargeRef: string) {
+  return prisma.aiPage.updateMany({ where: { id, tenantId }, data: { chargeRef } });
 }
 
 export type ChargeCreateResult =
