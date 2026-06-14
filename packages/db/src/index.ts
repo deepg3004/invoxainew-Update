@@ -197,8 +197,16 @@ export {
   getMembership,
   listJoinedCommunities,
   joinFreeCommunity,
+  listCommunityMessages,
+  createCommunityMessage,
+  deleteOwnCommunityMessage,
+  setCommunityMessageStatus,
+  deleteCommunityMessageAsSeller,
   type CreateCommunityResult,
+  type CommunityMessageNode,
+  type CreateCommunityMessageResult,
 } from "./community";
+export type { CommunityMessageStatus } from "@prisma/client";
 export {
   createProduct,
   listProducts,

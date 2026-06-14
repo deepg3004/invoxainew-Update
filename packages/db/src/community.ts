@@ -1,4 +1,4 @@
-import { Prisma, type CommunityStatus } from "@prisma/client";
+import { Prisma, type CommunityStatus, type CommunityMessageStatus } from "@prisma/client";
 import { prisma } from "./client";
 
 /**
@@ -233,4 +233,156 @@ export async function joinFreeCommunity(input: {
     skipDuplicates: true,
   });
   return { ok: true };
+}
+
+// ── Member discussion (member-to-member; moderated by the seller) ─────────────
+//
+// A CommunityMessage is posted by a MEMBER (gate enforced in the action via
+// getMembership, never here). One level of threading: a message with parentId is
+// a reply. The seller (community owner) moderates by HIDING (reversible) or
+// hard-DELETING. NOT a money path; every read/write is community- or tenant-
+// scoped.
+
+export type CommunityMessageNode = {
+  id: string;
+  authorName: string;
+  body: string;
+  buyerProfileId: string;
+  status: CommunityMessageStatus;
+  createdAt: Date;
+  replies: CommunityMessageNode[];
+};
+
+/**
+ * The discussion thread for a community as a 1-level tree (top-level messages,
+ * each with its replies, both oldest-first). `includeHidden` is for the seller
+ * moderation view; the buyer members view passes false so HIDDEN messages (and,
+ * implicitly, replies under a hidden parent) never surface. A reply whose parent
+ * is absent from the included set is dropped (so hiding a parent hides its
+ * thread in the buyer view).
+ */
+export async function listCommunityMessages(
+  communityId: string,
+  opts: { includeHidden?: boolean } = {},
+): Promise<CommunityMessageNode[]> {
+  const rows = await prisma.communityMessage.findMany({
+    where: {
+      communityId,
+      ...(opts.includeHidden ? {} : { status: "VISIBLE" }),
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      authorName: true,
+      body: true,
+      buyerProfileId: true,
+      status: true,
+      createdAt: true,
+      parentId: true,
+    },
+  });
+
+  const byId = new Map<string, CommunityMessageNode>();
+  for (const r of rows) {
+    byId.set(r.id, {
+      id: r.id,
+      authorName: r.authorName,
+      body: r.body,
+      buyerProfileId: r.buyerProfileId,
+      status: r.status,
+      createdAt: r.createdAt,
+      replies: [],
+    });
+  }
+
+  const roots: CommunityMessageNode[] = [];
+  for (const r of rows) {
+    const node = byId.get(r.id)!;
+    if (r.parentId) {
+      const parent = byId.get(r.parentId);
+      if (parent) parent.replies.push(node);
+      // else: parent not in the included set (e.g. hidden) → drop the reply.
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots;
+}
+
+export type CreateCommunityMessageResult =
+  | { ok: true; id: string }
+  | { ok: false; reason: "invalid_parent" };
+
+/**
+ * Post a member message (or a reply when parentId is set). The CALLER must have
+ * already verified the author's membership. A reply's parent is re-checked to
+ * belong to the SAME community (so a forged parentId from another community is
+ * rejected) and must itself be a top-level message (no nested threading).
+ */
+export async function createCommunityMessage(input: {
+  tenantId: string;
+  communityId: string;
+  buyerProfileId: string;
+  authorName: string;
+  body: string;
+  parentId?: string | null;
+}): Promise<CreateCommunityMessageResult> {
+  if (input.parentId) {
+    const parent = await prisma.communityMessage.findFirst({
+      where: { id: input.parentId, communityId: input.communityId },
+      select: { parentId: true },
+    });
+    if (!parent || parent.parentId) return { ok: false, reason: "invalid_parent" };
+  }
+  const m = await prisma.communityMessage.create({
+    data: {
+      tenantId: input.tenantId,
+      communityId: input.communityId,
+      buyerProfileId: input.buyerProfileId,
+      authorName: input.authorName,
+      body: input.body,
+      parentId: input.parentId ?? null,
+    },
+    select: { id: true },
+  });
+  return { ok: true, id: m.id };
+}
+
+/**
+ * A member deletes their OWN message. Scoped by communityId + buyerProfileId so
+ * a buyer can only remove messages they authored in this community. Cascades to
+ * replies via the self-FK. Returns the delete count (0 = not theirs / not found).
+ */
+export async function deleteOwnCommunityMessage(input: {
+  communityId: string;
+  buyerProfileId: string;
+  messageId: string;
+}) {
+  const res = await prisma.communityMessage.deleteMany({
+    where: {
+      id: input.messageId,
+      communityId: input.communityId,
+      buyerProfileId: input.buyerProfileId,
+    },
+  });
+  return res.count;
+}
+
+/** Seller moderation: hide/unhide a message. Tenant-scoped updateMany so a seller
+ *  can only moderate their own tenant's messages. */
+export function setCommunityMessageStatus(
+  tenantId: string,
+  messageId: string,
+  status: CommunityMessageStatus,
+) {
+  return prisma.communityMessage.updateMany({
+    where: { id: messageId, tenantId },
+    data: { status },
+  });
+}
+
+/** Seller moderation: hard-delete a message (and its replies via cascade).
+ *  Tenant-scoped. */
+export function deleteCommunityMessageAsSeller(tenantId: string, messageId: string) {
+  return prisma.communityMessage.deleteMany({ where: { id: messageId, tenantId } });
 }

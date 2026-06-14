@@ -104,6 +104,7 @@ model Tenant {
   // Phase 12: communities (members spaces) + their memberships.
   communities          Community[]
   communityMemberships CommunityMembership[]
+  communityMessages    CommunityMessage[]
   // Lead forms + CRM (Final Plan §12): capture forms and their submissions.
   leadForms     LeadForm[]
   leadSubmissions LeadSubmission[]
@@ -1173,6 +1174,7 @@ model Community {
   posts         CommunityPost[]
   memberships   CommunityMembership[]
   buyerPayments BuyerPayment[]
+  messages      CommunityMessage[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, status])
@@ -1215,6 +1217,43 @@ model CommunityMembership {
   @@index([tenantId, communityId])
   @@index([communityId, buyerProfileId])
   @@map("community_memberships")
+}
+
+/// Moderation state for a member discussion message. VISIBLE by default; the
+/// seller (community owner) HIDES a message to remove it from the members view
+/// without destroying it (audit-friendly), or hard-deletes it entirely.
+enum CommunityMessageStatus {
+  VISIBLE
+  HIDDEN
+}
+
+/// Member-to-member discussion inside a community (distinct from CommunityPost,
+/// which is seller-only announcements). Authored by a MEMBER (a buyer Profile
+/// with a CommunityMembership — the gate is enforced in the server action, never
+/// the anon client). One level of threading via `parentId` (a reply to a
+/// top-level message). `authorName` is a display snapshot taken at post time
+/// (buyers have no stored name). tenantId is denormalised for isolation + RLS.
+/// RLS: deny-anon; reads/writes are server-side via Prisma after a membership
+/// check. No money path.
+model CommunityMessage {
+  id             String                 @id @default(uuid()) @db.Uuid
+  tenantId       String                 @map("tenant_id") @db.Uuid
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  communityId    String                 @map("community_id") @db.Uuid
+  community      Community              @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  buyerProfileId String                 @map("buyer_profile_id") @db.Uuid
+  authorName     String                 @map("author_name")
+  body           String
+  parentId       String?                @map("parent_id") @db.Uuid
+  parent         CommunityMessage?      @relation("CommunityThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        CommunityMessage[]     @relation("CommunityThread")
+  status         CommunityMessageStatus @default(VISIBLE)
+  createdAt      DateTime               @default(now()) @map("created_at")
+
+  @@index([communityId, status, createdAt])
+  @@index([tenantId])
+  @@index([parentId])
+  @@map("community_messages")
 }
 
 /// Order fulfillment lifecycle (C10), set by the seller and shown to the buyer.

@@ -5,11 +5,13 @@ import {
   getPublishedCommunityMeta,
   getMembership,
   listCommunityPosts,
+  listCommunityMessages,
 } from "@invoxai/db";
 import { formatDateTimeShortIST } from "@invoxai/utils/date";
 import { safeUrl } from "@invoxai/utils/blocks";
 import { getSessionUser } from "../../../../lib/auth";
 import { resolveTenantByHost } from "../../../../lib/resolve";
+import { Composer, MessageActions } from "./Discussion";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +55,7 @@ export default async function CommunityMembersPage({
   }
 
   const posts = await listCommunityPosts(community.id);
+  const threads = await listCommunityMessages(community.id);
   const accessHref = community.accessUrl ? safeUrl(community.accessUrl) : null;
 
   return (
@@ -91,6 +94,58 @@ export default async function CommunityMembersPage({
               </div>
               {p.body ? (
                 <p className="mt-2 whitespace-pre-line leading-relaxed text-zinc-700">{p.body}</p>
+              ) : null}
+            </article>
+          ))}
+        </div>
+      )}
+
+      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted">Discussion</h2>
+      <p className="mt-1 text-xs text-muted">
+        Chat with other members. Be kind — the community owner can remove messages.
+      </p>
+      <Composer slug={community.slug} />
+
+      {threads.length === 0 ? (
+        <p className="mt-6 text-muted">No messages yet — start the conversation above.</p>
+      ) : (
+        <div className="mt-6 space-y-4">
+          {threads.map((m) => (
+            <article key={m.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-medium text-zinc-900">{m.authorName}</span>
+                <span className="shrink-0 text-xs text-muted">{formatDateTimeShortIST(m.createdAt)}</span>
+              </div>
+              <p className="mt-1 whitespace-pre-line leading-relaxed text-zinc-700">{m.body}</p>
+              <MessageActions
+                slug={community.slug}
+                messageId={m.id}
+                canReply
+                canDelete={m.buyerProfileId === user.id}
+              />
+
+              {m.replies.length > 0 ? (
+                <div className="mt-3 space-y-3 border-l-2 border-zinc-100 pl-4">
+                  {m.replies.map((r) => (
+                    <div key={r.id}>
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="text-sm font-medium text-zinc-900">{r.authorName}</span>
+                        <span className="shrink-0 text-xs text-muted">
+                          {formatDateTimeShortIST(r.createdAt)}
+                        </span>
+                      </div>
+                      <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-zinc-700">
+                        {r.body}
+                      </p>
+                      <MessageActions
+                        slug={community.slug}
+                        messageId={r.id}
+                        canReply={false}
+                        canDelete={r.buyerProfileId === user.id}
+                      />
+                    </div>
+                  ))}
+                </div>
               ) : null}
             </article>
           ))}

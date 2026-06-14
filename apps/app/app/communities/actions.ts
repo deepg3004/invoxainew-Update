@@ -9,6 +9,8 @@ import {
   getCommunityById,
   createCommunityPost,
   deleteCommunityPost,
+  setCommunityMessageStatus,
+  deleteCommunityMessageAsSeller,
   getSellerGateway,
   type CommunityStatus,
 } from "@invoxai/db";
@@ -168,5 +170,25 @@ export async function deletePostAction(communityId: string, postId: string) {
   const community = await getCommunityById(tenant.id, communityId);
   if (!community) return;
   await deleteCommunityPost(communityId, postId);
+  revalidatePath(`/communities/${communityId}`);
+}
+
+// ── Discussion moderation (member messages; tenant-scoped) ────────────────────
+
+export async function hideMessageAction(communityId: string, messageId: string) {
+  const { tenant } = await requireTenant();
+  await setCommunityMessageStatus(tenant.id, messageId, "HIDDEN");
+  revalidatePath(`/communities/${communityId}`);
+}
+
+export async function showMessageAction(communityId: string, messageId: string) {
+  const { tenant } = await requireTenant();
+  await setCommunityMessageStatus(tenant.id, messageId, "VISIBLE");
+  revalidatePath(`/communities/${communityId}`);
+}
+
+export async function deleteMessageAction(communityId: string, messageId: string) {
+  const { tenant } = await requireTenant();
+  await deleteCommunityMessageAsSeller(tenant.id, messageId);
   revalidatePath(`/communities/${communityId}`);
 }
