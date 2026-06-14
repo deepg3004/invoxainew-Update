@@ -87,8 +87,11 @@ export default async function ProductPage({
         }
       : null;
 
+  const onSale =
+    product.compareAtPaise != null && product.compareAtPaise > product.pricePaise;
+
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       <TrackingScripts ids={tracking ?? {}} />
       <TrackView name={product.title} valuePaise={product.pricePaise} />
       <div className="flex items-center justify-between">
@@ -98,75 +101,96 @@ export default async function ProductPage({
         <CartLink />
       </div>
 
-      {product.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={product.imageUrl}
-          alt={product.title}
-          className="mt-4 aspect-square w-full rounded-xl border border-zinc-200 object-cover"
-        />
-      ) : null}
-
-      <h1 className="mt-4 text-2xl font-bold">{product.title}</h1>
-      {rating.count > 0 ? (
-        <a href="#reviews" className="mt-1 flex items-center gap-2 text-sm">
-          <Stars value={rating.avg} />
-          <span className="font-medium text-zinc-900">{rating.avg.toFixed(1)}</span>
-          <span className="text-muted">
-            ({rating.count} review{rating.count === 1 ? "" : "s"})
-          </span>
-        </a>
-      ) : null}
-      {product.description ? (
-        <p className="mt-2 whitespace-pre-line text-muted">{product.description}</p>
-      ) : null}
-
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
-        <div className="flex flex-wrap items-baseline gap-2">
-          <span className="text-3xl font-bold">{formatRupees(product.pricePaise)}</span>
-          {product.compareAtPaise != null && product.compareAtPaise > product.pricePaise ? (
-            <>
-              <span className="text-lg text-muted line-through">
-                {formatRupees(product.compareAtPaise)}
-              </span>
-              <span className="rounded-full bg-green-50 px-2 py-0.5 text-sm font-medium text-green-700">
-                {Math.round((1 - product.pricePaise / product.compareAtPaise) * 100)}% off
-              </span>
-            </>
-          ) : null}
+      <div className="mt-6 grid gap-8 lg:grid-cols-2">
+        {/* ── Image ───────────────────────────────────────────────────── */}
+        <div>
+          <div className="lg:sticky lg:top-6">
+            {product.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={product.imageUrl}
+                alt={product.title}
+                className="aspect-square w-full rounded-xl border border-zinc-200 object-cover"
+              />
+            ) : (
+              <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-muted">
+                No image
+              </div>
+            )}
+          </div>
         </div>
-        <p className="mt-1 text-xs text-muted">
-          {product.kind.charAt(0) + product.kind.slice(1).toLowerCase()} · paid securely
-          to {tenant.name ?? tenant.username}.
-        </p>
 
-        {sellerReady ? (
-          <ProductBuyBox
-            product={{
-              id: product.id,
-              slug: product.slug,
-              title: product.title,
-              pricePaise: product.pricePaise,
-              imageUrl: product.imageUrl,
-              stockQty: product.stockQty,
-            }}
-            razorpayReady={razorpayReady}
-            upi={
-              upi
-                ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
-                : null
-            }
-            bump={bump}
-          />
-        ) : (
-          <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
-            This seller hasn’t finished setting up payments yet.
+        {/* ── Details + buy box ───────────────────────────────────────── */}
+        <div>
+          <h1 className="text-3xl font-bold leading-tight">{product.title}</h1>
+          {rating.count > 0 ? (
+            <a href="#reviews" className="mt-2 flex items-center gap-2 text-sm">
+              <span className="font-semibold text-zinc-900">{rating.avg.toFixed(1)}</span>
+              <Stars value={rating.avg} className="text-sm" />
+              <span className="text-muted">
+                ({rating.count} review{rating.count === 1 ? "" : "s"})
+              </span>
+            </a>
+          ) : null}
+
+          <div className="mt-4 flex flex-wrap items-baseline gap-2">
+            <span className="text-3xl font-bold">{formatRupees(product.pricePaise)}</span>
+            {onSale ? (
+              <>
+                <span className="text-lg text-muted line-through">
+                  {formatRupees(product.compareAtPaise!)}
+                </span>
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-sm font-medium text-green-700">
+                  {Math.round((1 - product.pricePaise / product.compareAtPaise!) * 100)}% off
+                </span>
+              </>
+            ) : null}
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            {product.kind.charAt(0) + product.kind.slice(1).toLowerCase()} · paid securely to{" "}
+            {tenant.name ?? tenant.username}.
           </p>
-        )}
+
+          {product.description ? (
+            <p className="mt-4 whitespace-pre-line leading-relaxed text-zinc-700">
+              {product.description}
+            </p>
+          ) : null}
+
+          <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-5">
+            {sellerReady ? (
+              <ProductBuyBox
+                product={{
+                  id: product.id,
+                  slug: product.slug,
+                  title: product.title,
+                  pricePaise: product.pricePaise,
+                  imageUrl: product.imageUrl,
+                  stockQty: product.stockQty,
+                }}
+                razorpayReady={razorpayReady}
+                upi={
+                  upi
+                    ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
+                    : null
+                }
+                bump={bump}
+              />
+            ) : (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                This seller hasn’t finished setting up payments yet.
+              </p>
+            )}
+            <ul className="mt-4 space-y-1.5 border-t border-zinc-200 pt-4 text-sm text-muted">
+              <li>✓ Secure checkout on {tenant.name ?? tenant.username}'s own gateway</li>
+              <li>✓ Instant receipt &amp; access</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {reviews.length > 0 ? (
-        <section id="reviews" className="mt-8">
+        <section id="reviews" className="mt-10">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-zinc-900">Reviews</h2>
             <Stars value={rating.avg} />
