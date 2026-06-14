@@ -411,9 +411,27 @@ model Lesson {
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  progress  LessonProgress[]
 
   @@index([courseId])
   @@map("lessons")
+}
+
+/// A buyer's completion of one lesson (Phase A: course progress). One row per
+/// (lesson, buyer) — presence = completed. Buyer is the logged-in Profile
+/// (the learn page requires login). tenantId/courseId denormalised for scoped reads.
+model LessonProgress {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  courseId       String   @map("course_id") @db.Uuid
+  lessonId       String   @map("lesson_id") @db.Uuid
+  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  buyerProfileId String   @map("buyer_profile_id") @db.Uuid
+  completedAt    DateTime @default(now()) @map("completed_at")
+
+  @@unique([lessonId, buyerProfileId])
+  @@index([courseId, buyerProfileId])
+  @@map("lesson_progress")
 }
 
 /// A buyer's access grant to a course (Courses / LMS). Created ONLY by the PAID

@@ -262,6 +262,8 @@ export {
   listEnrolledCourses,
   getCourseEnrolmentStats,
   getCourseAnalytics,
+  toggleLessonProgress,
+  getCourseProgress,
   listCourseStudents,
   type CreateCourseResult,
   type CourseStudent,

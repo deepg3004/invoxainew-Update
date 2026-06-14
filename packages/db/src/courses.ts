@@ -374,3 +374,56 @@ export async function getCourseAnalytics(tenantId: string): Promise<{
     totalRevenuePaise: rows.reduce((s, c) => s + c.revenuePaise, 0),
   };
 }
+
+// ── Lesson progress (buyer course tracking) ──────────────────────────────────
+
+/**
+ * Toggle a buyer's completion of one lesson. Presence of a LessonProgress row =
+ * completed. Idempotent/race-safe (unique on [lessonId, buyerProfileId]). The
+ * CALLER must verify the buyer is enrolled before calling. Returns the new state.
+ */
+export async function toggleLessonProgress(input: {
+  tenantId: string;
+  courseId: string;
+  lessonId: string;
+  profileId: string;
+}): Promise<{ completed: boolean }> {
+  const existing = await prisma.lessonProgress.findUnique({
+    where: { lessonId_buyerProfileId: { lessonId: input.lessonId, buyerProfileId: input.profileId } },
+    select: { id: true },
+  });
+  if (existing) {
+    await prisma.lessonProgress.delete({ where: { id: existing.id } });
+    return { completed: false };
+  }
+  try {
+    await prisma.lessonProgress.create({
+      data: {
+        tenantId: input.tenantId,
+        courseId: input.courseId,
+        lessonId: input.lessonId,
+        buyerProfileId: input.profileId,
+      },
+    });
+  } catch (e) {
+    // Lost a concurrent toggle race on the unique key — it's already complete.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return { completed: true };
+    }
+    throw e;
+  }
+  return { completed: true };
+}
+
+/** The set of lessonIds this buyer has completed in a course (for the player UI). */
+export async function getCourseProgress(input: {
+  tenantId: string;
+  courseId: string;
+  profileId: string;
+}): Promise<Set<string>> {
+  const rows = await prisma.lessonProgress.findMany({
+    where: { tenantId: input.tenantId, courseId: input.courseId, buyerProfileId: input.profileId },
+    select: { lessonId: true },
+  });
+  return new Set(rows.map((r) => r.lessonId));
+}

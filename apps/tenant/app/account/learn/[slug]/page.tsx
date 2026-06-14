@@ -6,10 +6,12 @@ import {
   getEnrolment,
   listLessons,
   getBuyerReviewForCourse,
+  getCourseProgress,
 } from "@invoxai/db";
 import { getSessionUser } from "../../../../lib/auth";
 import { resolveTenantByHost } from "../../../../lib/resolve";
 import { ReviewForm } from "../../orders/[id]/ReviewForm";
+import { toggleLessonAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -52,12 +54,15 @@ export default async function LearnPage({
     );
   }
 
-  const [lessons, myReview] = await Promise.all([
+  const [lessons, myReview, done] = await Promise.all([
     listLessons(course.id),
     // Enrolled buyers can review the course (verified purchase). Prefilled when
     // they've already reviewed it.
     getBuyerReviewForCourse(course.id, user.id),
+    getCourseProgress({ tenantId: tenant.id, courseId: course.id, profileId: user.id }),
   ]);
+  const completed = lessons.filter((l) => done.has(l.id)).length;
+  const pct = lessons.length ? Math.round((completed / lessons.length) * 100) : 0;
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -71,24 +76,56 @@ export default async function LearnPage({
         <p className="mt-2 whitespace-pre-line text-muted">{course.description}</p>
       ) : null}
 
+      {lessons.length > 0 ? (
+        <div className="mt-6">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted">Your progress</span>
+            <span className="font-medium text-zinc-900">
+              {completed} / {lessons.length} lessons
+            </span>
+          </div>
+          <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+            <div className="h-full rounded-full bg-cyan" style={{ width: `${Math.max(2, pct)}%` }} />
+          </div>
+        </div>
+      ) : null}
+
       {lessons.length === 0 ? (
         <p className="mt-8 text-muted">The seller hasn’t added any lessons yet.</p>
       ) : (
         <div className="mt-8 space-y-8">
-          {lessons.map((l, idx) => (
-            <article key={l.id} className="border-t border-zinc-200 pt-6">
-              <h2 className="text-lg font-semibold">
-                <span className="text-muted">{idx + 1}.</span> {l.title}
-              </h2>
-              {l.content ? (
-                <p className="mt-3 whitespace-pre-line leading-relaxed text-zinc-700">
-                  {l.content}
-                </p>
-              ) : (
-                <p className="mt-3 text-sm text-muted">No content yet.</p>
-              )}
-            </article>
-          ))}
+          {lessons.map((l, idx) => {
+            const isDone = done.has(l.id);
+            return (
+              <article key={l.id} className="border-t border-zinc-200 pt-6">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="text-lg font-semibold">
+                    <span className="text-muted">{idx + 1}.</span> {l.title}
+                    {isDone ? <span className="ml-2 text-sm text-green-600">✓ Completed</span> : null}
+                  </h2>
+                  <form action={toggleLessonAction.bind(null, slug, l.id)}>
+                    <button
+                      type="submit"
+                      className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                        isDone
+                          ? "border-zinc-200 text-muted hover:bg-zinc-50"
+                          : "border-cyan bg-cyan/10 text-cyan hover:bg-cyan/20"
+                      }`}
+                    >
+                      {isDone ? "Mark incomplete" : "Mark complete"}
+                    </button>
+                  </form>
+                </div>
+                {l.content ? (
+                  <p className="mt-3 whitespace-pre-line leading-relaxed text-zinc-700">
+                    {l.content}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm text-muted">No content yet.</p>
+                )}
+              </article>
+            );
+          })}
         </div>
       )}
 
