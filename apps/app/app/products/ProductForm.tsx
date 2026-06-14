@@ -20,6 +20,7 @@ export interface ProductValues {
   kind: ProductKind;
   stockQty: number | null;
   sortOrder: number;
+  collectionId: string | null;
   accessUrl: string | null;
   downloadKey: string | null;
   downloadName: string | null;
@@ -40,10 +41,12 @@ export function ProductForm({
   action,
   initial,
   submitLabel,
+  collections = [],
 }: {
   action: Action;
   initial?: ProductValues;
   submitLabel: string;
+  collections?: { id: string; title: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const isEdit = Boolean(initial);
@@ -119,6 +122,23 @@ export function ProductForm({
             ))}
           </select>
         </label>
+        {collections.length > 0 ? (
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-900">Collection</span>
+            <select
+              name="collectionId"
+              defaultValue={initial?.collectionId ?? ""}
+              className={inputCls}
+            >
+              <option value="">— None —</option>
+              {collections.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="block">
           <span className="text-sm font-medium text-zinc-900">Compare-at price (₹)</span>
           <input

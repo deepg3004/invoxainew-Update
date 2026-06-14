@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { GlassCard, PageHeader } from "@invoxai/ui";
-import { getProductById } from "@invoxai/db";
+import { getProductById, listCollections } from "@invoxai/db";
 import { requireTenant } from "../../../lib/tenant";
 import { ProductForm } from "../ProductForm";
 import { updateProductAction } from "../actions";
@@ -14,7 +14,10 @@ export default async function EditProductPage({
 }) {
   const { tenant } = await requireTenant();
   const { id } = await params;
-  const product = await getProductById(tenant.id, id);
+  const [product, collections] = await Promise.all([
+    getProductById(tenant.id, id),
+    listCollections(tenant.id),
+  ]);
   if (!product) notFound();
 
   const action = updateProductAction.bind(null, product.id);
@@ -30,6 +33,7 @@ export default async function EditProductPage({
         <ProductForm
           action={action}
           submitLabel="Save changes"
+          collections={collections}
           initial={{
             slug: product.slug,
             title: product.title,
@@ -44,6 +48,7 @@ export default async function EditProductPage({
             kind: product.kind,
             stockQty: product.stockQty,
             sortOrder: product.sortOrder,
+            collectionId: product.collectionId,
             accessUrl: product.accessUrl,
           }}
         />

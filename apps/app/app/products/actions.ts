@@ -8,6 +8,9 @@ import {
   setProductStatus,
   getSellerGateway,
   logActivity,
+  createCollection,
+  renameCollection,
+  deleteCollection,
   type ProductKind,
   type ProductStatus,
 } from "@invoxai/db";
@@ -30,6 +33,7 @@ interface ParsedProduct {
   kind: ProductKind;
   stockQty: number | null;
   sortOrder: number;
+  collectionId: string | null;
   accessUrl: string | null;
   downloadKey: string | null;
   downloadName: string | null;
@@ -122,6 +126,7 @@ function parseProductFields(
       kind,
       stockQty,
       sortOrder,
+      collectionId: String(form.get("collectionId") ?? "").trim() || null,
       accessUrl: accessRaw || null,
     },
   };
@@ -181,5 +186,29 @@ export async function setProductStatusAction(id: string, status: ProductStatus) 
   const verb =
     status === "PUBLISHED" ? "published" : status === "ARCHIVED" ? "archived" : "unpublished";
   await logActivity(tenant.id, `product.${verb}`).catch(() => {});
+  revalidatePath("/products");
+}
+
+// ── Collections (storefront categories) ──────────────────────────────────────
+
+export async function createCollectionAction(form: FormData) {
+  const { tenant } = await requireTenant();
+  const title = String(form.get("title") ?? "").trim().slice(0, 120);
+  if (!title) return;
+  await createCollection(tenant.id, title);
+  revalidatePath("/products");
+}
+
+export async function renameCollectionAction(id: string, form: FormData) {
+  const { tenant } = await requireTenant();
+  const title = String(form.get("title") ?? "").trim().slice(0, 120);
+  if (!title) return;
+  await renameCollection(tenant.id, id, title);
+  revalidatePath("/products");
+}
+
+export async function deleteCollectionAction(id: string) {
+  const { tenant } = await requireTenant();
+  await deleteCollection(tenant.id, id);
   revalidatePath("/products");
 }

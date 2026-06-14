@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
-import { listProducts, countProducts, getSellerGateway } from "@invoxai/db";
+import { listProducts, countProducts, getSellerGateway, listCollections } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
-import { setProductStatusAction } from "./actions";
+import {
+  setProductStatusAction,
+  createCollectionAction,
+  renameCollectionAction,
+  deleteCollectionAction,
+} from "./actions";
 import { CopyLinkButton } from "../components/CopyLinkButton";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +34,10 @@ export default async function ProductsPage({
   const { page: rawPage, size: rawSize } = await searchParams;
   const total = await countProducts(tenant.id);
   const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
-  const [products, gateway] = await Promise.all([
+  const [products, gateway, collections] = await Promise.all([
     listProducts(tenant.id, { skip, take }),
     getSellerGateway(tenant.id),
+    listCollections(tenant.id),
   ]);
   const firstOnPage = total === 0 ? 0 : skip + 1;
   const lastOnPage = skip + products.length;
@@ -48,6 +54,45 @@ export default async function ProductsPage({
           ) : null
         }
       />
+
+      {gateway ? (
+        <details className="mt-4 rounded-xl border border-zinc-200 bg-surface p-4">
+          <summary className="cursor-pointer text-sm font-medium text-zinc-900">
+            Collections ({collections.length})
+          </summary>
+          <p className="mt-2 text-sm text-muted">
+            Group products into storefront categories. Assign a product to a collection on its
+            edit page.
+          </p>
+          {collections.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {collections.map((c) => (
+                <li key={c.id} className="flex items-center gap-2 rounded-lg border border-zinc-200 p-2">
+                  <form action={renameCollectionAction.bind(null, c.id)} className="flex flex-1 items-center gap-2">
+                    <input
+                      name="title"
+                      defaultValue={c.title}
+                      className="flex-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-brand"
+                    />
+                    <button className="rounded-md px-2 py-1 text-xs text-brand-strong underline">Rename</button>
+                  </form>
+                  <form action={deleteCollectionAction.bind(null, c.id)}>
+                    <button className="text-xs text-muted underline hover:text-red-700">Delete</button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <form action={createCollectionAction} className="mt-3 flex gap-2">
+            <input
+              name="title"
+              placeholder="New collection (e.g. Ebooks)"
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
+            />
+            <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">Add</button>
+          </form>
+        </details>
+      ) : null}
 
       {!gateway ? (
         <div className="mt-8">

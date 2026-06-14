@@ -88,6 +88,7 @@ model Tenant {
   tracking     TenantTracking?
   // Store: the seller's product catalog (Final Plan §9).
   products     Product[]
+  collections  Collection[]
   // Store slice 3 (coupons): the seller's discount codes.
   coupons      Coupon[]
   // Courses / LMS (Final Plan §10): the seller's courses + buyer enrolments.
@@ -245,6 +246,9 @@ model Product {
   bumpBlurb   String?       @map("bump_blurb") // short pitch shown on the bump card
   imageUrl    String?       @map("image_url")
   kind        ProductKind   @default(DIGITAL)
+  // Optional storefront collection/category grouping (Shopify-style). Null = none.
+  collectionId String?      @map("collection_id") @db.Uuid
+  collection   Collection?  @relation(fields: [collectionId], references: [id], onDelete: SetNull)
   // Gated post-purchase access link (community invite / download URL). Revealed
   // to the buyer ONLY on a PAID order (getBuyerOrder) — never on public pages.
   accessUrl   String?       @map("access_url")
@@ -427,6 +431,21 @@ model Lesson {
 
   @@index([courseId])
   @@map("lessons")
+}
+
+/// A storefront collection/category grouping products (Shopify-style). Optional —
+/// products may be uncategorised. Ordered by sortOrder.
+model Collection {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title     String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  products  Product[]
+
+  @@index([tenantId])
+  @@map("collections")
 }
 
 /// A curriculum module/section grouping a course's lessons (Udemy-style).

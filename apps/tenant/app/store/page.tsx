@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   listPublishedProducts,
+  listPublishedCollections,
   getTenantTracking,
   getProductRatingSummaries,
   getProductSalesCounts,
@@ -35,17 +36,20 @@ type SortKey = (typeof SORTS)[number]["key"];
 export default async function StorePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sort?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; collection?: string }>;
 }) {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
-  const [products, tracking, { q: rawQ, sort: rawSort }] = await Promise.all([
-    listPublishedProducts(tenant.id),
+  const { q: rawQ, sort: rawSort, collection: rawCollection } = await searchParams;
+  const collections = await listPublishedCollections(tenant.id);
+  // Only honour a collection filter that actually belongs to this store.
+  const collectionId = collections.some((c) => c.id === rawCollection) ? rawCollection : undefined;
+  const [products, tracking] = await Promise.all([
+    listPublishedProducts(tenant.id, { collectionId }),
     getTenantTracking(tenant.id),
-    searchParams,
   ]);
 
   const q = (rawQ ?? "").trim();
@@ -81,13 +85,18 @@ export default async function StorePage({
   else if (sort === "newest") sorted.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
   else if (sort === "best-selling")
     sorted.sort((a, b) => (salesCounts.get(b.id) ?? 0) - (salesCounts.get(a.id) ?? 0));
-  const sortHref = (key: SortKey) => {
+  // Build a /store href preserving the current q/sort/collection, with overrides.
+  const href = (over: { sort?: SortKey; collection?: string | null }) => {
     const sp = new URLSearchParams();
     if (q) sp.set("q", q);
-    if (key !== "featured") sp.set("sort", key);
-    const s = sp.toString();
-    return s ? `/store?${s}` : "/store";
+    const s = over.sort ?? sort;
+    if (s !== "featured") sp.set("sort", s);
+    const col = over.collection === undefined ? collectionId : over.collection;
+    if (col) sp.set("collection", col);
+    const str = sp.toString();
+    return str ? `/store?${str}` : "/store";
   };
+  const sortHref = (key: SortKey) => href({ sort: key });
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -138,6 +147,32 @@ export default async function StorePage({
               </Link>
             ) : null}
           </form>
+
+          {collections.length > 0 ? (
+            <div className="mt-4 flex flex-wrap items-center gap-1.5">
+              <Link
+                href={href({ collection: null })}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                  !collectionId ? "bg-brand text-white" : "border border-zinc-200 text-muted hover:bg-zinc-50"
+                }`}
+              >
+                All
+              </Link>
+              {collections.map((c) => (
+                <Link
+                  key={c.id}
+                  href={href({ collection: c.id })}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    collectionId === c.id
+                      ? "bg-brand text-white"
+                      : "border border-zinc-200 text-muted hover:bg-zinc-50"
+                  }`}
+                >
+                  {c.title}
+                </Link>
+              ))}
+            </div>
+          ) : null}
 
           {filtered.length === 0 ? (
             <p className="mt-8 text-muted">

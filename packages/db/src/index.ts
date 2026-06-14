@@ -227,6 +227,11 @@ export {
   getProductSalesCounts,
   getStoreAnalytics,
   getOrderBumpProduct,
+  listCollections,
+  listPublishedCollections,
+  createCollection,
+  renameCollection,
+  deleteCollection,
   type CreateProductResult,
 } from "./products";
 export {

@@ -39,6 +39,7 @@ const PUBLIC_PRODUCT_SELECT = Prisma.validator<Prisma.ProductSelect>()({
   imageUrl: true,
   kind: true,
   stockQty: true,
+  collectionId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -60,6 +61,7 @@ export async function createProduct(input: {
   kind: ProductKind;
   stockQty?: number | null;
   sortOrder?: number;
+  collectionId?: string | null;
   accessUrl?: string | null;
   downloadKey?: string | null;
   downloadName?: string | null;
@@ -82,6 +84,7 @@ export async function createProduct(input: {
         kind: input.kind,
         stockQty: input.stockQty ?? null,
         sortOrder: input.sortOrder ?? 0,
+        collectionId: input.collectionId ?? null,
         accessUrl: input.accessUrl ?? null,
         status: input.status ?? "DRAFT",
       },
@@ -115,13 +118,57 @@ export function getProductById(tenantId: string, id: string) {
   return prisma.product.findFirst({ where: { id, tenantId } });
 }
 
-/** The PUBLISHED catalog for a tenant — the public storefront listing. */
-export function listPublishedProducts(tenantId: string) {
+/** The PUBLISHED catalog for a tenant — the public storefront listing. Optionally
+ *  filtered to one collection. */
+export function listPublishedProducts(
+  tenantId: string,
+  opts: { collectionId?: string } = {},
+) {
   return prisma.product.findMany({
-    where: { tenantId, status: "PUBLISHED" },
+    where: {
+      tenantId,
+      status: "PUBLISHED",
+      ...(opts.collectionId ? { collectionId: opts.collectionId } : {}),
+    },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     select: PUBLIC_PRODUCT_SELECT,
   });
+}
+
+// ── Collections (storefront categories) ──────────────────────────────────────
+
+/** A tenant's collections in display order (seller + storefront). */
+export function listCollections(tenantId: string) {
+  return prisma.collection.findMany({
+    where: { tenantId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
+
+/** Collections that have at least one PUBLISHED product — for storefront filter chips. */
+export function listPublishedCollections(tenantId: string) {
+  return prisma.collection.findMany({
+    where: { tenantId, products: { some: { status: "PUBLISHED" } } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: { id: true, title: true },
+  });
+}
+
+export async function createCollection(tenantId: string, title: string) {
+  const count = await prisma.collection.count({ where: { tenantId } });
+  return prisma.collection.create({
+    data: { tenantId, title, sortOrder: count },
+    select: { id: true },
+  });
+}
+
+export function renameCollection(tenantId: string, id: string, title: string) {
+  return prisma.collection.updateMany({ where: { id, tenantId }, data: { title } });
+}
+
+/** Delete a collection. Products are NOT deleted — collection_id is SET NULL. */
+export function deleteCollection(tenantId: string, id: string) {
+  return prisma.collection.deleteMany({ where: { id, tenantId } });
 }
 
 /** A single PUBLISHED product by tenant+slug — the public product page. */
@@ -168,6 +215,7 @@ export function updateProduct(
     kind: ProductKind;
     stockQty?: number | null;
     sortOrder?: number;
+    collectionId?: string | null;
     accessUrl?: string | null;
     downloadKey?: string | null;
     downloadName?: string | null;
@@ -189,6 +237,7 @@ export function updateProduct(
       kind: data.kind,
       stockQty: data.stockQty ?? null,
       sortOrder: data.sortOrder ?? 0,
+      collectionId: data.collectionId ?? null,
       accessUrl: data.accessUrl ?? null,
     },
   });
