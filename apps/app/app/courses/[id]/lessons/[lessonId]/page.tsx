@@ -36,6 +36,8 @@ export default async function EditLessonPage({
           initial={{
             title: lesson.title,
             content: lesson.content,
+            videoUrl: lesson.videoUrl,
+            durationSec: lesson.durationSec,
             isPreview: lesson.isPreview,
             sortOrder: lesson.sortOrder,
           }}

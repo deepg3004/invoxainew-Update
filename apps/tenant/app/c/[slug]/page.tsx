@@ -13,9 +13,17 @@ import {
   getCourseEnrolmentStats,
 } from "@invoxai/db";
 import { formatDateIST } from "@invoxai/utils/date";
+import { toEmbedUrl } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { cachedCourse } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
+
+/** Short duration label, e.g. 750 → "13m". */
+function durLabel(sec: number | null | undefined): string | null {
+  if (!sec || sec <= 0) return null;
+  const m = Math.round(sec / 60);
+  return m >= 1 ? `${m}m` : `${sec}s`;
+}
 import { CourseBuyBox } from "./CourseBuyBox";
 import { MoreFromStore } from "../../MoreFromStore";
 import { Stars } from "../../Stars";
@@ -168,6 +176,10 @@ export default async function CoursePage({
                     <div className="flex items-center gap-2">
                       <span className="w-5 text-right text-sm text-muted">{idx + 1}</span>
                       <span className="flex-1 text-sm font-medium text-zinc-900">{l.title}</span>
+                      {l.videoUrl ? <span className="text-xs text-muted">▶</span> : null}
+                      {durLabel(l.durationSec) ? (
+                        <span className="text-xs text-muted">{durLabel(l.durationSec)}</span>
+                      ) : null}
                       {l.isPreview ? (
                         <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
                           Preview
@@ -176,7 +188,17 @@ export default async function CoursePage({
                         <span className="text-xs text-muted">🔒</span>
                       )}
                     </div>
-                    {l.isPreview && l.content ? (
+                    {/* Free preview: embed the video (if any), else show the preview text. */}
+                    {l.isPreview && l.videoUrl && toEmbedUrl(l.videoUrl) ? (
+                      <div className="mt-2 ml-7 aspect-video overflow-hidden rounded-lg border border-zinc-200 bg-black">
+                        <iframe
+                          src={toEmbedUrl(l.videoUrl)}
+                          className="h-full w-full"
+                          title={l.title}
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : l.isPreview && l.content ? (
                       <p className="mt-2 whitespace-pre-line pl-7 text-sm text-muted">{l.content}</p>
                     ) : null}
                   </li>

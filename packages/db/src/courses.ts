@@ -137,6 +137,8 @@ export function createLesson(input: {
   courseId: string;
   title: string;
   content?: string | null;
+  videoUrl?: string | null;
+  durationSec?: number | null;
   isPreview?: boolean;
   sortOrder?: number;
 }) {
@@ -145,6 +147,8 @@ export function createLesson(input: {
       courseId: input.courseId,
       title: input.title,
       content: input.content ?? null,
+      videoUrl: input.videoUrl ?? null,
+      durationSec: input.durationSec ?? null,
       isPreview: input.isPreview ?? false,
       sortOrder: input.sortOrder ?? 0,
     },
@@ -156,7 +160,14 @@ export function updateLesson(
   tenantId: string,
   courseId: string,
   lessonId: string,
-  data: { title: string; content?: string | null; isPreview: boolean; sortOrder: number },
+  data: {
+    title: string;
+    content?: string | null;
+    videoUrl?: string | null;
+    durationSec?: number | null;
+    isPreview: boolean;
+    sortOrder: number;
+  },
 ) {
   // `course: { tenantId }` makes the db layer self-enforce ownership (F3) rather
   // than relying solely on the action's getCourseById precheck.
@@ -165,6 +176,8 @@ export function updateLesson(
     data: {
       title: data.title,
       content: data.content ?? null,
+      videoUrl: data.videoUrl ?? null,
+      durationSec: data.durationSec ?? null,
       isPreview: data.isPreview,
       sortOrder: data.sortOrder,
     },
@@ -199,14 +212,26 @@ export async function getPublishedCourse(tenantId: string, slug: string) {
     include: {
       lessons: {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        select: { id: true, title: true, isPreview: true, sortOrder: true, content: true },
+        select: {
+          id: true,
+          title: true,
+          isPreview: true,
+          sortOrder: true,
+          content: true,
+          videoUrl: true,
+          durationSec: true,
+        },
       },
     },
   });
   if (!course) return null;
   return {
     ...course,
-    lessons: course.lessons.map((l) => (l.isPreview ? l : { ...l, content: null })),
+    // Non-preview lessons: never leak the body OR the video URL to the public
+    // landing — only enrolled buyers (the learn page) get those. Duration is fine.
+    lessons: course.lessons.map((l) =>
+      l.isPreview ? l : { ...l, content: null, videoUrl: null },
+    ),
   };
 }
 

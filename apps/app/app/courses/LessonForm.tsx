@@ -7,6 +7,8 @@ import type { LessonFormState } from "./actions";
 export interface LessonValues {
   title: string;
   content: string | null;
+  videoUrl: string | null;
+  durationSec: number | null;
   isPreview: boolean;
   sortOrder: number;
 }
@@ -58,13 +60,35 @@ export function LessonForm({
         </label>
       </div>
 
+      <div className="grid grid-cols-[1fr_7rem] gap-3">
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700">Video URL</span>
+          <input
+            name="videoUrl"
+            defaultValue={initial?.videoUrl ?? ""}
+            placeholder="YouTube or Vimeo link (optional)"
+            className={inputCls}
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-700">Minutes</span>
+          <input
+            name="durationMin"
+            inputMode="decimal"
+            defaultValue={initial?.durationSec ? Math.round(initial.durationSec / 60) : ""}
+            placeholder="12"
+            className={inputCls}
+          />
+        </label>
+      </div>
+
       <label className="block">
-        <span className="text-sm font-medium text-zinc-700">Content</span>
+        <span className="text-sm font-medium text-zinc-700">Content / notes</span>
         <textarea
           name="content"
           defaultValue={initial?.content ?? ""}
           rows={isEdit ? 10 : 4}
-          placeholder="Lesson text. (Video uploads come later.)"
+          placeholder="Lesson text or notes shown alongside the video."
           className={inputCls}
         />
       </label>

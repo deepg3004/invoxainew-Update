@@ -411,6 +411,10 @@ model Lesson {
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   title     String
   content   String?  // text/markdown lesson body
+  // Optional video lesson (YouTube/Vimeo link; embedded in the player). Plus an
+  // optional duration for the curriculum/player UI.
+  videoUrl    String? @map("video_url")
+  durationSec Int?    @map("duration_sec")
   isPreview Boolean  @default(false) @map("is_preview")
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")

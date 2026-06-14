@@ -154,10 +154,38 @@ export async function setCourseStatusAction(id: string, status: CourseStatus) {
 
 function parseLessonFields(
   form: FormData,
-): { ok: true; value: { title: string; content: string | null; isPreview: boolean; sortOrder: number } } | { ok: false; message: string } {
+):
+  | {
+      ok: true;
+      value: {
+        title: string;
+        content: string | null;
+        videoUrl: string | null;
+        durationSec: number | null;
+        isPreview: boolean;
+        sortOrder: number;
+      };
+    }
+  | { ok: false; message: string } {
   const title = String(form.get("title") ?? "").trim();
   if (!title) return { ok: false, message: "Lesson title is required." };
   const content = String(form.get("content") ?? "").trim() || null;
+
+  const videoRaw = String(form.get("videoUrl") ?? "").trim();
+  if (videoRaw && !/^https?:\/\/\S+$/.test(videoRaw)) {
+    return { ok: false, message: "Video URL must start with http:// or https://" };
+  }
+
+  let durationSec: number | null = null;
+  const minsRaw = String(form.get("durationMin") ?? "").trim();
+  if (minsRaw) {
+    const m = Number(minsRaw);
+    if (!Number.isFinite(m) || m < 0) {
+      return { ok: false, message: "Duration must be a number of minutes (0 or more)." };
+    }
+    durationSec = Math.round(m * 60);
+  }
+
   const isPreview = form.get("isPreview") === "on";
   const orderRaw = String(form.get("sortOrder") ?? "").trim();
   let sortOrder = 0;
@@ -168,7 +196,10 @@ function parseLessonFields(
     }
     sortOrder = n;
   }
-  return { ok: true, value: { title, content, isPreview, sortOrder } };
+  return {
+    ok: true,
+    value: { title, content, videoUrl: videoRaw || null, durationSec, isPreview, sortOrder },
+  };
 }
 
 export async function createLessonAction(

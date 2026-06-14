@@ -8,12 +8,20 @@ import {
   getBuyerReviewForCourse,
   getCourseProgress,
 } from "@invoxai/db";
+import { toEmbedUrl } from "@invoxai/utils/blocks";
 import { getSessionUser } from "../../../../lib/auth";
 import { resolveTenantByHost } from "../../../../lib/resolve";
 import { ReviewForm } from "../../orders/[id]/ReviewForm";
 import { toggleLessonAction } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+/** Short duration label, e.g. 750 → "13m". */
+function durLabel(sec: number | null | undefined): string | null {
+  if (!sec || sec <= 0) return null;
+  const m = Math.round(sec / 60);
+  return m >= 1 ? `${m}m` : `${sec}s`;
+}
 
 export default async function LearnPage({
   params,
@@ -149,6 +157,10 @@ export default async function LearnPage({
                     <span className={`flex-1 ${isActive ? "font-medium text-zinc-900" : "text-zinc-700"}`}>
                       {l.title}
                     </span>
+                    {l.videoUrl ? <span className="shrink-0 text-xs text-muted">▶</span> : null}
+                    {durLabel(l.durationSec) ? (
+                      <span className="shrink-0 text-xs text-muted">{durLabel(l.durationSec)}</span>
+                    ) : null}
                   </Link>
                 </li>
               );
@@ -164,13 +176,23 @@ export default async function LearnPage({
                 Lesson {activeIdx + 1} of {lessons.length}
               </p>
               <h2 className="mt-1 text-xl font-bold text-zinc-900">{active.title}</h2>
+              {active.videoUrl && toEmbedUrl(active.videoUrl) ? (
+                <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg border border-zinc-200 bg-black">
+                  <iframe
+                    src={toEmbedUrl(active.videoUrl)}
+                    className="h-full w-full"
+                    title={active.title}
+                    allowFullScreen
+                  />
+                </div>
+              ) : null}
               {active.content ? (
                 <p className="mt-4 whitespace-pre-line leading-relaxed text-zinc-700">
                   {active.content}
                 </p>
-              ) : (
+              ) : !active.videoUrl ? (
                 <p className="mt-4 text-sm text-muted">No content for this lesson yet.</p>
-              )}
+              ) : null}
 
               <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-5">
                 <form action={toggleLessonAction.bind(null, slug, active.id)}>
