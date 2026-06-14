@@ -5,9 +5,12 @@ import {
   listFeatureCharges,
   countFeatureCharges,
   sumFeatureChargesPaise,
+  availableFeatureCreditsByKey,
+  listFeatureRules,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
+import { BuyFeatureCredit } from "./BuyFeatureCredit";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +31,14 @@ export default async function FeaturePaymentsPage({
 
   const total = await countFeatureCharges(tenant.id);
   const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
-  const [charges, lifetimePaise] = await Promise.all([
+  const [charges, lifetimePaise, rules, creditsByKey] = await Promise.all([
     listFeatureCharges(tenant.id, { skip, take }),
     sumFeatureChargesPaise(tenant.id),
+    listFeatureRules(),
+    availableFeatureCreditsByKey(tenant.id),
   ]);
+  // Features payable directly via the platform gateway (pay-per-use credits).
+  const directRules = rules.filter((r) => r.active && r.directEnabled);
   const firstOnPage = total === 0 ? 0 : skip + 1;
   const lastOnPage = skip + charges.length;
 
@@ -59,7 +66,42 @@ export default async function FeaturePaymentsPage({
         </p>
       ) : null}
 
-      <GlassCard className="mt-6 overflow-hidden p-0">
+      {directRules.length > 0 ? (
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold text-zinc-900">Pay-per-use credits</h2>
+          <p className="mt-1 text-sm text-muted">
+            Prefer not to keep wallet balance? Buy a credit and it's used automatically
+            the next time you use the feature.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {directRules.map((r) => {
+              const gstPaise = Math.round((r.basePaise * r.gstRateBps) / 10000);
+              const pricePaise = r.basePaise + gstPaise;
+              const available = creditsByKey[r.featureKey] ?? 0;
+              return (
+                <GlassCard key={r.featureKey} className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="font-medium text-zinc-900">{r.name}</div>
+                    <div className="text-sm text-muted">
+                      {available > 0
+                        ? `${available} credit${available === 1 ? "" : "s"} available`
+                        : "No credits — buy one to use this feature"}
+                    </div>
+                  </div>
+                  <BuyFeatureCredit
+                    featureKey={r.featureKey}
+                    featureName={r.name}
+                    pricePaise={pricePaise}
+                  />
+                </GlassCard>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      <h2 className="mt-8 text-lg font-semibold text-zinc-900">Charge history</h2>
+      <GlassCard className="mt-3 overflow-hidden p-0">
         <table className="w-full text-left text-sm">
           <thead className="bg-zinc-50 text-muted">
             <tr>

@@ -86,10 +86,16 @@ export async function generateAiPageAction(
   const charge = await consumeFeature({ tenantId: tenant.id, featureKey: FEATURE });
   if (!charge.ok) {
     await deleteAiPage(tenant.id, created.id);
+    const price = formatRupees(charge.pricePaise ?? quota.totalPaise);
     if (charge.reason === "insufficient_funds") {
-      return {
-        error: `Free AI pages used up and your wallet is low (need ${formatRupees(charge.pricePaise ?? quota.totalPaise)}). Top up and try again.`,
-      };
+      // Wallet too low. Offer the direct pay-per-use credit when it's available.
+      return charge.directAvailable
+        ? { error: `Free AI pages used up and your wallet is low. Top up your wallet, or buy a ${price} credit from Feature charges, then try again.` }
+        : { error: `Free AI pages used up and your wallet is low (need ${price}). Top up and try again.` };
+    }
+    if (charge.reason === "payment_required") {
+      // Direct-pay only: buy a credit on /feature-payments, then re-generate.
+      return { error: `This AI page costs ${price}. Buy a credit from Feature charges, then generate again.` };
     }
     return { error: "Couldn’t bill the AI page. Please try again." };
   }

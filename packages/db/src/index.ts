@@ -293,6 +293,7 @@ export {
   listFeatureCharges,
   countFeatureCharges,
   sumFeatureChargesPaise,
+  availableFeatureCreditsByKey,
   type ConsumeResult,
   type FeatureQuota,
   type FeatureUsageRow,

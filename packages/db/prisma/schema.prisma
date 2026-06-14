@@ -466,6 +466,7 @@ enum OrderStatus {
 enum OrderPurpose {
   SUBSCRIPTION
   WALLET_TOPUP
+  FEATURE
 }
 
 /// Wallet ledger entry direction. CREDIT = money in (top-up); DEBIT = money out
@@ -615,6 +616,10 @@ model FeatureCharge {
   totalPaise  Int      @map("total_paise")
   payVia      String   @map("pay_via")
   referenceId String   @unique @map("reference_id")
+  // For a direct-paid PREPAID credit (payVia="direct"): null = available, set =
+  // already consumed by a feature use. Wallet charges leave this null (they are
+  // consumed at the instant they're written, never a standing credit).
+  consumedAt  DateTime? @map("consumed_at")
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([tenantId, createdAt])
@@ -718,6 +723,8 @@ model PlatformOrder {
   planId          String?       @map("plan_id") @db.Uuid
   plan            Plan?         @relation(fields: [planId], references: [id])
   billingCycle    BillingCycle? @map("billing_cycle")
+  // Set only for FEATURE orders (which paid feature this credit unlocks).
+  featureKey      String?       @map("feature_key")
   amountPaise     Int           @map("amount_paise")
   status          OrderStatus   @default(CREATED)
   razorpayPaymentId String?     @map("razorpay_payment_id")

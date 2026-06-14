@@ -182,7 +182,7 @@ export async function getFeatureQuota(
 export type ConsumeResult =
   | {
       ok: true;
-      charged: "free" | "wallet";
+      charged: "free" | "wallet" | "direct";
       amountPaise: number;
       remainingFree: number;
       referenceId?: string;
@@ -196,9 +196,11 @@ export type ConsumeResult =
 
 /**
  * Consume one unit of a feature for a tenant. Free while within the plan's
- * monthly allowance; otherwise charged base+GST from the wallet (when wallet
- * payment is enabled). Returns `payment_required` when only direct payment is
- * enabled (handled by the platform-gateway flow — a later slice). Atomic.
+ * monthly allowance; otherwise: a prepaid direct-payment credit (bought via the
+ * platform gateway, see startFeaturePayment) is claimed first, else base+GST is
+ * debited from the wallet (when wallet payment is enabled). Returns
+ * `payment_required` when there's no credit and only direct payment is enabled —
+ * the caller routes the seller to startFeaturePayment. Atomic.
  */
 export async function consumeFeature(input: {
   tenantId: string;
@@ -243,6 +245,27 @@ export async function consumeFeature(input: {
     // Over the allowance — needs payment.
     const gstPaise = Math.round((rule.basePaise * rule.gstRateBps) / 10000);
     const totalPaise = rule.basePaise + gstPaise;
+
+    // Prepaid direct-payment credit first: a paid FEATURE platform order minted
+    // an unconsumed FeatureCharge (payVia="direct"). Atomically claim the oldest
+    // one — `updateMany ... where consumedAt = null` so two concurrent consumes
+    // can't both take the same credit.
+    const credit = await tx.featureCharge.findFirst({
+      where: { tenantId: input.tenantId, featureKey: input.featureKey, payVia: "direct", consumedAt: null },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    if (credit) {
+      const claimed = await tx.featureCharge.updateMany({
+        where: { id: credit.id, consumedAt: null },
+        data: { consumedAt: new Date() },
+      });
+      if (claimed.count === 1) {
+        await tx.featureUsage.update({ where: { id: usage.id }, data: { count: { increment: 1 } } });
+        return { ok: true, charged: "direct", amountPaise: totalPaise, remainingFree: 0, referenceId: credit.id };
+      }
+      // Lost the race for this credit — fall through to wallet / payment_required.
+    }
 
     if (rule.walletEnabled) {
       // Lock the wallet row so this feature debit can't lose a concurrent fee/commission.
@@ -351,6 +374,22 @@ export async function listFeatureCharges(
 /** Count of a tenant's feature charges (for pagination). */
 export function countFeatureCharges(tenantId: string): Promise<number> {
   return prisma.featureCharge.count({ where: { tenantId } });
+}
+
+/**
+ * How many unconsumed prepaid direct-payment credits the tenant holds, keyed by
+ * feature. Each is one paid-but-unused FeatureCharge (payVia="direct") that the
+ * next consumeFeature for that feature will claim instead of the wallet.
+ */
+export async function availableFeatureCreditsByKey(
+  tenantId: string,
+): Promise<Record<string, number>> {
+  const rows = await prisma.featureCharge.groupBy({
+    by: ["featureKey"],
+    where: { tenantId, payVia: "direct", consumedAt: null },
+    _count: { _all: true },
+  });
+  return Object.fromEntries(rows.map((r) => [r.featureKey, r._count._all]));
 }
 
 /** Lifetime total a tenant has been charged for paid features (in paise). */

@@ -41,9 +41,10 @@ export function getSubscriptionByTenant(tenantId: string) {
 export function createPlatformOrder(input: {
   razorpayOrderId: string;
   tenantId: string;
-  purpose: "SUBSCRIPTION" | "WALLET_TOPUP";
+  purpose: "SUBSCRIPTION" | "WALLET_TOPUP" | "FEATURE";
   planId?: string | null;
   billingCycle?: "MONTHLY" | "YEARLY" | null;
+  featureKey?: string | null;
   amountPaise: number;
 }) {
   return prisma.platformOrder.create({
@@ -53,6 +54,7 @@ export function createPlatformOrder(input: {
       purpose: input.purpose,
       planId: input.planId ?? null,
       billingCycle: input.billingCycle ?? null,
+      featureKey: input.featureKey ?? null,
       amountPaise: input.amountPaise,
     },
     select: { id: true, razorpayOrderId: true },
@@ -67,7 +69,7 @@ export function getPlatformOrderByRazorpayId(razorpayOrderId: string) {
 }
 
 export type PaidOrderResult =
-  | { ok: true; alreadyProcessed: boolean; purpose: "SUBSCRIPTION" | "WALLET_TOPUP" }
+  | { ok: true; alreadyProcessed: boolean; purpose: "SUBSCRIPTION" | "WALLET_TOPUP" | "FEATURE" }
   | { ok: false; reason: "order_not_found" };
 
 /**
@@ -136,6 +138,36 @@ export async function markPlatformOrderPaid(input: {
       // A top-up clears any outstanding commission arrears (C7), oldest first.
       await settleDueCommissions(tx, order.tenantId);
       return { ok: true, alreadyProcessed: false, purpose: "WALLET_TOPUP" };
+    }
+
+    if (order.purpose === "FEATURE") {
+      // featureKey is always set for this purpose (createPlatformOrder).
+      if (!order.featureKey) {
+        throw new Error(`Feature order ${order.id} missing featureKey`);
+      }
+      // Mint a PREPAID, unconsumed feature credit. The next consumeFeature for
+      // this feature claims it instead of debiting the wallet. referenceId =
+      // order.id makes it idempotent (the CREATED→PAID claim above already
+      // guarantees single-run; the unique referenceId is a second guard).
+      const rule = await tx.featureRule.findUnique({
+        where: { featureKey: order.featureKey },
+        select: { basePaise: true, gstRateBps: true },
+      });
+      const basePaise = rule?.basePaise ?? order.amountPaise;
+      const gstPaise = rule ? Math.round((rule.basePaise * rule.gstRateBps) / 10000) : 0;
+      await tx.featureCharge.create({
+        data: {
+          tenantId: order.tenantId,
+          featureKey: order.featureKey,
+          basePaise,
+          gstPaise,
+          totalPaise: order.amountPaise,
+          payVia: "direct",
+          referenceId: order.id,
+          consumedAt: null,
+        },
+      });
+      return { ok: true, alreadyProcessed: false, purpose: "FEATURE" };
     }
 
     // SUBSCRIPTION — planId/billingCycle are always set for this purpose.
