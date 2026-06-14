@@ -139,9 +139,11 @@ async function priceCart(
     }
     const variants = variantsBy.get(productId) ?? [];
 
-    // Resolve the server-trusted unit price + stock + title for this line.
+    // Resolve the server-trusted unit price + title for this line. Stock is the
+    // PRODUCT's (variants share the product's inventory pool in v1; per-variant
+    // stock is a future enhancement), so it decrements correctly by productId.
     let unitPricePaise = product.pricePaise;
-    let stockQty = product.stockQty;
+    const stockQty = product.stockQty;
     let titleSnapshot = product.title;
     if (variants.length > 0) {
       // A variant product MUST be bought with a valid variant of THIS product.
@@ -150,7 +152,6 @@ async function priceCart(
         return { ok: false, error: `Please choose an option for “${product.title}”.` };
       }
       unitPricePaise = variant.pricePaise;
-      stockQty = variant.stockQty;
       titleSnapshot = `${product.title} — ${variant.label}`;
     } else if (variantId) {
       // Client sent a variant for a product that has none — reject (don't ignore).

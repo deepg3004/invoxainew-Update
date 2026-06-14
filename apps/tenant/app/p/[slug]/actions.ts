@@ -77,10 +77,12 @@ async function resolveProductLine(
   if (variants.length > 0) {
     const v = variantId ? variants.find((x) => x.id === variantId) : null;
     if (!v) return { ok: false, error: `Please choose an option for “${product.title}”.` };
+    // Price/title from the variant; stock from the PRODUCT (shared inventory pool
+    // in v1 — decrements correctly by productId).
     return {
       ok: true,
       unitPricePaise: v.pricePaise,
-      stockQty: v.stockQty,
+      stockQty: product.stockQty,
       titleSnapshot: `${product.title} — ${v.label}`,
     };
   }
@@ -334,6 +336,7 @@ export async function previewProductCoupon(
   productId: string,
   quantity: number,
   code: string,
+  variantId: string | null = null,
 ): Promise<PreviewCouponResult> {
   const trimmed = (code ?? "").trim();
   if (!trimmed) return { ok: false, error: "Enter a code." };
@@ -347,7 +350,11 @@ export async function previewProductCoupon(
   const product = await getPublishedProductById(tenant.id, productId);
   if (!product) return { ok: false, error: "This product is unavailable." };
 
-  const result = await applyCoupon(product.tenantId, trimmed, product.pricePaise * qty);
+  // Price against the chosen variant so the previewed discount matches the charge.
+  const line = await resolveProductLine(product, variantId);
+  if (!line.ok) return { ok: false, error: line.error };
+
+  const result = await applyCoupon(product.tenantId, trimmed, line.unitPricePaise * qty);
   if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
   return { ok: true, code: result.code, discountPaise: result.discountPaise };
 }

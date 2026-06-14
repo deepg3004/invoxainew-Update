@@ -63,7 +63,8 @@ export function ProductBuyBox({
   const selectedVariant = variants.find((v) => v.id === variantId) ?? null;
   // Server re-prices regardless; these drive display + stock cap only.
   const unitPricePaise = selectedVariant?.pricePaise ?? product.pricePaise;
-  const maxQty = variants.length > 0 ? (selectedVariant?.stockQty ?? null) : product.stockQty;
+  // Variants share the product's stock pool (v1) → cap qty by the product's stock.
+  const maxQty = product.stockQty;
   const [method, setMethod] = useState<"razorpay" | "upi">(razorpayReady ? "razorpay" : "upi");
   const [status, setStatus] = useState<Status>("idle");
   const [upiDone, setUpiDone] = useState(false);
@@ -98,7 +99,7 @@ export function ProductBuyBox({
     (async () => {
       setApplying(true);
       try {
-        const res = await previewProductCoupon(productId, 1, c);
+        const res = await previewProductCoupon(productId, 1, c, variantId);
         if (!cancelled && res.ok) setApplied({ code: res.code, discountPaise: res.discountPaise });
       } finally {
         if (!cancelled) setApplying(false);
@@ -114,7 +115,7 @@ export function ProductBuyBox({
     setApplying(true);
     setCouponMsg(null);
     try {
-      const res = await previewProductCoupon(productId, qty, code);
+      const res = await previewProductCoupon(productId, qty, code, variantId);
       if (res.ok) {
         setApplied({ code: res.code, discountPaise: res.discountPaise });
         setCode(res.code);
@@ -221,25 +222,20 @@ export function ProductBuyBox({
             <div className="mb-3">
               <span className="text-sm text-muted">Options</span>
               <div className="mt-1 flex flex-wrap gap-2">
-                {variants.map((v) => {
-                  const out = v.stockQty === 0;
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      disabled={out}
-                      onClick={() => setVariantId(v.id)}
-                      className={`rounded-lg border px-3 py-1.5 text-sm ${
-                        v.id === variantId
-                          ? "border-brand bg-brand/10 text-brand-strong"
-                          : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
-                      } ${out ? "opacity-40" : ""}`}
-                    >
-                      {v.label}
-                      {out ? " (sold out)" : ""}
-                    </button>
-                  );
-                })}
+                {variants.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setVariantId(v.id)}
+                    className={`rounded-lg border px-3 py-1.5 text-sm ${
+                      v.id === variantId
+                        ? "border-brand bg-brand/10 text-brand-strong"
+                        : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {v.label} · {formatRupees(v.pricePaise)}
+                  </button>
+                ))}
               </div>
             </div>
           ) : null}

@@ -60,8 +60,8 @@ export default async function EditProductPage({
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-zinc-900">Variants</h2>
         <p className="mt-1 text-sm text-muted">
-          Optional size/colour options, each with its own price &amp; stock. When set, buyers
-          pick a variant at checkout and are charged that variant's price.
+          Optional size/colour options, each with its own price. When set, buyers pick a variant
+          at checkout and are charged that variant's price. Variants share this product's stock.
         </p>
         {variants.length > 0 ? (
           <ul className="mt-3 space-y-2">
@@ -72,9 +72,6 @@ export default async function EditProductPage({
               >
                 <span className="flex-1 font-medium text-zinc-900">{v.label}</span>
                 <span className="text-zinc-900">{formatRupees(v.pricePaise)}</span>
-                <span className="text-muted">
-                  {v.stockQty === null ? "∞ stock" : `${v.stockQty} in stock`}
-                </span>
                 <form action={deleteVariantAction.bind(null, product.id, v.id)}>
                   <button className="text-xs text-muted underline hover:text-red-700">Delete</button>
                 </form>
@@ -82,7 +79,7 @@ export default async function EditProductPage({
             ))}
           </ul>
         ) : null}
-        <form action={addVariantAction} className="mt-3 grid grid-cols-[1fr_8rem_7rem_auto] items-end gap-2">
+        <form action={addVariantAction} className="mt-3 grid grid-cols-[1fr_8rem_auto] items-end gap-2">
           <label className="block">
             <span className="text-xs font-medium text-zinc-700">Label</span>
             <input
@@ -97,15 +94,6 @@ export default async function EditProductPage({
               name="price"
               inputMode="decimal"
               placeholder="999"
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
-            />
-          </label>
-          <label className="block">
-            <span className="text-xs font-medium text-zinc-700">Stock</span>
-            <input
-              name="stockQty"
-              inputMode="numeric"
-              placeholder="∞"
               className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
           </label>

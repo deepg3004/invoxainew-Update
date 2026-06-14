@@ -223,14 +223,10 @@ export async function createVariantAction(productId: string, form: FormData) {
   if (!label) return;
   const price = rupeeStringToPaise(String(form.get("price") ?? ""));
   if (!price.ok || price.paise <= 0) return;
-  let stockQty: number | null = null;
-  const stockRaw = String(form.get("stockQty") ?? "").trim();
-  if (stockRaw) {
-    const n = Number(stockRaw);
-    if (!Number.isInteger(n) || n < 0) return;
-    stockQty = n;
-  }
-  await createVariant({ tenantId: tenant.id, productId, label, pricePaise: price.paise, stockQty });
+  // v1: variants are price/label options that SHARE the product's stock pool, so
+  // there's no per-variant stock (stockQty stays null). Avoids an oversell where
+  // a per-variant limit is validated but never decremented.
+  await createVariant({ tenantId: tenant.id, productId, label, pricePaise: price.paise, stockQty: null });
   revalidatePath(`/products/${productId}`);
 }
 

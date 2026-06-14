@@ -415,6 +415,9 @@ export function getOrderBumpProduct(tenantId: string) {
       status: "PUBLISHED",
       bumpEnabled: true,
       OR: [{ stockQty: null }, { stockQty: { gt: 0 } }],
+      // A variant product can't be an auto-injected bump (the buyer never chose a
+      // variant for it) — exclude it so the bump line never needs a variant.
+      variants: { none: {} },
     },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     select: {
