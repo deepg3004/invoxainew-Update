@@ -1,4 +1,4 @@
-import { Badge, GlassCard, PageHeader, StatCard, Pagination, pageSlice } from "@invoxai/ui";
+import { Badge, Button, GlassCard, PageHeader, StatCard, Pagination, pageSlice } from "@invoxai/ui";
 import { listContacts } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -50,6 +50,17 @@ export default async function ContactsPage({
         eyebrow="InvoxAI · grow"
         title="Contacts"
         description="Everyone who submitted a form or started a checkout — your CRM, built from your leads and buyers."
+        actions={
+          contacts.length > 0 ? (
+            <Button
+              href={`/contacts/export${rawQ ? `?q=${encodeURIComponent(rawQ)}` : ""}`}
+              variant="secondary"
+              size="sm"
+            >
+              Export CSV
+            </Button>
+          ) : null
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-3">

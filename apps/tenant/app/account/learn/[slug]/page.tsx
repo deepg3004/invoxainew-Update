@@ -5,9 +5,11 @@ import {
   getPublishedCourseMeta,
   getEnrolment,
   listLessons,
+  getBuyerReviewForCourse,
 } from "@invoxai/db";
 import { getSessionUser } from "../../../../lib/auth";
 import { resolveTenantByHost } from "../../../../lib/resolve";
+import { ReviewForm } from "../../orders/[id]/ReviewForm";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +52,12 @@ export default async function LearnPage({
     );
   }
 
-  const lessons = await listLessons(course.id);
+  const [lessons, myReview] = await Promise.all([
+    listLessons(course.id),
+    // Enrolled buyers can review the course (verified purchase). Prefilled when
+    // they've already reviewed it.
+    getBuyerReviewForCourse(course.id, user.id),
+  ]);
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -84,6 +91,25 @@ export default async function LearnPage({
           ))}
         </div>
       )}
+
+      <div className="mt-10 rounded-xl border border-zinc-200 bg-surface p-5">
+        <h2 className="text-sm font-semibold text-zinc-900">Rate this course</h2>
+        <p className="mt-1 text-xs text-muted">
+          Your review appears on the course page and helps other buyers (verified purchase).
+        </p>
+        <div className="mt-4">
+          <ReviewForm
+            kind="course"
+            subjectId={course.id}
+            subjectTitle={course.title}
+            initial={
+              myReview
+                ? { rating: myReview.rating, body: myReview.body, authorName: myReview.authorName }
+                : null
+            }
+          />
+        </div>
+      </div>
     </main>
   );
 }
