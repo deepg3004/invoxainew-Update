@@ -11,6 +11,8 @@ import {
   createCollection,
   renameCollection,
   deleteCollection,
+  createVariant,
+  deleteVariant,
   type ProductKind,
   type ProductStatus,
 } from "@invoxai/db";
@@ -211,4 +213,29 @@ export async function deleteCollectionAction(id: string) {
   const { tenant } = await requireTenant();
   await deleteCollection(tenant.id, id);
   revalidatePath("/products");
+}
+
+// ── Product variants (size/color) ────────────────────────────────────────────
+
+export async function createVariantAction(productId: string, form: FormData) {
+  const { tenant } = await requireTenant();
+  const label = String(form.get("label") ?? "").trim().slice(0, 120);
+  if (!label) return;
+  const price = rupeeStringToPaise(String(form.get("price") ?? ""));
+  if (!price.ok || price.paise <= 0) return;
+  let stockQty: number | null = null;
+  const stockRaw = String(form.get("stockQty") ?? "").trim();
+  if (stockRaw) {
+    const n = Number(stockRaw);
+    if (!Number.isInteger(n) || n < 0) return;
+    stockQty = n;
+  }
+  await createVariant({ tenantId: tenant.id, productId, label, pricePaise: price.paise, stockQty });
+  revalidatePath(`/products/${productId}`);
+}
+
+export async function deleteVariantAction(productId: string, variantId: string) {
+  const { tenant } = await requireTenant();
+  await deleteVariant(tenant.id, variantId);
+  revalidatePath(`/products/${productId}`);
 }

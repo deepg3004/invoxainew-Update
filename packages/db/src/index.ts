@@ -232,6 +232,9 @@ export {
   createCollection,
   renameCollection,
   deleteCollection,
+  listProductVariants,
+  createVariant,
+  deleteVariant,
   type CreateProductResult,
 } from "./products";
 export {

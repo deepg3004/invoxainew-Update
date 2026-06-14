@@ -171,6 +171,50 @@ export function deleteCollection(tenantId: string, id: string) {
   return prisma.collection.deleteMany({ where: { id, tenantId } });
 }
 
+// ── Product variants (size/color) ────────────────────────────────────────────
+
+/** A product's variants in display order. */
+export function listProductVariants(productId: string) {
+  return prisma.productVariant.findMany({
+    where: { productId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
+
+/** Create a variant. Tenant-scoped via the product join (the caller also verifies
+ *  product ownership). Returns null if the product isn't this tenant's. */
+export async function createVariant(input: {
+  tenantId: string;
+  productId: string;
+  label: string;
+  pricePaise: number;
+  stockQty: number | null;
+}) {
+  const owns = await prisma.product.findFirst({
+    where: { id: input.productId, tenantId: input.tenantId },
+    select: { id: true },
+  });
+  if (!owns) return null;
+  const count = await prisma.productVariant.count({ where: { productId: input.productId } });
+  return prisma.productVariant.create({
+    data: {
+      productId: input.productId,
+      label: input.label,
+      pricePaise: input.pricePaise,
+      stockQty: input.stockQty,
+      sortOrder: count,
+    },
+    select: { id: true },
+  });
+}
+
+/** Delete a variant — scoped to the tenant via the product relation. */
+export function deleteVariant(tenantId: string, variantId: string) {
+  return prisma.productVariant.deleteMany({
+    where: { id: variantId, product: { tenantId } },
+  });
+}
+
 /** A single PUBLISHED product by tenant+slug — the public product page. */
 export function getPublishedProduct(tenantId: string, slug: string) {
   return prisma.product.findFirst({

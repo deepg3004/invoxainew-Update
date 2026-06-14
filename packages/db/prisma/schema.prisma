@@ -273,6 +273,25 @@ model Product {
   orderItems    OrderItem[]
   // Verified-purchase reviews.
   reviews       ProductReview[]
+  // Purchasable variations (size/color). Empty = the product has no variants.
+  variants      ProductVariant[]
+}
+
+/// A purchasable variation of a product (Shopify-style size/color), with its own
+/// price + stock. When a product has variants, checkout MUST price the chosen
+/// variant server-side (never the base product). RLS: deny-anon lockdown.
+model ProductVariant {
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String   @map("product_id") @db.Uuid
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label      String // e.g. "Large / Red"
+  pricePaise Int      @map("price_paise")
+  stockQty   Int?     @map("stock_qty") // null = unlimited
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([productId])
+  @@map("product_variants")
 }
 
 /// A buyer's star rating + review of a product. Written ONLY after a PAID order
