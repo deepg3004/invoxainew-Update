@@ -390,3 +390,16 @@ export {
   type CreateReviewResult,
   type RatingSummary,
 } from "./reviews";
+export {
+  createAffiliate,
+  setAffiliateStatus,
+  deleteAffiliate,
+  incrementAffiliateClick,
+  listAffiliatesWithStats,
+  resolveAffiliateAttribution,
+  normaliseAffiliateCode,
+  type AffiliateWithStats,
+  type NewAffiliate,
+  type CreateAffiliateResult,
+} from "./affiliates";
+export type { AffiliateStatus } from "@prisma/client";

@@ -12,6 +12,7 @@ import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { readUtmCookie } from "../../../lib/utm";
+import { affiliateAttribution } from "../../../lib/affiliate";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import type { StartUpiSessionResult } from "../../../lib/upi";
 
@@ -120,6 +121,7 @@ export async function startBuyerCheckout(
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    affiliate: await affiliateAttribution(page.tenantId, priced.amountPaise),
   });
 
   return {
@@ -167,6 +169,7 @@ export async function startPayUpiSession(
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    affiliate: await affiliateAttribution(page.tenantId, priced.amountPaise),
   });
   if (!session.ok) {
     return { ok: false, error: "Too many payments in progress right now — please try again in a moment." };

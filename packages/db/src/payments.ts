@@ -185,6 +185,24 @@ function utmData(u?: UtmFields | null) {
   };
 }
 
+/** Affiliate attribution stamped on an order. Resolved server-side (see
+ * resolveAffiliateAttribution in affiliates.ts); all-null/zero when the order
+ * carries no valid affiliate ref. The commission is a RECORDED figure the seller
+ * owes the affiliate — it never changes the buyer charge or InvoxAI commission. */
+export interface AffiliateFields {
+  affiliateId?: string | null;
+  affiliateCode?: string | null;
+  affiliateCommissionPaise?: number;
+}
+
+function affiliateData(a?: AffiliateFields | null) {
+  return {
+    affiliateId: a?.affiliateId ?? null,
+    affiliateCode: a?.affiliateCode ?? null,
+    affiliateCommissionPaise: a?.affiliateCommissionPaise ?? 0,
+  };
+}
+
 export function createBuyerPayment(input: {
   razorpayOrderId: string;
   tenantId: string;
@@ -202,6 +220,7 @@ export function createBuyerPayment(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  affiliate?: AffiliateFields | null;
   // Manual UPI: status PENDING + method/ref. Defaults keep the Razorpay path
   // (CREATED, RAZORPAY) byte-identical to before.
   status?: "CREATED" | "PENDING";
@@ -230,6 +249,7 @@ export function createBuyerPayment(input: {
       paymentMethod: input.paymentMethod ?? "RAZORPAY",
       upiRef: input.upiRef ?? null,
       ...utmData(input.utm),
+      ...affiliateData(input.affiliate),
     },
     select: { id: true, razorpayOrderId: true },
   });
@@ -268,6 +288,7 @@ export function createCartOrder(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  affiliate?: AffiliateFields | null;
   // Manual UPI: same defaults as createBuyerPayment — a Razorpay cart order is
   // CREATED/RAZORPAY (byte-identical to before); a manual-UPI cart order is
   // PENDING/UPI_MANUAL and carries the buyer-submitted reference.
@@ -294,6 +315,7 @@ export function createCartOrder(input: {
       paymentMethod: input.paymentMethod ?? "RAZORPAY",
       upiRef: input.upiRef ?? null,
       ...utmData(input.utm),
+      ...affiliateData(input.affiliate),
       orderItems: {
         create: input.items.map((it) => ({
           productId: it.productId,
@@ -936,6 +958,7 @@ export async function createUpiSession(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  affiliate?: AffiliateFields | null;
 }): Promise<UpiSessionResult> {
   await expireStaleUpiOrders(input.tenantId); // free stale amounts before allocating
   const expiresAt = new Date(Date.now() + input.ttlMinutes * 60_000);
@@ -966,6 +989,7 @@ export async function createUpiSession(input: {
           buyerEmail: input.buyerEmail ?? null,
           buyerContact: input.buyerContact ?? null,
           ...utmData(input.utm),
+      ...affiliateData(input.affiliate),
           ...(input.items && input.items.length > 0
             ? {
                 orderItems: {

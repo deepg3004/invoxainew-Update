@@ -91,6 +91,7 @@ model Tenant {
   collections  Collection[]
   // Store slice 3 (coupons): the seller's discount codes.
   coupons      Coupon[]
+  affiliates   Affiliate[]
   // Courses / LMS (Final Plan §10): the seller's courses + buyer enrolments.
   courses      Course[]
   enrolments   Enrolment[]
@@ -999,6 +1000,15 @@ model BuyerPayment {
   utmCampaign       String?            @map("utm_campaign")
   utmContent        String?            @map("utm_content")
   utmTerm           String?            @map("utm_term")
+  // Affiliates: when the buyer arrived via an affiliate link (?ref=CODE captured
+  // to a cookie), the order is attributed to that affiliate. `affiliateCommissionPaise`
+  // is the amount the SELLER owes the affiliate (computed off the post-discount
+  // amountPaise × the affiliate's commissionBps at sale time) — it is a RECORDED
+  // figure only; it does NOT change the buyer's charge or the InvoxAI commission.
+  affiliateId       String?            @map("affiliate_id") @db.Uuid
+  affiliate         Affiliate?         @relation(fields: [affiliateId], references: [id], onDelete: SetNull)
+  affiliateCode     String?            @map("affiliate_code")
+  affiliateCommissionPaise Int         @default(0) @map("affiliate_commission_paise")
   razorpayPaymentId String?            @map("razorpay_payment_id")
   paidAt            DateTime?          @map("paid_at")
   // C10: fulfillment tracking (seller-set, buyer-visible).
@@ -1023,7 +1033,36 @@ model BuyerPayment {
 
   @@index([tenantId, createdAt])
   @@index([tenantId, buyerProfileId])
+  @@index([affiliateId])
   @@map("buyer_payments")
+}
+
+enum AffiliateStatus {
+  ACTIVE
+  PAUSED
+}
+
+/// A seller's affiliate/referral partner. Buyers who land via this affiliate's
+/// link (?ref=CODE) get the order attributed to it; the seller owes the affiliate
+/// `commissionBps` of each attributed PAID order's total (off-platform — InvoxAI
+/// only records it). `clicks` is a lightweight landing counter. Codes are unique
+/// per tenant so two sellers can both use "FRIEND10".
+model Affiliate {
+  id            String          @id @default(uuid()) @db.Uuid
+  tenantId      String          @map("tenant_id") @db.Uuid
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code          String
+  name          String
+  email         String?
+  commissionBps Int             @default(1000) @map("commission_bps")
+  clicks        Int             @default(0)
+  status        AffiliateStatus @default(ACTIVE)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  buyerPayments BuyerPayment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("affiliates")
 }
 
 /// One line of a multi-item (cart) order — Store slice 3. A cart checkout

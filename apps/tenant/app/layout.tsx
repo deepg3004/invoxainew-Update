@@ -5,6 +5,7 @@ import { safeUrl } from "@invoxai/utils/blocks";
 import "./globals.css";
 import { UtmCapture } from "./UtmCapture";
 import { CouponCapture } from "./CouponCapture";
+import { AffiliateCapture } from "./AffiliateCapture";
 import { PageViewBeacon } from "./PageViewBeacon";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { CartDrawer } from "./CartDrawer";
@@ -45,6 +46,7 @@ export default async function RootLayout({
       <body>
         <UtmCapture />
         <CouponCapture />
+        <AffiliateCapture />
         <PageViewBeacon />
         {announcement ? <AnnouncementBar text={announcement} href={annHref} /> : null}
         {tenant && !tenant.suspendedAt ? <CartDrawer /> : null}

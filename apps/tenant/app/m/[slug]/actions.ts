@@ -17,6 +17,7 @@ import { getSessionUser } from "../../../lib/auth";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { readUtmCookie } from "../../../lib/utm";
+import { affiliateAttribution } from "../../../lib/affiliate";
 import type { StartUpiSessionResult } from "../../../lib/upi";
 
 const NO_PROFILE = "00000000-0000-0000-0000-000000000000";
@@ -103,6 +104,7 @@ export async function startCommunityCheckout(
     buyerEmail,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    affiliate: await affiliateAttribution(tenant.id, amountPaise),
   });
 
   return { ok: true, orderId: order.id, amountPaise, keyId: creds.keyId, title: community.title };
@@ -170,6 +172,7 @@ export async function startCommunityUpiSession(
     buyerEmail,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    affiliate: await affiliateAttribution(tenant.id, amountPaise),
   });
   if (!session.ok) {
     return { ok: false, error: "Too many payments in progress right now — please try again in a moment." };

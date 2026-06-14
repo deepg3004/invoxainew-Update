@@ -16,6 +16,7 @@ import { getSessionUser } from "../../../lib/auth";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { readUtmCookie } from "../../../lib/utm";
+import { affiliateAttribution } from "../../../lib/affiliate";
 import type { StartUpiSessionResult } from "../../../lib/upi";
 
 export type StartCourseResult =
@@ -115,6 +116,7 @@ export async function startCourseCheckout(
     buyerEmail,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    affiliate: await affiliateAttribution(tenant.id, amountPaise),
   });
 
   return { ok: true, orderId: order.id, amountPaise, keyId: creds.keyId, title: course.title };
@@ -192,6 +194,7 @@ export async function startCourseUpiSession(
     buyerEmail,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    affiliate: await affiliateAttribution(tenant.id, amountPaise),
   });
   if (!session.ok) {
     return { ok: false, error: "Too many payments in progress right now — please try again in a moment." };

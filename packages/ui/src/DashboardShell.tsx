@@ -36,6 +36,7 @@ import {
   Target,
   Gauge,
   History,
+  Share2,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "./cn";
@@ -82,6 +83,7 @@ export const SELLER_NAV: NavGroup[] = [
     heading: "Grow",
     items: [
       { href: "/forms", label: "Forms", icon: ClipboardList },
+      { href: "/affiliates", label: "Affiliates", icon: Share2 },
       { href: "/contacts", label: "Contacts", icon: Users },
       { href: "/domains", label: "Domains", icon: Globe },
       { href: "/analytics", label: "Analytics", icon: LineChart },
