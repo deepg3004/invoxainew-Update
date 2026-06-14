@@ -10,6 +10,7 @@ import {
   isTenantSuspended,
   getEnabledSellerUpi,
   createUpiSession,
+  variantsByProductIds,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { getGatewayCredentials } from "../../../lib/gateway";
@@ -59,6 +60,34 @@ async function resolveBumpLine(
   };
 }
 
+/**
+ * Server-trusted unit price + stock + title for a product line, honouring a
+ * chosen variant. If the product HAS variants, a valid variant of THIS product
+ * is required (price/stock from the variant, never the client). If it has none,
+ * a stray variantId is rejected. Shared by both single-product checkout paths.
+ */
+async function resolveProductLine(
+  product: { id: string; title: string; pricePaise: number; stockQty: number | null },
+  variantId: string | null,
+): Promise<
+  | { ok: true; unitPricePaise: number; stockQty: number | null; titleSnapshot: string }
+  | { ok: false; error: string }
+> {
+  const variants = (await variantsByProductIds([product.id])).get(product.id) ?? [];
+  if (variants.length > 0) {
+    const v = variantId ? variants.find((x) => x.id === variantId) : null;
+    if (!v) return { ok: false, error: `Please choose an option for “${product.title}”.` };
+    return {
+      ok: true,
+      unitPricePaise: v.pricePaise,
+      stockQty: v.stockQty,
+      titleSnapshot: `${product.title} — ${v.label}`,
+    };
+  }
+  if (variantId) return { ok: false, error: "This product is unavailable." };
+  return { ok: true, unitPricePaise: product.pricePaise, stockQty: product.stockQty, titleSnapshot: product.title };
+}
+
 export type StartProductResult =
   | { ok: false; error: string }
   | {
@@ -82,6 +111,7 @@ export async function startProductCheckout(
   buyer: { email?: string; contact?: string },
   couponCode?: string,
   addBump = false,
+  variantId: string | null = null,
 ): Promise<StartProductResult> {
   const qty = Math.floor(Number(quantity));
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
@@ -98,14 +128,15 @@ export async function startProductCheckout(
     return { ok: false, error: "This store is temporarily unavailable." };
   }
 
+  // Server-trusted unit price + stock + title (honours a chosen variant).
+  const line = await resolveProductLine(product, variantId);
+  if (!line.ok) return { ok: false, error: line.error };
+
   // Stock is tracked only when stockQty is non-null; null = unlimited.
-  if (product.stockQty !== null && product.stockQty < qty) {
+  if (line.stockQty !== null && line.stockQty < qty) {
     return {
       ok: false,
-      error:
-        product.stockQty === 0
-          ? "This product is sold out."
-          : `Only ${product.stockQty} left in stock.`,
+      error: line.stockQty === 0 ? "This product is sold out." : `Only ${line.stockQty} left in stock.`,
     };
   }
 
@@ -117,7 +148,7 @@ export async function startProductCheckout(
   // Order lines (server-trusted): the product, plus the store's bump add-on if the
   // buyer opted in (price/stock from the DB). Subtotal before discount.
   const bump = addBump ? await resolveBumpLine(product.tenantId, product.id) : null;
-  let amountPaise = product.pricePaise * qty + (bump?.pricePaise ?? 0);
+  let amountPaise = line.unitPricePaise * qty + (bump?.pricePaise ?? 0);
 
   // Apply a coupon if supplied — authoritative (re-validated + recomputed here),
   // against the combined subtotal. amountPaise becomes the charged total.
@@ -159,12 +190,12 @@ export async function startProductCheckout(
     // real line with its own stock decrement + the commission on the combined total.
     await createCartOrder({
       ...common,
-      itemTitle: `${product.title} + 1 add-on`,
+      itemTitle: `${line.titleSnapshot} + 1 add-on`,
       items: [
         {
           productId: product.id,
-          titleSnapshot: product.title,
-          unitPricePaise: product.pricePaise,
+          titleSnapshot: line.titleSnapshot,
+          unitPricePaise: line.unitPricePaise,
           quantity: qty,
         },
         bump.line,
@@ -176,7 +207,7 @@ export async function startProductCheckout(
       ...common,
       productId: product.id,
       quantity: qty,
-      itemTitle: product.title,
+      itemTitle: line.titleSnapshot,
     });
   }
 
@@ -185,7 +216,7 @@ export async function startProductCheckout(
     orderId: order.id,
     amountPaise,
     keyId: creds.keyId,
-    title: product.title,
+    title: line.titleSnapshot,
   };
 }
 
@@ -202,6 +233,7 @@ export async function startProductUpiSession(
   buyer: { email?: string; contact?: string },
   couponCode?: string,
   addBump = false,
+  variantId: string | null = null,
 ): Promise<StartUpiSessionResult> {
   const qty = Math.floor(Number(quantity));
   if (!Number.isInteger(qty) || qty < 1 || qty > 99) {
@@ -218,13 +250,14 @@ export async function startProductUpiSession(
     return { ok: false, error: "This store is temporarily unavailable." };
   }
 
-  if (product.stockQty !== null && product.stockQty < qty) {
+  // Server-trusted unit price + stock + title (honours a chosen variant).
+  const line = await resolveProductLine(product, variantId);
+  if (!line.ok) return { ok: false, error: line.error };
+
+  if (line.stockQty !== null && line.stockQty < qty) {
     return {
       ok: false,
-      error:
-        product.stockQty === 0
-          ? "This product is sold out."
-          : `Only ${product.stockQty} left in stock.`,
+      error: line.stockQty === 0 ? "This product is sold out." : `Only ${line.stockQty} left in stock.`,
     };
   }
 
@@ -234,7 +267,7 @@ export async function startProductUpiSession(
   // Server-trusted subtotal (+ optional bump) + authoritative coupon (same as
   // startProductCheckout).
   const bump = addBump ? await resolveBumpLine(product.tenantId, product.id) : null;
-  let amountPaise = product.pricePaise * qty + (bump?.pricePaise ?? 0);
+  let amountPaise = line.unitPricePaise * qty + (bump?.pricePaise ?? 0);
   const code = (couponCode ?? "").trim();
   let couponId: string | null = null;
   let couponSnapshot: string | null = null;
@@ -257,18 +290,18 @@ export async function startProductUpiSession(
     // single-product session, unchanged.
     ...(bump
       ? {
-          itemTitle: `${product.title} + 1 add-on`,
+          itemTitle: `${line.titleSnapshot} + 1 add-on`,
           items: [
             {
               productId: product.id,
-              titleSnapshot: product.title,
-              unitPricePaise: product.pricePaise,
+              titleSnapshot: line.titleSnapshot,
+              unitPricePaise: line.unitPricePaise,
               quantity: qty,
             },
             bump.line,
           ],
         }
-      : { productId: product.id, quantity: qty, itemTitle: product.title }),
+      : { productId: product.id, quantity: qty, itemTitle: line.titleSnapshot }),
     couponId,
     couponCode: couponSnapshot,
     discountPaise,

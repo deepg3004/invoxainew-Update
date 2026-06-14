@@ -9,6 +9,7 @@ import {
   getProductRatingSummary,
   getProductReviews,
   getOrderBumpProduct,
+  listProductVariants,
 } from "@invoxai/db";
 import { formatDateIST } from "@invoxai/utils/date";
 import { resolveTenantByHost } from "../../../lib/resolve";
@@ -64,13 +65,14 @@ export default async function ProductPage({
   const product = await cachedProduct(tenant.id, slug);
   if (!product) notFound();
 
-  const [gateway, upi, tracking, rating, reviews, bumpProduct] = await Promise.all([
+  const [gateway, upi, tracking, rating, reviews, bumpProduct, variants] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
     getProductRatingSummary(product.id),
     getProductReviews(product.id),
     getOrderBumpProduct(tenant.id),
+    listProductVariants(product.id),
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
@@ -175,6 +177,12 @@ export default async function ProductPage({
                     : null
                 }
                 bump={bump}
+                variants={variants.map((v) => ({
+                  id: v.id,
+                  label: v.label,
+                  pricePaise: v.pricePaise,
+                  stockQty: v.stockQty,
+                }))}
               />
             ) : (
               <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">

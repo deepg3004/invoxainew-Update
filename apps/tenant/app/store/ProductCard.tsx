@@ -10,6 +10,7 @@ export function ProductCard({
   product,
   rating,
   bestseller,
+  hasVariants = false,
 }: {
   product: {
     id: string;
@@ -22,6 +23,7 @@ export function ProductCard({
   };
   rating?: { count: number; avg: number };
   bestseller?: boolean;
+  hasVariants?: boolean;
 }) {
   const onSale =
     product.compareAtPaise != null && product.compareAtPaise > product.pricePaise;
@@ -79,16 +81,25 @@ export function ProductCard({
         </div>
       </Link>
       <div className="mt-3">
-        <AddToCartButton
-          product={{
-            productId: product.id,
-            slug: product.slug,
-            title: product.title,
-            pricePaise: product.pricePaise,
-            imageUrl: product.imageUrl,
-            maxQty: product.stockQty,
-          }}
-        />
+        {hasVariants ? (
+          <Link
+            href={`/p/${product.slug}`}
+            className="block w-full rounded-lg border border-zinc-200 px-4 py-2 text-center text-sm font-medium hover:border-brand/40"
+          >
+            Select options
+          </Link>
+        ) : (
+          <AddToCartButton
+            product={{
+              productId: product.id,
+              slug: product.slug,
+              title: product.title,
+              pricePaise: product.pricePaise,
+              imageUrl: product.imageUrl,
+              maxQty: product.stockQty,
+            }}
+          />
+        )}
       </div>
     </div>
   );

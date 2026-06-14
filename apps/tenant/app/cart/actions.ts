@@ -9,6 +9,7 @@ import {
   isTenantSuspended,
   getEnabledSellerUpi,
   createUpiSession,
+  variantsByProductIds,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../lib/gateway";
 import { createOrderWithKeys } from "../../lib/razorpay";
@@ -48,6 +49,7 @@ export type StartCartResult =
 export interface CartLine {
   productId: string;
   qty: number;
+  variantId?: string | null;
 }
 
 export type PreviewCouponResult =
@@ -105,44 +107,65 @@ async function priceCart(
     return { ok: false, error: "Your cart is empty." };
   }
 
-  const merged = new Map<string, number>();
+  // Merge by (productId, variantId) so two variants of one product are distinct
+  // lines. The variantId is server-validated below; an invalid one is rejected.
+  const merged = new Map<string, { productId: string; variantId: string | null; qty: number }>();
   for (const line of lines) {
     const qty = Math.floor(Number(line.qty));
     if (!line.productId || !Number.isInteger(qty) || qty < 1 || qty > 99) {
       return { ok: false, error: "Invalid item in your cart. Please review it." };
     }
-    merged.set(line.productId, (merged.get(line.productId) ?? 0) + qty);
+    const variantId = line.variantId ? String(line.variantId) : null;
+    const key = `${line.productId}::${variantId ?? ""}`;
+    const prev = merged.get(key);
+    merged.set(key, { productId: line.productId, variantId, qty: (prev?.qty ?? 0) + qty });
   }
 
-  // One batched, tenant-scoped lookup instead of an await-per-line N+1.
-  const products = await listPublishedProductsByIds(tenantId, [...merged.keys()]);
+  // One batched, tenant-scoped lookup instead of an await-per-line N+1, plus the
+  // server-trusted variants for those products (price/stock NEVER from the client).
+  const productIds = [...new Set([...merged.values()].map((m) => m.productId))];
+  const products = await listPublishedProductsByIds(tenantId, productIds);
   const byId = new Map(products.map((p) => [p.id, p]));
+  const variantsBy = await variantsByProductIds(productIds);
 
   const items: PricedCart["items"] = [];
   let amountPaise = 0;
-  for (const [productId, qty] of merged) {
+  for (const { productId, variantId, qty } of merged.values()) {
     if (qty > 99) return { ok: false, error: "Quantity too high for an item." };
     const product = byId.get(productId);
     if (!product) {
       // Not found / wrong tenant / unpublished — the query already scoped both.
       return { ok: false, error: "An item in your cart is no longer available." };
     }
-    if (product.stockQty !== null && product.stockQty < qty) {
+    const variants = variantsBy.get(productId) ?? [];
+
+    // Resolve the server-trusted unit price + stock + title for this line.
+    let unitPricePaise = product.pricePaise;
+    let stockQty = product.stockQty;
+    let titleSnapshot = product.title;
+    if (variants.length > 0) {
+      // A variant product MUST be bought with a valid variant of THIS product.
+      const variant = variantId ? variants.find((v) => v.id === variantId) : null;
+      if (!variant) {
+        return { ok: false, error: `Please choose an option for “${product.title}”.` };
+      }
+      unitPricePaise = variant.pricePaise;
+      stockQty = variant.stockQty;
+      titleSnapshot = `${product.title} — ${variant.label}`;
+    } else if (variantId) {
+      // Client sent a variant for a product that has none — reject (don't ignore).
+      return { ok: false, error: "An item in your cart is no longer available." };
+    }
+
+    if (stockQty !== null && stockQty < qty) {
       return {
         ok: false,
         error:
-          product.stockQty === 0
-            ? `“${product.title}” is sold out.`
-            : `Only ${product.stockQty} of “${product.title}” left.`,
+          stockQty === 0 ? `“${titleSnapshot}” is sold out.` : `Only ${stockQty} of “${titleSnapshot}” left.`,
       };
     }
-    items.push({
-      productId: product.id,
-      titleSnapshot: product.title,
-      unitPricePaise: product.pricePaise,
-      quantity: qty,
-    });
-    amountPaise += product.pricePaise * qty;
+    items.push({ productId: product.id, titleSnapshot, unitPricePaise, quantity: qty });
+    amountPaise += unitPricePaise * qty;
   }
 
   if (amountPaise <= 0) {

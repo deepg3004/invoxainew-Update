@@ -34,22 +34,36 @@ export interface BuyBoxProduct {
   stockQty: number | null;
 }
 
+export interface BuyBoxVariant {
+  id: string;
+  label: string;
+  pricePaise: number;
+  stockQty: number | null;
+}
+
 export function ProductBuyBox({
   product,
   razorpayReady,
   upi,
   bump,
+  variants = [],
 }: {
   product: BuyBoxProduct;
   razorpayReady: boolean;
   upi: { upiId: string; payeeName: string } | null;
   bump: BumpInfo | null;
+  variants?: BuyBoxVariant[];
 }) {
   const productId = product.id;
-  const maxQty = product.stockQty;
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [qty, setQty] = useState(1);
+  // Variant selection: default to the first variant when the product has any.
+  const [variantId, setVariantId] = useState<string | null>(variants[0]?.id ?? null);
+  const selectedVariant = variants.find((v) => v.id === variantId) ?? null;
+  // Server re-prices regardless; these drive display + stock cap only.
+  const unitPricePaise = selectedVariant?.pricePaise ?? product.pricePaise;
+  const maxQty = variants.length > 0 ? (selectedVariant?.stockQty ?? null) : product.stockQty;
   const [method, setMethod] = useState<"razorpay" | "upi">(razorpayReady ? "razorpay" : "upi");
   const [status, setStatus] = useState<Status>("idle");
   const [upiDone, setUpiDone] = useState(false);
@@ -61,18 +75,18 @@ export function ProductBuyBox({
   const [addBump, setAddBump] = useState(false);
 
   const cap = maxQty === null ? 99 : Math.min(maxQty, 99);
-  const subtotal = product.pricePaise * qty;
+  const subtotal = unitPricePaise * qty;
   const discount = applied ? Math.min(applied.discountPaise, subtotal) : 0;
   // The bump is added at full price on top of the (discounted) product subtotal —
   // the server re-applies the coupon to the combined total, so the buyer is never
   // charged MORE than shown (a % coupon there discounts the bump too).
   const total = Math.max(0, subtotal - discount) + (addBump && bump ? bump.pricePaise : 0);
 
-  // Drop a stale discount when quantity changes (checkout re-validates anyway).
+  // Drop a stale discount when quantity OR variant changes (checkout re-validates).
   useEffect(() => {
     setApplied(null);
     setCouponMsg(null);
-  }, [qty]);
+  }, [qty, variantId]);
 
   // Share-link coupon: if the buyer arrived via ?coupon=… (captured to a cookie),
   // pre-fill + auto-apply it on mount. Runs once; checkout re-validates regardless.
@@ -125,6 +139,7 @@ export function ProductBuyBox({
         { email, contact },
         applied?.code,
         addBump,
+        variantId,
       );
       if (!result.ok) {
         setError(result.error);
@@ -202,6 +217,32 @@ export function ProductBuyBox({
               </button>
             </div>
           ) : null}
+          {variants.length > 0 ? (
+            <div className="mb-3">
+              <span className="text-sm text-muted">Options</span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {variants.map((v) => {
+                  const out = v.stockQty === 0;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      disabled={out}
+                      onClick={() => setVariantId(v.id)}
+                      className={`rounded-lg border px-3 py-1.5 text-sm ${
+                        v.id === variantId
+                          ? "border-brand bg-brand/10 text-brand-strong"
+                          : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                      } ${out ? "opacity-40" : ""}`}
+                    >
+                      {v.label}
+                      {out ? " (sold out)" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <div className="space-y-2">
             <label className="flex items-center justify-between gap-3 text-sm">
               <span className="text-muted">Quantity</span>
@@ -277,7 +318,7 @@ export function ProductBuyBox({
               upi={upi}
               title={product.title}
               onStart={() =>
-                startProductUpiSession(productId, qty, { email, contact }, applied?.code, addBump)
+                startProductUpiSession(productId, qty, { email, contact }, applied?.code, addBump, variantId)
               }
               onConfirmed={() => setStatus("paid")}
               onSubmitted={() => setUpiDone(true)}
@@ -289,9 +330,11 @@ export function ProductBuyBox({
                 productId: product.id,
                 slug: product.slug,
                 title: product.title,
-                pricePaise: product.pricePaise,
+                pricePaise: unitPricePaise,
                 imageUrl: product.imageUrl,
-                maxQty: product.stockQty,
+                maxQty: maxQty,
+                variantId: variantId,
+                variantLabel: selectedVariant?.label ?? null,
               }}
             />
           </div>

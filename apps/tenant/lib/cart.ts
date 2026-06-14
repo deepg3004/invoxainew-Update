@@ -22,6 +22,17 @@ export interface CartItem {
   // Stock cap at add time (null = untracked/unlimited); a display hint only.
   maxQty: number | null;
   qty: number;
+  // Optional chosen variant (size/color). null = no variant. A product + variant
+  // is a DISTINCT cart line. Price/title here are display only — checkout re-prices
+  // the variant server-side.
+  variantId?: string | null;
+  variantLabel?: string | null;
+}
+
+/** A cart line is identified by (productId, variantId) so two variants of one
+ *  product are separate lines. */
+function sameLine(a: CartItem, productId: string, variantId: string | null): boolean {
+  return a.productId === productId && (a.variantId ?? null) === variantId;
 }
 
 const KEY = "invox_cart_v1";
@@ -52,27 +63,28 @@ function clampQty(qty: number, maxQty: number | null): number {
 
 export function addToCart(item: Omit<CartItem, "qty">, qty = 1): void {
   const items = read();
-  const existing = items.find((i) => i.productId === item.productId);
+  const variantId = item.variantId ?? null;
+  const existing = items.find((i) => sameLine(i, item.productId, variantId));
   if (existing) {
     existing.qty = clampQty(existing.qty + qty, item.maxQty);
     // Refresh display fields in case the product changed since it was added.
     Object.assign(existing, item, { qty: existing.qty });
   } else {
-    items.push({ ...item, qty: clampQty(qty, item.maxQty) });
+    items.push({ ...item, variantId, qty: clampQty(qty, item.maxQty) });
   }
   write(items);
 }
 
-export function setQty(productId: string, qty: number): void {
+export function setQty(productId: string, variantId: string | null, qty: number): void {
   const items = read();
-  const item = items.find((i) => i.productId === productId);
+  const item = items.find((i) => sameLine(i, productId, variantId));
   if (!item) return;
   item.qty = clampQty(qty, item.maxQty);
   write(items);
 }
 
-export function removeFromCart(productId: string): void {
-  write(read().filter((i) => i.productId !== productId));
+export function removeFromCart(productId: string, variantId: string | null): void {
+  write(read().filter((i) => !sameLine(i, productId, variantId)));
 }
 
 export function clearCart(): void {

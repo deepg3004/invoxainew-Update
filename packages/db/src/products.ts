@@ -215,6 +215,30 @@ export function deleteVariant(tenantId: string, variantId: string) {
   });
 }
 
+/**
+ * Variants for a set of products (server-trusted pricing for checkout). Pass
+ * product ids that are ALREADY tenant-verified (e.g. from listPublishedProductsByIds).
+ * Returns a Map productId → variants[]. Used by checkout to price a chosen variant
+ * and to detect "this product requires a variant choice".
+ */
+export async function variantsByProductIds(
+  productIds: string[],
+): Promise<Map<string, { id: string; label: string; pricePaise: number; stockQty: number | null }[]>> {
+  const map = new Map<string, { id: string; label: string; pricePaise: number; stockQty: number | null }[]>();
+  if (productIds.length === 0) return map;
+  const rows = await prisma.productVariant.findMany({
+    where: { productId: { in: productIds } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: { id: true, productId: true, label: true, pricePaise: true, stockQty: true },
+  });
+  for (const r of rows) {
+    const list = map.get(r.productId) ?? [];
+    list.push({ id: r.id, label: r.label, pricePaise: r.pricePaise, stockQty: r.stockQty });
+    map.set(r.productId, list);
+  }
+  return map;
+}
+
 /** A single PUBLISHED product by tenant+slug — the public product page. */
 export function getPublishedProduct(tenantId: string, slug: string) {
   return prisma.product.findFirst({

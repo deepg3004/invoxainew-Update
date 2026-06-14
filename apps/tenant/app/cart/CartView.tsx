@@ -76,7 +76,7 @@ export function CartView({
     (async () => {
       setApplying(true);
       try {
-        const lines = items.map((i) => ({ productId: i.productId, qty: i.qty }));
+        const lines = items.map((i) => ({ productId: i.productId, qty: i.qty, variantId: i.variantId ?? null }));
         const res = await previewCartCoupon(lines, c);
         if (!cancelled && res.ok) setApplied({ code: res.code, discountPaise: res.discountPaise });
       } finally {
@@ -93,7 +93,7 @@ export function CartView({
     setApplying(true);
     setCouponMsg(null);
     try {
-      const lines = items.map((i) => ({ productId: i.productId, qty: i.qty }));
+      const lines = items.map((i) => ({ productId: i.productId, qty: i.qty, variantId: i.variantId ?? null }));
       const res = await previewCartCoupon(lines, code);
       if (res.ok) {
         setApplied({ code: res.code, discountPaise: res.discountPaise });
@@ -113,7 +113,7 @@ export function CartView({
     setError(null);
     setStatus("starting");
     try {
-      const lines = items.map((i) => ({ productId: i.productId, qty: i.qty }));
+      const lines = items.map((i) => ({ productId: i.productId, qty: i.qty, variantId: i.variantId ?? null }));
       const result = await startCartCheckout(lines, { email, contact }, applied?.code, addBump);
       if (!result.ok) {
         setError(result.error);
@@ -193,7 +193,7 @@ export function CartView({
         {items.map((i) => {
           const cap = i.maxQty === null ? 99 : Math.min(i.maxQty, 99);
           return (
-            <li key={i.productId} className="flex items-center gap-3 p-3">
+            <li key={`${i.productId}::${i.variantId ?? ""}`} className="flex items-center gap-3 p-3">
               {i.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -206,11 +206,14 @@ export function CartView({
               )}
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{i.title}</div>
+                {i.variantLabel ? (
+                  <div className="truncate text-xs text-muted">{i.variantLabel}</div>
+                ) : null}
                 <div className="text-xs text-muted">{formatRupees(i.pricePaise)} each</div>
               </div>
               <select
                 value={i.qty}
-                onChange={(e) => setQty(i.productId, Number(e.target.value))}
+                onChange={(e) => setQty(i.productId, i.variantId ?? null, Number(e.target.value))}
                 className="rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-brand"
               >
                 {Array.from({ length: cap }, (_, n) => n + 1).map((n) => (
@@ -220,7 +223,7 @@ export function CartView({
                 ))}
               </select>
               <button
-                onClick={() => removeFromCart(i.productId)}
+                onClick={() => removeFromCart(i.productId, i.variantId ?? null)}
                 className="text-xs text-muted hover:text-red-600"
                 aria-label={`Remove ${i.title}`}
               >
@@ -339,7 +342,7 @@ export function CartView({
           title={items.length === 1 ? items[0]!.title : `${items[0]!.title} + ${items.length - 1} more`}
           onStart={() =>
             startCartUpiSession(
-              items.map((i) => ({ productId: i.productId, qty: i.qty })),
+              items.map((i) => ({ productId: i.productId, qty: i.qty, variantId: i.variantId ?? null })),
               { email, contact },
               applied?.code,
               addBump,

@@ -60,7 +60,7 @@ export function CartDrawer() {
           ) : (
             <ul className="space-y-4">
               {items.map((i) => (
-                <li key={i.productId} className="flex gap-3">
+                <li key={`${i.productId}::${i.variantId ?? ""}`} className="flex gap-3">
                   {i.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -73,12 +73,15 @@ export function CartDrawer() {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-zinc-900">{i.title}</p>
+                    {i.variantLabel ? (
+                      <p className="truncate text-xs text-muted">{i.variantLabel}</p>
+                    ) : null}
                     <p className="text-sm text-muted">{formatRupees(i.pricePaise)}</p>
                     <div className="mt-1.5 flex items-center gap-2">
                       <div className="flex items-center rounded-lg border border-zinc-200">
                         <button
                           type="button"
-                          onClick={() => setQty(i.productId, i.qty - 1)}
+                          onClick={() => setQty(i.productId, i.variantId ?? null, i.qty - 1)}
                           aria-label="Decrease quantity"
                           className="px-2 py-1 text-sm text-muted hover:text-zinc-900"
                         >
@@ -87,7 +90,7 @@ export function CartDrawer() {
                         <span className="w-7 text-center text-sm text-zinc-900">{i.qty}</span>
                         <button
                           type="button"
-                          onClick={() => setQty(i.productId, i.qty + 1)}
+                          onClick={() => setQty(i.productId, i.variantId ?? null, i.qty + 1)}
                           aria-label="Increase quantity"
                           className="px-2 py-1 text-sm text-muted hover:text-zinc-900"
                         >
@@ -96,7 +99,7 @@ export function CartDrawer() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeFromCart(i.productId)}
+                        onClick={() => removeFromCart(i.productId, i.variantId ?? null)}
                         className="text-xs text-muted underline hover:text-red-600"
                       >
                         Remove

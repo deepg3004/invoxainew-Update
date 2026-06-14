@@ -235,6 +235,7 @@ export {
   listProductVariants,
   createVariant,
   deleteVariant,
+  variantsByProductIds,
   type CreateProductResult,
 } from "./products";
 export {

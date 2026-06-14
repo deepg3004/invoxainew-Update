@@ -8,6 +8,7 @@ import {
   getTenantTracking,
   getProductRatingSummaries,
   getProductSalesCounts,
+  variantsByProductIds,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
@@ -64,9 +65,10 @@ export default async function StorePage({
 
   // Batched rating summaries + sales counts for the visible cards (no N+1).
   const ids = filtered.map((p) => p.id);
-  const [ratingSummaries, salesCounts] = await Promise.all([
+  const [ratingSummaries, salesCounts, variantsBy] = await Promise.all([
     getProductRatingSummaries(ids),
     getProductSalesCounts(tenant.id, ids),
+    variantsByProductIds(ids),
   ]);
   // "Bestseller" badge → the top 3 products that have at least one sale.
   const bestsellerIds = new Set(
@@ -221,6 +223,7 @@ export default async function StorePage({
                     }}
                     rating={ratingSummaries.get(p.id)}
                     bestseller={bestsellerIds.has(p.id)}
+                    hasVariants={(variantsBy.get(p.id)?.length ?? 0) > 0}
                   />
                 ))}
               </div>
