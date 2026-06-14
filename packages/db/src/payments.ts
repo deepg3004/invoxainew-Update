@@ -2,6 +2,7 @@ import { Prisma, type BuyerPayment, type ProductKind } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { prisma } from "./client";
 import { getUpiDueBlockPaise } from "./settings";
+import { lockWalletForUpdate } from "./wallet";
 
 /**
  * Buyer payments + commission (C7).
@@ -799,9 +800,9 @@ async function applyPaidEffects(
       return { ok: true, alreadyProcessed: false, commission: "none" };
     }
 
-    const wallet = await tx.wallet.findUnique({
-      where: { tenantId: payment.tenantId },
-    });
+    // Lock the wallet row so this commission debit can't race another fee on the
+    // same wallet (lost-update → money drift). Held until the surrounding tx commits.
+    const wallet = await lockWalletForUpdate(tx, payment.tenantId);
     const canCover = wallet && wallet.balancePaise >= commissionPaise;
 
     if (wallet && canCover) {
@@ -1221,7 +1222,9 @@ export async function settleDueCommissions(
   tx: Prisma.TransactionClient,
   tenantId: string,
 ): Promise<void> {
-  const wallet = await tx.wallet.findUnique({ where: { tenantId } });
+  // Lock the wallet row up front: the loop below does a read-modify-write per
+  // charge, which must not interleave with a concurrent debit/credit on this wallet.
+  const wallet = await lockWalletForUpdate(tx, tenantId);
   if (!wallet) return;
 
   const due = await tx.commissionCharge.findMany({

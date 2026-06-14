@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "./client";
+import { lockWalletForUpdate } from "./wallet";
 
 /**
  * Feature Billing engine (Final Plan §10). Admin-configurable paid features:
@@ -244,7 +245,8 @@ export async function consumeFeature(input: {
     const totalPaise = rule.basePaise + gstPaise;
 
     if (rule.walletEnabled) {
-      const wallet = await tx.wallet.findUnique({ where: { tenantId: input.tenantId } });
+      // Lock the wallet row so this feature debit can't lose a concurrent fee/commission.
+      const wallet = await lockWalletForUpdate(tx, input.tenantId);
       if (!wallet || wallet.balancePaise < totalPaise) {
         return {
           ok: false,

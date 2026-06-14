@@ -57,6 +57,31 @@ export function listWalletTransactions(tenantId: string, take = 50) {
   });
 }
 
+/**
+ * Lock the tenant's wallet row FOR UPDATE inside an already-open transaction, so
+ * a balance read-modify-write can't lose a concurrent debit/credit. The row stays
+ * locked until the surrounding transaction commits, serialising every other
+ * writer on it (Postgres row lock). Returns the locked wallet, or null if the
+ * tenant has no wallet row yet. MUST be called inside a `$transaction` (FOR
+ * UPDATE outside a transaction locks nothing). Postgres-only.
+ *
+ * Use this before ANY read-then-write balance mutation (compute `balanceAfter`
+ * in JS, then write the literal). Atomic relative writes (`{ increment }` /
+ * `{ decrement }`) take their own row lock and don't need it; a read-then-write
+ * does — otherwise two concurrent fees on the same wallet both read the same
+ * starting balance and one write is silently lost.
+ */
+export async function lockWalletForUpdate(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+): Promise<{ id: string; balancePaise: number } | null> {
+  const rows = await tx.$queryRaw<{ id: string; balance_paise: number }[]>`
+    SELECT id, balance_paise FROM wallets WHERE tenant_id = ${tenantId}::uuid FOR UPDATE
+  `;
+  const w = rows[0];
+  return w ? { id: w.id, balancePaise: Number(w.balance_paise) } : null;
+}
+
 export type DebitResult =
   | { ok: true; alreadyApplied: boolean; balancePaise: number }
   | { ok: false; reason: "insufficient_funds" | "no_wallet" };
@@ -87,9 +112,8 @@ export async function debitWallet(input: {
       return { ok: true, alreadyApplied: true, balancePaise: prior.balanceAfter };
     }
 
-    const wallet = await tx.wallet.findUnique({
-      where: { tenantId: input.tenantId },
-    });
+    // Lock the row so a concurrent fee on the same wallet can't lose this debit.
+    const wallet = await lockWalletForUpdate(tx, input.tenantId);
     if (!wallet) return { ok: false, reason: "no_wallet" };
     if (wallet.balancePaise < input.amountPaise) {
       return { ok: false, reason: "insufficient_funds" };
