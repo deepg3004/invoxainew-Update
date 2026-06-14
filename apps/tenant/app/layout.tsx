@@ -7,6 +7,7 @@ import { UtmCapture } from "./UtmCapture";
 import { CouponCapture } from "./CouponCapture";
 import { PageViewBeacon } from "./PageViewBeacon";
 import { AnnouncementBar } from "./AnnouncementBar";
+import { CartDrawer } from "./CartDrawer";
 import { resolveTenantByHost } from "../lib/resolve";
 
 const sora = Sora({
@@ -46,6 +47,7 @@ export default async function RootLayout({
         <CouponCapture />
         <PageViewBeacon />
         {announcement ? <AnnouncementBar text={announcement} href={annHref} /> : null}
+        {tenant && !tenant.suspendedAt ? <CartDrawer /> : null}
         {children}
         {tenant && !tenant.suspendedAt ? (
           <footer className="border-t border-zinc-200/70 py-5 text-center text-xs text-zinc-400">

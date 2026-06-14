@@ -79,6 +79,13 @@ export function clearCart(): void {
   write([]);
 }
 
+/** Slide-over cart drawer open signal. CartLink dispatches it; CartDrawer (mounted
+ *  once in the tenant layout) listens and opens. */
+export const CART_OPEN_EVENT = "invox-cart-open";
+export function openCart(): void {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(CART_OPEN_EVENT));
+}
+
 /** Reactive view of the cart for client components. Empty during SSR/first paint. */
 export function useCart(): CartItem[] {
   const [items, setItems] = useState<CartItem[]>([]);
