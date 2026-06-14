@@ -39,6 +39,7 @@ const PUBLIC_PRODUCT_SELECT = Prisma.validator<Prisma.ProductSelect>()({
   imageUrl: true,
   kind: true,
   stockQty: true,
+  createdAt: true,
   updatedAt: true,
 });
 

@@ -23,17 +23,26 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: `Store · ${name}` };
 }
 
+const SORTS = [
+  { key: "featured", label: "Featured" },
+  { key: "newest", label: "Newest" },
+  { key: "price-low", label: "Price ↑" },
+  { key: "price-high", label: "Price ↓" },
+  { key: "best-selling", label: "Best selling" },
+] as const;
+type SortKey = (typeof SORTS)[number]["key"];
+
 export default async function StorePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string }>;
 }) {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
   if (!tenant) notFound();
   if (tenant.suspendedAt) return <StoreUnavailable name={tenant.name ?? tenant.username} />;
 
-  const [products, tracking, { q: rawQ }] = await Promise.all([
+  const [products, tracking, { q: rawQ, sort: rawSort }] = await Promise.all([
     listPublishedProducts(tenant.id),
     getTenantTracking(tenant.id),
     searchParams,
@@ -64,8 +73,24 @@ export default async function StorePage({
       .map(([id]) => id),
   );
 
+  // Sort (in-memory over the published set).
+  const sort: SortKey = (SORTS.some((s) => s.key === rawSort) ? rawSort : "featured") as SortKey;
+  const sorted = [...filtered];
+  if (sort === "price-low") sorted.sort((a, b) => a.pricePaise - b.pricePaise);
+  else if (sort === "price-high") sorted.sort((a, b) => b.pricePaise - a.pricePaise);
+  else if (sort === "newest") sorted.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+  else if (sort === "best-selling")
+    sorted.sort((a, b) => (salesCounts.get(b.id) ?? 0) - (salesCounts.get(a.id) ?? 0));
+  const sortHref = (key: SortKey) => {
+    const sp = new URLSearchParams();
+    if (q) sp.set("q", q);
+    if (key !== "featured") sp.set("sort", key);
+    const s = sp.toString();
+    return s ? `/store?${s}` : "/store";
+  };
+
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <main className="mx-auto max-w-6xl px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <div className="flex items-start justify-between">
         <div>
@@ -108,10 +133,7 @@ export default async function StorePage({
               Search
             </button>
             {q ? (
-              <Link
-                href="/store"
-                className="flex items-center px-2 text-sm text-muted underline"
-              >
+              <Link href="/store" className="flex items-center px-2 text-sm text-muted underline">
                 Clear
               </Link>
             ) : null}
@@ -126,13 +148,31 @@ export default async function StorePage({
             </p>
           ) : (
             <>
-              {q ? (
-                <p className="mt-4 text-sm text-muted">
-                  {filtered.length} result{filtered.length === 1 ? "" : "s"} for “{q}”
+              {/* Sort bar + result count */}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3">
+                <p className="text-sm text-muted">
+                  {sorted.length} product{sorted.length === 1 ? "" : "s"}
+                  {q ? ` for “${q}”` : ""}
                 </p>
-              ) : null}
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                {filtered.map((p) => (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {SORTS.map((s) => (
+                    <Link
+                      key={s.key}
+                      href={sortHref(s.key)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        sort === s.key
+                          ? "bg-brand text-white"
+                          : "border border-zinc-200 text-muted hover:bg-zinc-50"
+                      }`}
+                    >
+                      {s.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-5 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {sorted.map((p) => (
                   <ProductCard
                     key={p.id}
                     product={{
