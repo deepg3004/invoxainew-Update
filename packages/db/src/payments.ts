@@ -1032,13 +1032,53 @@ export type UpiSubmitResult =
   | { ok: false; reason: "not_found" | "expired" | "duplicate" };
 
 /**
+ * Does paying this order hand the buyer something INSTANTLY (so an unverified,
+ * buyer-typed UPI reference must NOT auto-complete it — H1)? True for any course,
+ * community, bare payment-page link, or non-PHYSICAL product, including a cart
+ * line that is digital/service or whose product row is gone (unknown → treat as
+ * instant). Only a purely-PHYSICAL order — which still needs fulfilment before
+ * the buyer receives anything — returns false and is safe to auto-confirm.
+ */
+async function upiOrderGrantsInstantAccess(order: {
+  id: string;
+  productId: string | null;
+  courseId: string | null;
+  communityId: string | null;
+}): Promise<boolean> {
+  if (order.courseId || order.communityId) return true;
+
+  const [items, directProduct] = await Promise.all([
+    prisma.orderItem.findMany({
+      where: { buyerPaymentId: order.id },
+      select: { product: { select: { kind: true } } },
+    }),
+    order.productId
+      ? prisma.product.findUnique({ where: { id: order.productId }, select: { kind: true } })
+      : Promise.resolve(null),
+  ]);
+
+  const kinds = [
+    ...items.map((i) => i.product?.kind ?? null),
+    ...(order.productId ? [directProduct?.kind ?? null] : []),
+  ];
+
+  // No product lines at all → a bare payment-page link (could deliver a digital
+  // good/service) → treat as instant. Otherwise instant if ANY line is
+  // non-physical or its product is missing/unknown.
+  if (kinds.length === 0) return true;
+  return kinds.some((k) => k !== "PHYSICAL");
+}
+
+/**
  * Buyer submits their UPI reference for a session. Stamps the reference (a partial
  * unique index rejects a reference already used by another order → `duplicate`),
  * then EITHER auto-confirms instantly (claim PENDING→PAID + commission, reusing
  * the exact shared path as a Razorpay sale) when the seller has auto-confirm on,
- * the amount is within their cap, and they're not dues-blocked; OR leaves the
- * order PENDING with the reference for manual seller confirmation (the existing
- * queue). Tenant-scoped. Never refuses the buyer — always confirms or holds.
+ * the amount is within their cap, they're not dues-blocked, AND the order is
+ * purely physical (instant-delivery goods never auto-confirm off an unverified
+ * UTR — see upiOrderGrantsInstantAccess, H1); OR leaves the order PENDING with
+ * the reference for manual seller confirmation (the existing queue). Tenant-
+ * scoped. Never refuses the buyer — always confirms or holds.
  */
 export async function autoConfirmOrHoldUpiOrder(
   tenantId: string,
@@ -1050,7 +1090,10 @@ export async function autoConfirmOrHoldUpiOrder(
 
   const order = await prisma.buyerPayment.findFirst({
     where: { id: buyerPaymentId, tenantId, paymentMethod: "UPI_MANUAL" },
-    select: { id: true, status: true, amountPaise: true, itemTitle: true, upiRef: true, expiresAt: true },
+    select: {
+      id: true, status: true, amountPaise: true, itemTitle: true, upiRef: true, expiresAt: true,
+      productId: true, courseId: true, communityId: true,
+    },
   });
   if (!order) return { ok: false, reason: "not_found" };
   const summary: UpiOrderSummary = {
@@ -1068,19 +1111,25 @@ export async function autoConfirmOrHoldUpiOrder(
 
   // Decide auto vs hold from config + dues BEFORE the tx (a dues race here is
   // inconsequential — it only nudges one borderline order to the manual queue).
-  const [cfg, blocked] = await Promise.all([
+  const [cfg, blocked, grantsInstant] = await Promise.all([
     prisma.sellerUpi.findUnique({
       where: { tenantId },
       select: { autoConfirm: true, autoConfirmMaxPaise: true, enabled: true },
     }),
     isUpiAutoConfirmBlocked(tenantId),
+    upiOrderGrantsInstantAccess(order),
   ]);
   const shouldAuto =
     !!cfg &&
     cfg.enabled &&
     cfg.autoConfirm &&
     (cfg.autoConfirmMaxPaise == null || order.amountPaise <= cfg.autoConfirmMaxPaise) &&
-    !blocked;
+    !blocked &&
+    // H1: never auto-complete an order that grants instant access (digital /
+    // course / community / non-physical) off an unverified, buyer-typed UTR.
+    // Only purely-physical orders (which still need fulfilment) may auto-confirm;
+    // everything else falls to the seller's manual-confirm queue.
+    !grantsInstant;
 
   try {
     return await prisma.$transaction(async (tx) => {
