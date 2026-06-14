@@ -238,6 +238,34 @@ export async function getProductSalesCounts(
 }
 
 /**
+ * Store-analytics breakout: every product with units sold (single-product orders
+ * + cart lines, via getProductSalesCounts), sorted best-seller first, plus totals.
+ * Units (not revenue) to stay exact across cart lines. Tenant-scoped.
+ */
+export async function getStoreAnalytics(tenantId: string): Promise<{
+  products: { id: string; title: string; units: number }[];
+  totalUnits: number;
+  publishedCount: number;
+}> {
+  const products = await prisma.product.findMany({
+    where: { tenantId },
+    select: { id: true, title: true, status: true },
+  });
+  const counts = await getProductSalesCounts(
+    tenantId,
+    products.map((p) => p.id),
+  );
+  const rows = products
+    .map((p) => ({ id: p.id, title: p.title, units: counts.get(p.id) ?? 0 }))
+    .sort((a, b) => b.units - a.units);
+  return {
+    products: rows,
+    totalUnits: rows.reduce((s, p) => s + p.units, 0),
+    publishedCount: products.filter((p) => p.status === "PUBLISHED").length,
+  };
+}
+
+/**
  * The store's order-bump add-on (or null): the first PUBLISHED, bump-enabled,
  * in-stock product by sortOrder. Used both to render the bump at checkout and as
  * the server-trusted source for its price/stock when a buyer opts in. Scoped.

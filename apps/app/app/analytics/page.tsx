@@ -1,5 +1,10 @@
 import { Button, GlassCard, PageHeader, StatCard } from "@invoxai/ui";
-import { getAnalytics, getTrafficAnalytics } from "@invoxai/db";
+import {
+  getAnalytics,
+  getTrafficAnalytics,
+  getCourseAnalytics,
+  getStoreAnalytics,
+} from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { RevenueChart } from "../components/RevenueChart";
@@ -26,9 +31,11 @@ export default async function AnalyticsPage({
     ? (Number(rawDays) as (typeof RANGES)[number])
     : 30;
 
-  const [a, traffic] = await Promise.all([
+  const [a, traffic, courseStats, storeStats] = await Promise.all([
     getAnalytics(tenant.id, days),
     getTrafficAnalytics(tenant.id, days),
+    getCourseAnalytics(tenant.id),
+    getStoreAnalytics(tenant.id),
   ]);
 
   return (
@@ -223,6 +230,58 @@ export default async function AnalyticsPage({
             </a>{" "}
             to see which campaigns convert.
           </p>
+        </GlassCard>
+      </div>
+
+      {/* Store + Course breakouts */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <GlassCard>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold text-zinc-900">Store</h2>
+            <span className="text-sm text-muted">
+              {storeStats.totalUnits} sold · {storeStats.publishedCount} live
+            </span>
+          </div>
+          {storeStats.products.filter((p) => p.units > 0).length === 0 ? (
+            <p className="mt-4 text-sm text-muted">No product sales yet.</p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {storeStats.products
+                .filter((p) => p.units > 0)
+                .slice(0, 8)
+                .map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate text-zinc-900">{p.title}</span>
+                    <span className="shrink-0 text-muted">
+                      {p.units} sold
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </GlassCard>
+
+        <GlassCard>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold text-zinc-900">Courses</h2>
+            <span className="text-sm text-muted">
+              {formatRupees(courseStats.totalRevenuePaise)} · {courseStats.totalEnrolments} enrolled
+            </span>
+          </div>
+          {courseStats.courses.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">No courses yet.</p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {courseStats.courses.slice(0, 8).map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="min-w-0 truncate text-zinc-900">{c.title}</span>
+                  <span className="shrink-0 text-muted">
+                    {formatRupees(c.revenuePaise)} · {c.enrolments} enrolled
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </GlassCard>
       </div>
     </div>

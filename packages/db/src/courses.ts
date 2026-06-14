@@ -337,3 +337,40 @@ export async function listCourseStudents(
     };
   });
 }
+
+/**
+ * Course-analytics breakout: every course with its enrolment count and PAID
+ * revenue (courses are bought as single courseId orders, so the grouped sum is
+ * exact), sorted by revenue. Tenant-scoped.
+ */
+export async function getCourseAnalytics(tenantId: string): Promise<{
+  courses: { id: string; title: string; enrolments: number; revenuePaise: number }[];
+  totalEnrolments: number;
+  totalRevenuePaise: number;
+}> {
+  const [courses, revenue] = await Promise.all([
+    prisma.course.findMany({
+      where: { tenantId },
+      select: { id: true, title: true, _count: { select: { enrolments: true } } },
+    }),
+    prisma.buyerPayment.groupBy({
+      by: ["courseId"],
+      where: { tenantId, status: "PAID", courseId: { not: null } },
+      _sum: { amountPaise: true },
+    }),
+  ]);
+  const revByCourse = new Map(revenue.map((r) => [r.courseId, r._sum.amountPaise ?? 0]));
+  const rows = courses
+    .map((c) => ({
+      id: c.id,
+      title: c.title,
+      enrolments: c._count.enrolments,
+      revenuePaise: revByCourse.get(c.id) ?? 0,
+    }))
+    .sort((a, b) => b.revenuePaise - a.revenuePaise || b.enrolments - a.enrolments);
+  return {
+    courses: rows,
+    totalEnrolments: rows.reduce((s, c) => s + c.enrolments, 0),
+    totalRevenuePaise: rows.reduce((s, c) => s + c.revenuePaise, 0),
+  };
+}

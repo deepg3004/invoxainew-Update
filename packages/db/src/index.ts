@@ -225,6 +225,7 @@ export {
   updateProduct,
   setProductStatus,
   getProductSalesCounts,
+  getStoreAnalytics,
   getOrderBumpProduct,
   type CreateProductResult,
 } from "./products";
@@ -260,6 +261,7 @@ export {
   getEnrolment,
   listEnrolledCourses,
   getCourseEnrolmentStats,
+  getCourseAnalytics,
   listCourseStudents,
   type CreateCourseResult,
   type CourseStudent,
