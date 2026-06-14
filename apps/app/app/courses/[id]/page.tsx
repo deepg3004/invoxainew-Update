@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { GlassCard, PageHeader } from "@invoxai/ui";
-import { getCourseById, listLessons } from "@invoxai/db";
+import { GlassCard, PageHeader, StatCard } from "@invoxai/ui";
+import {
+  getCourseById,
+  listLessons,
+  getCourseEnrolmentStats,
+  listCourseStudents,
+} from "@invoxai/db";
+import { formatRupees } from "@invoxai/utils/money";
+import { formatDateIST } from "@invoxai/utils/date";
 import { requireTenant } from "../../../lib/tenant";
 import { CourseForm } from "../CourseForm";
 import { LessonForm } from "../LessonForm";
@@ -22,7 +29,12 @@ export default async function EditCoursePage({
   const { id } = await params;
   const course = await getCourseById(tenant.id, id);
   if (!course) notFound();
-  const lessons = await listLessons(course.id);
+  const STUDENT_LIMIT = 50;
+  const [lessons, stats, students] = await Promise.all([
+    listLessons(course.id),
+    getCourseEnrolmentStats(tenant.id, course.id),
+    listCourseStudents(tenant.id, course.id, { take: STUDENT_LIMIT }),
+  ]);
 
   const courseAction = updateCourseAction.bind(null, course.id);
   const addLessonAction = createLessonAction.bind(null, course.id);
@@ -91,6 +103,63 @@ export default async function EditCoursePage({
             courseId={course.id}
           />
         </GlassCard>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold text-zinc-900">Students</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <StatCard label="Enrolments" value={stats.enrolments} />
+          <StatCard label="Revenue" value={formatRupees(stats.revenuePaise)} hint="paid, this course" />
+        </div>
+
+        {students.length === 0 ? (
+          <p className="mt-4 text-sm text-muted">
+            No students yet. Enrolments appear here once buyers purchase or are granted access.
+          </p>
+        ) : (
+          <GlassCard className="mt-4 overflow-hidden p-0">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-50 text-muted">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Student</th>
+                  <th className="px-4 py-3 font-medium">Enrolled</th>
+                  <th className="px-4 py-3 font-medium text-right">Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map((s) => (
+                  <tr key={s.id} className="border-t border-zinc-100 hover:bg-zinc-50">
+                    <td className="px-4 py-3">
+                      <div className="min-w-0">
+                        {s.name ? (
+                          <span className="font-medium text-zinc-900">{s.name}</span>
+                        ) : null}
+                        <span className={s.name ? "ml-2 text-muted" : "text-zinc-900"}>
+                          {s.email ?? "—"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted">
+                      {formatDateIST(s.enrolledAt)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {s.free ? (
+                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-muted">Free</span>
+                      ) : (
+                        formatRupees(s.amountPaise)
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </GlassCard>
+        )}
+        {stats.enrolments > students.length ? (
+          <p className="mt-2 text-xs text-muted">
+            Showing the latest {students.length} of {stats.enrolments} students.
+          </p>
+        ) : null}
       </section>
     </div>
   );

@@ -256,3 +256,79 @@ export async function listEnrolledCourses(input: {
     .map((e) => e.course)
     .filter((c) => c.status !== "ARCHIVED");
 }
+
+// ── Seller-side course analytics / roster ────────────────────────────────────
+
+export type CourseStudent = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  amountPaise: number;
+  free: boolean;
+  enrolledAt: Date;
+};
+
+/**
+ * Per-course headline stats for the seller: total enrolments and PAID revenue
+ * attributed to this course. Revenue comes from BuyerPayment (the authoritative
+ * money record), not the enrolment rows (which include free grants). Tenant-scoped.
+ */
+export async function getCourseEnrolmentStats(
+  tenantId: string,
+  courseId: string,
+): Promise<{ enrolments: number; revenuePaise: number }> {
+  const [enrolments, revenue] = await Promise.all([
+    prisma.enrolment.count({ where: { tenantId, courseId } }),
+    prisma.buyerPayment.aggregate({
+      where: { tenantId, courseId, status: "PAID" },
+      _sum: { amountPaise: true },
+    }),
+  ]);
+  return { enrolments, revenuePaise: revenue._sum.amountPaise ?? 0 };
+}
+
+/**
+ * The students enrolled in a course (newest first), with the buyer's name/email
+ * and what they paid. Names are resolved from Profile when the buyer was signed
+ * in at checkout; otherwise we fall back to the purchase email. A null
+ * `buyerPaymentId` means a free/granted enrolment. Tenant-scoped.
+ */
+export async function listCourseStudents(
+  tenantId: string,
+  courseId: string,
+  opts: { skip?: number; take?: number } = {},
+): Promise<CourseStudent[]> {
+  const take = Math.min(Math.max(opts.take ?? 50, 1), 100);
+  const skip = Math.max(opts.skip ?? 0, 0);
+
+  const rows = await prisma.enrolment.findMany({
+    where: { tenantId, courseId },
+    orderBy: { createdAt: "desc" },
+    take,
+    skip,
+    include: { buyerPayment: { select: { amountPaise: true, buyerEmail: true } } },
+  });
+
+  const profileIds = [
+    ...new Set(rows.map((r) => r.buyerProfileId).filter((x): x is string => Boolean(x))),
+  ];
+  const profiles = profileIds.length
+    ? await prisma.profile.findMany({
+        where: { id: { in: profileIds } },
+        select: { id: true, fullName: true, email: true },
+      })
+    : [];
+  const byId = new Map(profiles.map((p) => [p.id, p]));
+
+  return rows.map((r) => {
+    const p = r.buyerProfileId ? byId.get(r.buyerProfileId) : undefined;
+    return {
+      id: r.id,
+      name: p?.fullName ?? null,
+      email: p?.email ?? r.buyerEmail ?? r.buyerPayment?.buyerEmail ?? null,
+      amountPaise: r.buyerPayment?.amountPaise ?? 0,
+      free: !r.buyerPaymentId,
+      enrolledAt: r.createdAt,
+    };
+  });
+}

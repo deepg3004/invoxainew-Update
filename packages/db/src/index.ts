@@ -259,7 +259,10 @@ export {
   getPublishedCourseMeta,
   getEnrolment,
   listEnrolledCourses,
+  getCourseEnrolmentStats,
+  listCourseStudents,
   type CreateCourseResult,
+  type CourseStudent,
 } from "./courses";
 export {
   chargeAndCreateAiPage,
