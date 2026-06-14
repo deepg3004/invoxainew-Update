@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   Area,
   AreaChart,
@@ -10,16 +9,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useChartResizeNudge } from "./useChartResizeNudge";
 
 type Point = { date: string; views: number };
 
 export default function TrafficChartInner({ data }: { data: Point[] }) {
-  // See RevenueChartInner: force a re-measure on the next frame so a 0-width first
-  // paint (this is a dynamic ssr:false chart) doesn't leave the area blank.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
-    return () => cancelAnimationFrame(id);
-  }, []);
+  // Fixes the "blank chart on first load" measure race — see useChartResizeNudge.
+  useChartResizeNudge();
 
   return (
     <ResponsiveContainer width="100%" height={200}>

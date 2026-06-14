@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   Area,
   AreaChart,
@@ -10,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useChartResizeNudge } from "./useChartResizeNudge";
 
 type Point = { date: string; revenue: number; orders: number };
 
@@ -18,15 +18,8 @@ const compact = (v: number) =>
 const full = (v: number) => "₹" + new Intl.NumberFormat("en-IN").format(v);
 
 export default function RevenueChartInner({ data }: { data: Point[] }) {
-  // ResponsiveContainer can measure a width of 0 on its first paint here — this
-  // component is loaded via next/dynamic(ssr:false), so it mounts after layout
-  // and recharts occasionally reads the parent before it has a width, leaving the
-  // chart blank until something triggers a resize (e.g. a full nav to another
-  // range). Dispatching one resize on the next frame forces a correct re-measure.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
-    return () => cancelAnimationFrame(id);
-  }, []);
+  // Fixes the "blank chart on first load" measure race — see useChartResizeNudge.
+  useChartResizeNudge();
 
   return (
     <ResponsiveContainer width="100%" height={240}>
