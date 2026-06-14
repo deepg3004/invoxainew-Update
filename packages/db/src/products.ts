@@ -238,9 +238,9 @@ export async function getProductSalesCounts(
 }
 
 /**
- * Store-analytics breakout: every product with units sold (single-product orders
- * + cart lines, via getProductSalesCounts), sorted best-seller first, plus totals.
- * Units (not revenue) to stay exact across cart lines. Tenant-scoped.
+ * Store-analytics breakout: every product with UNITS sold (sum of quantity across
+ * single-product orders + cart lines, not order count), sorted best-seller first,
+ * plus totals. Tenant-scoped, two batched grouped queries.
  */
 export async function getStoreAnalytics(tenantId: string): Promise<{
   products: { id: string; title: string; units: number }[];
@@ -251,12 +251,32 @@ export async function getStoreAnalytics(tenantId: string): Promise<{
     where: { tenantId },
     select: { id: true, title: true, status: true },
   });
-  const counts = await getProductSalesCounts(
-    tenantId,
-    products.map((p) => p.id),
-  );
+  const ids = products.map((p) => p.id);
+
+  const units = new Map<string, number>();
+  if (ids.length) {
+    const [single, lines] = await Promise.all([
+      prisma.buyerPayment.groupBy({
+        by: ["productId"],
+        where: { tenantId, status: "PAID", productId: { in: ids } },
+        _sum: { quantity: true },
+      }),
+      prisma.orderItem.groupBy({
+        by: ["productId"],
+        where: { productId: { in: ids }, buyerPayment: { tenantId, status: "PAID" } },
+        _sum: { quantity: true },
+      }),
+    ]);
+    for (const r of single) {
+      if (r.productId) units.set(r.productId, (units.get(r.productId) ?? 0) + (r._sum.quantity ?? 0));
+    }
+    for (const r of lines) {
+      if (r.productId) units.set(r.productId, (units.get(r.productId) ?? 0) + (r._sum.quantity ?? 0));
+    }
+  }
+
   const rows = products
-    .map((p) => ({ id: p.id, title: p.title, units: counts.get(p.id) ?? 0 }))
+    .map((p) => ({ id: p.id, title: p.title, units: units.get(p.id) ?? 0 }))
     .sort((a, b) => b.units - a.units);
   return {
     products: rows,

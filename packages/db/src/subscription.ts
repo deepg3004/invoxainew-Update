@@ -151,10 +151,14 @@ export async function markPlatformOrderPaid(input: {
       // guarantees single-run; the unique referenceId is a second guard).
       const rule = await tx.featureRule.findUnique({
         where: { featureKey: order.featureKey },
-        select: { basePaise: true, gstRateBps: true },
+        select: { gstRateBps: true },
       });
-      const basePaise = rule?.basePaise ?? order.amountPaise;
-      const gstPaise = rule ? Math.round((rule.basePaise * rule.gstRateBps) / 10000) : 0;
+      // Derive the base/GST split FROM the server-trusted total so it always sums
+      // to totalPaise, even if the rule's price was edited between order creation
+      // and payment. gst = total − base (remainder), so base + gst === total exactly.
+      const gstRateBps = rule?.gstRateBps ?? 0;
+      const basePaise = Math.round((order.amountPaise * 10000) / (10000 + gstRateBps));
+      const gstPaise = order.amountPaise - basePaise;
       await tx.featureCharge.create({
         data: {
           tenantId: order.tenantId,

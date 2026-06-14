@@ -99,7 +99,7 @@ export async function generateAiPageAction(
     }
     return { error: "Couldn’t bill the AI page. Please try again." };
   }
-  if (charge.charged === "wallet" && charge.referenceId) {
+  if ((charge.charged === "wallet" || charge.charged === "direct") && charge.referenceId) {
     await setAiPageChargeRef(tenant.id, created.id, charge.referenceId);
   }
 
