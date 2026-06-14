@@ -418,6 +418,17 @@ export function listAdminAuditLog(tenantId: string, take = 15) {
   });
 }
 
+/** Recent GLOBAL (non-tenant) admin config changes — plan / pricing / feature /
+ *  settings edits write rows with a null tenantId, so they don't show in the
+ *  tenant-scoped view above. This surfaces them for the platform audit trail. */
+export function listGlobalAdminAuditLog(take = 30) {
+  return prisma.adminAuditLog.findMany({
+    where: { tenantId: null },
+    orderBy: { createdAt: "desc" },
+    take,
+  });
+}
+
 /** Full admin view of one tenant (no gateway secret — key id / mode / status only). */
 export function getTenantAdminDetail(id: string) {
   return prisma.tenant.findUnique({

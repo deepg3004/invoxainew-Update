@@ -56,22 +56,31 @@ export type CreatePlanResult =
   | { ok: false; reason: "key_taken" };
 
 /** Create a plan. The `key` is globally unique; a clash is reported, not thrown. */
-export async function createPlan(input: PlanInput): Promise<CreatePlanResult> {
+export async function createPlan(
+  input: PlanInput,
+  adminEmail: string,
+): Promise<CreatePlanResult> {
   try {
-    const plan = await prisma.plan.create({
-      data: {
-        key: input.key,
-        name: input.name,
-        description: input.description ?? null,
-        priceMonthly: input.priceMonthly,
-        priceYearly: input.priceYearly,
-        commissionBps: input.commissionBps,
-        maxProducts: input.maxProducts ?? null,
-        maxAiPages: input.maxAiPages ?? null,
-        customDomainAllowed: input.customDomainAllowed ?? false,
-        sortOrder: input.sortOrder ?? 0,
-      },
-      select: { id: true },
+    const plan = await prisma.$transaction(async (tx) => {
+      const p = await tx.plan.create({
+        data: {
+          key: input.key,
+          name: input.name,
+          description: input.description ?? null,
+          priceMonthly: input.priceMonthly,
+          priceYearly: input.priceYearly,
+          commissionBps: input.commissionBps,
+          maxProducts: input.maxProducts ?? null,
+          maxAiPages: input.maxAiPages ?? null,
+          customDomainAllowed: input.customDomainAllowed ?? false,
+          sortOrder: input.sortOrder ?? 0,
+        },
+        select: { id: true },
+      });
+      await tx.adminAuditLog.create({
+        data: { adminEmail, action: "plan.create", detail: `${input.name} (${input.key})` },
+      });
+      return p;
     });
     return { ok: true, id: plan.id };
   } catch (e) {
@@ -90,26 +99,37 @@ export async function createPlan(input: PlanInput): Promise<CreatePlanResult> {
 export function updatePlan(
   id: string,
   input: Omit<PlanInput, "key">,
+  adminEmail: string,
 ) {
-  return prisma.plan.update({
-    where: { id },
-    data: {
-      name: input.name,
-      description: input.description ?? null,
-      priceMonthly: input.priceMonthly,
-      priceYearly: input.priceYearly,
-      commissionBps: input.commissionBps,
-      maxProducts: input.maxProducts ?? null,
-      maxAiPages: input.maxAiPages ?? null,
-      customDomainAllowed: input.customDomainAllowed ?? false,
-      sortOrder: input.sortOrder ?? 0,
-    },
-  });
+  return prisma.$transaction([
+    prisma.plan.update({
+      where: { id },
+      data: {
+        name: input.name,
+        description: input.description ?? null,
+        priceMonthly: input.priceMonthly,
+        priceYearly: input.priceYearly,
+        commissionBps: input.commissionBps,
+        maxProducts: input.maxProducts ?? null,
+        maxAiPages: input.maxAiPages ?? null,
+        customDomainAllowed: input.customDomainAllowed ?? false,
+        sortOrder: input.sortOrder ?? 0,
+      },
+    }),
+    prisma.adminAuditLog.create({
+      data: { adminEmail, action: "plan.update", detail: input.name },
+    }),
+  ]);
 }
 
 /** Retire / restore a plan. We never hard-delete (sellers may be subscribed). */
-export function setPlanActive(id: string, isActive: boolean) {
-  return prisma.plan.update({ where: { id }, data: { isActive } });
+export function setPlanActive(id: string, isActive: boolean, adminEmail: string) {
+  return prisma.$transaction([
+    prisma.plan.update({ where: { id }, data: { isActive } }),
+    prisma.adminAuditLog.create({
+      data: { adminEmail, action: isActive ? "plan.restore" : "plan.retire", detail: id },
+    }),
+  ]);
 }
 
 /**
@@ -146,21 +166,34 @@ export function getPricingSetting(key: string) {
  * refreshed on update so a renamed label sticks); `valuePaise` is the editable
  * amount.
  */
-export function upsertPricingSetting(input: {
-  key: string;
-  label: string;
-  valuePaise: number;
-}) {
-  return prisma.pricingSetting.upsert({
-    where: { key: input.key },
-    create: {
-      key: input.key,
-      label: input.label,
-      valuePaise: input.valuePaise,
-    },
-    update: {
-      label: input.label,
-      valuePaise: input.valuePaise,
-    },
-  });
+export function upsertPricingSetting(
+  input: {
+    key: string;
+    label: string;
+    valuePaise: number;
+  },
+  adminEmail: string,
+) {
+  return prisma.$transaction([
+    prisma.pricingSetting.upsert({
+      where: { key: input.key },
+      create: {
+        key: input.key,
+        label: input.label,
+        valuePaise: input.valuePaise,
+      },
+      update: {
+        label: input.label,
+        valuePaise: input.valuePaise,
+      },
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        adminEmail,
+        action: "pricing.update",
+        amountPaise: input.valuePaise,
+        detail: input.key,
+      },
+    }),
+  ]);
 }

@@ -18,15 +18,18 @@ export async function saveFeatureRuleAction(form: FormData) {
   const base = rupeeStringToPaise(String(form.get("base") ?? "0"));
   const gst = percentStringToBps(String(form.get("gst") ?? "18"));
 
-  await upsertFeatureRule({
-    featureKey,
-    name,
-    basePaise: base.ok ? base.paise : 0,
-    gstRateBps: gst.ok ? gst.bps : 1800,
-    walletEnabled: form.get("wallet") === "on",
-    directEnabled: form.get("direct") === "on",
-    active: form.get("active") === "on",
-  });
+  await upsertFeatureRule(
+    {
+      featureKey,
+      name,
+      basePaise: base.ok ? base.paise : 0,
+      gstRateBps: gst.ok ? gst.bps : 1800,
+      walletEnabled: form.get("wallet") === "on",
+      directEnabled: form.get("direct") === "on",
+      active: form.get("active") === "on",
+    },
+    gate.user.email!,
+  );
   revalidatePath("/features");
 }
 
@@ -41,7 +44,7 @@ export async function setFeatureLimitsAction(featureKey: string, form: FormData)
     if (raw === "") continue;
     const n = Number(raw);
     if (!Number.isInteger(n)) continue;
-    await setPlanFeatureLimit(plan.id, featureKey, n);
+    await setPlanFeatureLimit(plan.id, featureKey, n, gate.user.email!);
   }
   revalidatePath("/features");
 }

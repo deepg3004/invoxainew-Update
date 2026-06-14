@@ -27,39 +27,62 @@ export function listFeatureRules() {
   return prisma.featureRule.findMany({ orderBy: { featureKey: "asc" } });
 }
 
-export function upsertFeatureRule(input: {
-  featureKey: string;
-  name: string;
-  basePaise: number;
-  gstRateBps: number;
-  walletEnabled: boolean;
-  directEnabled: boolean;
-  active: boolean;
-}) {
-  return prisma.featureRule.upsert({
-    where: { featureKey: input.featureKey },
-    create: input,
-    update: {
-      name: input.name,
-      basePaise: input.basePaise,
-      gstRateBps: input.gstRateBps,
-      walletEnabled: input.walletEnabled,
-      directEnabled: input.directEnabled,
-      active: input.active,
-    },
-  });
+export function upsertFeatureRule(
+  input: {
+    featureKey: string;
+    name: string;
+    basePaise: number;
+    gstRateBps: number;
+    walletEnabled: boolean;
+    directEnabled: boolean;
+    active: boolean;
+  },
+  adminEmail: string,
+) {
+  return prisma.$transaction([
+    prisma.featureRule.upsert({
+      where: { featureKey: input.featureKey },
+      create: input,
+      update: {
+        name: input.name,
+        basePaise: input.basePaise,
+        gstRateBps: input.gstRateBps,
+        walletEnabled: input.walletEnabled,
+        directEnabled: input.directEnabled,
+        active: input.active,
+      },
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        adminEmail,
+        action: "feature.rule.update",
+        amountPaise: input.basePaise,
+        detail: input.featureKey,
+      },
+    }),
+  ]);
 }
 
 export function setPlanFeatureLimit(
   planId: string,
   featureKey: string,
   freeLimit: number,
+  adminEmail: string,
 ) {
-  return prisma.planFeatureLimit.upsert({
-    where: { planId_featureKey: { planId, featureKey } },
-    create: { planId, featureKey, freeLimit },
-    update: { freeLimit },
-  });
+  return prisma.$transaction([
+    prisma.planFeatureLimit.upsert({
+      where: { planId_featureKey: { planId, featureKey } },
+      create: { planId, featureKey, freeLimit },
+      update: { freeLimit },
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        adminEmail,
+        action: "feature.limit.update",
+        detail: `${featureKey} → ${freeLimit}`,
+      },
+    }),
+  ]);
 }
 
 /** All plan→feature free limits, for the admin grid. */

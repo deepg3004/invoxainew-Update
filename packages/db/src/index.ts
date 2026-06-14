@@ -308,6 +308,7 @@ export {
   adminAdjustWallet,
   markChargeback,
   listAdminAuditLog,
+  listGlobalAdminAuditLog,
   getRevenueReport,
   getWalletAttention,
   searchBuyerPayments,

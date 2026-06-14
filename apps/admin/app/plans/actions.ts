@@ -100,7 +100,7 @@ export async function createPlanAction(
   const parsed = parseEditableFields(form);
   if (!parsed.ok) return { error: parsed.message };
 
-  const result = await createPlan({ key, ...parsed.data });
+  const result = await createPlan({ key, ...parsed.data }, gate.user.email!);
   if (!result.ok) return { error: `The key "${key}" is already in use.` };
 
   revalidatePath("/plans");
@@ -118,7 +118,7 @@ export async function updatePlanAction(
   const parsed = parseEditableFields(form);
   if (!parsed.ok) return { error: parsed.message };
 
-  await updatePlan(id, parsed.data);
+  await updatePlan(id, parsed.data, gate.user.email!);
   revalidatePath("/plans");
   redirect("/plans");
 }
@@ -127,6 +127,6 @@ export async function updatePlanAction(
 export async function setPlanActiveAction(id: string, isActive: boolean) {
   const gate = await requireAdmin();
   if (!gate.ok) return;
-  await setPlanActive(id, isActive);
+  await setPlanActive(id, isActive, gate.user.email!);
   revalidatePath("/plans");
 }

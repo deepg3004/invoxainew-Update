@@ -32,7 +32,7 @@ export async function savePricingSettingAction(
   const value = rupeeStringToPaise(String(form.get("value") ?? ""));
   if (!value.ok) return { error: `Amount: ${value.message}` };
 
-  await upsertPricingSetting({ key, label, valuePaise: value.paise });
+  await upsertPricingSetting({ key, label, valuePaise: value.paise }, gate.user.email!);
   revalidatePath("/pricing");
   return { ok: true };
 }
