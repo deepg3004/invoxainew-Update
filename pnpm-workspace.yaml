@@ -9,5 +9,8 @@ allowBuilds:
   # source-map upload CLI only; not needed for our env-gated server init.
   "@sentry/cli": false
   esbuild: true
+  # BullMQ's optional native msgpack accelerator; it falls back to pure JS, so
+  # we don't build it.
+  msgpackr-extract: false
   prisma: true
   sharp: true

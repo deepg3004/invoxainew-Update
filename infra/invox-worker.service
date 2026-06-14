@@ -1,0 +1,20 @@
+[Unit]
+Description=InvoxAI notification worker (BullMQ)
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/invoxai/packages/jobs
+Environment=NODE_ENV=production
+Environment=HOME=/root
+Environment=PATH=/root/.nvm/versions/node/v22.22.3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# Runs `tsx src/worker.ts` (the package's "worker" script). Env (.env at the repo
+# root) is auto-loaded by @invoxai/config / @invoxai/db at import.
+ExecStart=/root/.nvm/versions/node/v22.22.3/bin/pnpm worker
+Restart=on-failure
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

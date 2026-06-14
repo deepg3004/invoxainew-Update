@@ -1,0 +1,26 @@
+{
+  "name": "@invoxai/jobs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "worker": "NODE_OPTIONS=--conditions=react-server tsx src/worker.ts"
+  },
+  "dependencies": {
+    "@invoxai/config": "workspace:*",
+    "@invoxai/db": "workspace:*",
+    "@invoxai/utils": "workspace:*",
+    "bullmq": "^5.34.0",
+    "ioredis": "5.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

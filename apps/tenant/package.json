@@ -12,6 +12,7 @@
     "@invoxai/auth": "workspace:*",
     "@invoxai/config": "workspace:*",
     "@invoxai/db": "workspace:*",
+    "@invoxai/jobs": "workspace:*",
     "@invoxai/ui": "workspace:*",
     "@invoxai/utils": "workspace:*",
     "@sentry/nextjs": "^10.57.0",
