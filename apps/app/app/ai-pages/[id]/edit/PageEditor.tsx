@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { GripVertical, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { GripVertical, ArrowUp, ArrowDown, Trash2, Monitor, Smartphone } from "lucide-react";
 import { ImageUpload } from "@invoxai/ui";
 import {
   type Block,
@@ -119,6 +119,7 @@ export function PageEditor({
   const [error, setError] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
 
   const presetIds = Object.keys(THEME_PRESETS) as ThemePreset[];
   const previewTokens = { ...THEME_PRESETS[theme.preset], accent: theme.accent };
@@ -410,18 +411,46 @@ export function PageEditor({
                 <span className="h-2.5 w-2.5 rounded-full bg-flame/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-brand/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-accent/70" />
-                <span className="ml-2 truncate text-xs text-muted">/{slug} — live preview</span>
+                <span className="ml-2 min-w-0 flex-1 truncate text-xs text-muted">/{slug} — live preview</span>
+                <div className="flex shrink-0 items-center gap-0.5 rounded-md border border-zinc-200 bg-white p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setDevice("desktop")}
+                    aria-pressed={device === "desktop"}
+                    aria-label="Desktop preview"
+                    title="Desktop preview"
+                    className={`rounded p-1 ${device === "desktop" ? "bg-zinc-100 text-zinc-900" : "text-muted hover:text-zinc-900"}`}
+                  >
+                    <Monitor size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDevice("mobile")}
+                    aria-pressed={device === "mobile"}
+                    aria-label="Mobile preview"
+                    title="Mobile preview"
+                    className={`rounded p-1 ${device === "mobile" ? "bg-zinc-100 text-zinc-900" : "text-muted hover:text-zinc-900"}`}
+                  >
+                    <Smartphone size={14} />
+                  </button>
+                </div>
               </div>
               <div className="max-h-[70vh] overflow-y-auto px-6 py-8" style={{ background: previewTokens.bg }}>
-                {blocks.length === 0 ? (
-                  <p className="text-center text-sm" style={{ color: previewTokens.muted }}>
-                    Your page preview appears here.
-                  </p>
-                ) : (
-                  blocks.map((b, i) => <PreviewBlock key={i} block={b} t={previewTokens} />)
-                )}
-                <div className="mt-12 pt-4 text-center text-xs" style={{ borderTop: `1px solid ${previewTokens.border}`, color: previewTokens.muted }}>
-                  Updates as you type — save to publish changes.
+                <div
+                  className={`mx-auto w-full transition-[max-width] duration-200 ${
+                    device === "mobile" ? "max-w-[390px]" : ""
+                  }`}
+                >
+                  {blocks.length === 0 ? (
+                    <p className="text-center text-sm" style={{ color: previewTokens.muted }}>
+                      Your page preview appears here.
+                    </p>
+                  ) : (
+                    blocks.map((b, i) => <PreviewBlock key={i} block={b} t={previewTokens} />)
+                  )}
+                  <div className="mt-12 pt-4 text-center text-xs" style={{ borderTop: `1px solid ${previewTokens.border}`, color: previewTokens.muted }}>
+                    Updates as you type — save to publish changes.
+                  </div>
                 </div>
               </div>
             </div>
