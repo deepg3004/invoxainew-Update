@@ -10,6 +10,7 @@ import {
   getCourseRatingSummary,
   getCourseReviews,
   getBuyerReviewForCourse,
+  getCourseEnrolmentStats,
 } from "@invoxai/db";
 import { formatDateIST } from "@invoxai/utils/date";
 import { resolveTenantByHost } from "../../../lib/resolve";
@@ -67,14 +68,16 @@ export default async function CoursePage({
   const course = await cachedCourse(tenant.id, slug);
   if (!course) notFound();
 
-  const [gateway, upi, tracking, user, rating, reviews] = await Promise.all([
+  const [gateway, upi, tracking, user, rating, reviews, stats] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
     getSessionUser(),
     getCourseRatingSummary(course.id),
     getCourseReviews(course.id),
+    getCourseEnrolmentStats(tenant.id, course.id),
   ]);
+  const previewCount = course.lessons.filter((l) => l.isPreview).length;
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
 
@@ -91,7 +94,7 @@ export default async function CoursePage({
   const myReview = enrolment && user ? await getBuyerReviewForCourse(course.id, user.id) : null;
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
+    <main className="mx-auto max-w-5xl px-6 py-10">
       <TrackingScripts ids={tracking ?? {}} />
       <TrackView name={course.title} valuePaise={course.pricePaise} />
       <div className="flex items-center justify-between">
@@ -101,73 +104,72 @@ export default async function CoursePage({
         <CartLink />
       </div>
 
-      {course.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={course.imageUrl}
-          alt={course.title}
-          className="mt-4 aspect-video w-full rounded-xl border border-zinc-200 object-cover"
-        />
-      ) : null}
+      <div className="mt-6 grid gap-8 lg:grid-cols-3">
+        {/* ── Main column ─────────────────────────────────────────────── */}
+        <div className="lg:col-span-2">
+          <h1 className="text-3xl font-bold leading-tight">{course.title}</h1>
+          {course.description ? (
+            <p className="mt-3 whitespace-pre-line leading-relaxed text-muted">{course.description}</p>
+          ) : null}
 
-      <h1 className="mt-4 text-2xl font-bold">{course.title}</h1>
-      {rating.count > 0 ? (
-        <a href="#reviews" className="mt-1 flex items-center gap-2 text-sm">
-          <Stars value={rating.avg} />
-          <span className="font-medium text-zinc-900">{rating.avg.toFixed(1)}</span>
-          <span className="text-muted">
-            ({rating.count} review{rating.count === 1 ? "" : "s"})
-          </span>
-        </a>
-      ) : null}
-      {course.description ? (
-        <p className="mt-2 whitespace-pre-line text-muted">{course.description}</p>
-      ) : null}
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            {rating.count > 0 ? (
+              <a href="#reviews" className="flex items-center gap-1.5">
+                <span className="font-semibold text-zinc-900">{rating.avg.toFixed(1)}</span>
+                <Stars value={rating.avg} className="text-sm" />
+                <span className="text-muted">({rating.count})</span>
+              </a>
+            ) : null}
+            {stats.enrolments > 0 ? (
+              <span className="text-muted">
+                {stats.enrolments} student{stats.enrolments === 1 ? "" : "s"}
+              </span>
+            ) : null}
+            <span className="text-muted">
+              {course.lessons.length} lesson{course.lessons.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            Created by{" "}
+            <span className="font-medium text-zinc-900">{tenant.name ?? tenant.username}</span>
+          </p>
 
-      {/* Curriculum */}
-      {course.lessons.length > 0 ? (
-        <div className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-            {course.lessons.length} lesson{course.lessons.length === 1 ? "" : "s"}
-          </h2>
-          <ul className="mt-2 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
-            {course.lessons.map((l, idx) => (
-              <li key={l.id} className="p-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 text-right text-sm text-muted">{idx + 1}</span>
-                  <span className="flex-1 text-sm font-medium text-zinc-900">{l.title}</span>
-                  {l.isPreview ? (
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
-                      Preview
-                    </span>
-                  ) : (
-                    <span className="text-xs text-muted">🔒</span>
-                  )}
-                </div>
-                {l.isPreview && l.content ? (
-                  <p className="mt-2 whitespace-pre-line pl-7 text-sm text-muted">
-                    {l.content}
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+          {/* Curriculum */}
+          {course.lessons.length > 0 ? (
+            <section className="mt-8">
+              <h2 className="text-lg font-semibold text-zinc-900">Course content</h2>
+              <p className="mt-1 text-sm text-muted">
+                {course.lessons.length} lesson{course.lessons.length === 1 ? "" : "s"}
+                {previewCount > 0
+                  ? ` · ${previewCount} free preview${previewCount === 1 ? "" : "s"}`
+                  : ""}
+              </p>
+              <ul className="mt-3 divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-surface">
+                {course.lessons.map((l, idx) => (
+                  <li key={l.id} className="p-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 text-right text-sm text-muted">{idx + 1}</span>
+                      <span className="flex-1 text-sm font-medium text-zinc-900">{l.title}</span>
+                      {l.isPreview ? (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-cyan">
+                          Preview
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted">🔒</span>
+                      )}
+                    </div>
+                    {l.isPreview && l.content ? (
+                      <p className="mt-2 whitespace-pre-line pl-7 text-sm text-muted">{l.content}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
-        {enrolment ? (
-          <div>
-            <div className="text-center">
-              <p className="text-sm font-medium text-green-700">✓ You’re enrolled in this course.</p>
-              <Link
-                href={`/account/learn/${course.slug}`}
-                className="mt-3 inline-block w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white"
-              >
-                Go to course →
-              </Link>
-            </div>
-            <div className="mt-5 border-t border-zinc-200 pt-5">
+          {/* Enrolled — leave a review */}
+          {enrolment ? (
+            <section className="mt-8 rounded-xl border border-zinc-200 bg-surface p-5">
               <p className="text-sm font-semibold text-zinc-900">Rate this course</p>
               <div className="mt-3">
                 <ReviewForm
@@ -181,78 +183,105 @@ export default async function CoursePage({
                   }
                 />
               </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-3xl font-bold">{formatRupees(course.pricePaise)}</span>
-              {course.compareAtPaise != null && course.compareAtPaise > course.pricePaise ? (
-                <>
-                  <span className="text-lg text-muted line-through">
-                    {formatRupees(course.compareAtPaise)}
-                  </span>
-                  <span className="rounded-full bg-green-50 px-2 py-0.5 text-sm font-medium text-green-700">
-                    {Math.round((1 - course.pricePaise / course.compareAtPaise) * 100)}% off
-                  </span>
-                </>
-              ) : null}
-            </div>
-            <p className="mt-1 text-xs text-muted">
-              Lifetime access · paid securely to {tenant.name ?? tenant.username}.
-            </p>
-            {sellerReady ? (
-              <CourseBuyBox
-                course={{
-                  id: course.id,
-                  slug: course.slug,
-                  title: course.title,
-                  pricePaise: course.pricePaise,
-                }}
-                razorpayReady={razorpayReady}
-                upi={
-                  upi
-                    ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
-                    : null
-                }
-              />
-            ) : (
-              <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                This seller hasn’t finished setting up payments yet.
-              </p>
-            )}
-          </>
-        )}
-      </div>
+            </section>
+          ) : null}
 
-      {reviews.length > 0 ? (
-        <section id="reviews" className="mt-8">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-zinc-900">Reviews</h2>
-            <Stars value={rating.avg} />
-            <span className="text-sm text-muted">
-              {rating.avg.toFixed(1)} · {rating.count}
-            </span>
-          </div>
-          <ul className="mt-3 space-y-3">
-            {reviews.map((r) => (
-              <li key={r.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <Stars value={r.rating} className="text-sm" />
-                  <span className="text-xs text-muted">{formatDateIST(r.createdAt)}</span>
+          {/* Reviews */}
+          {reviews.length > 0 ? (
+            <section id="reviews" className="mt-8">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-zinc-900">Reviews</h2>
+                <Stars value={rating.avg} />
+                <span className="text-sm text-muted">
+                  {rating.avg.toFixed(1)} · {rating.count}
+                </span>
+              </div>
+              <ul className="mt-3 space-y-3">
+                {reviews.map((r) => (
+                  <li key={r.id} className="rounded-xl border border-zinc-200 bg-surface p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <Stars value={r.rating} className="text-sm" />
+                      <span className="text-xs text-muted">{formatDateIST(r.createdAt)}</span>
+                    </div>
+                    {r.body ? (
+                      <p className="mt-2 whitespace-pre-line text-sm text-zinc-700">{r.body}</p>
+                    ) : null}
+                    <p className="mt-1.5 text-xs text-muted">
+                      {r.authorName || "Verified learner"} ·{" "}
+                      <span className="font-medium text-green-700">✓ Enrolled</span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
+
+        {/* ── Sticky purchase card (Udemy-style) ──────────────────────── */}
+        <aside className="lg:col-span-1">
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-surface lg:sticky lg:top-6">
+            {course.imageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={course.imageUrl} alt={course.title} className="aspect-video w-full object-cover" />
+            ) : null}
+            <div className="p-5">
+              {enrolment ? (
+                <div className="text-center">
+                  <p className="text-sm font-medium text-green-700">✓ You’re enrolled</p>
+                  <Link
+                    href={`/account/learn/${course.slug}`}
+                    className="mt-3 inline-block w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-white"
+                  >
+                    Go to course →
+                  </Link>
                 </div>
-                {r.body ? (
-                  <p className="mt-2 whitespace-pre-line text-sm text-zinc-700">{r.body}</p>
-                ) : null}
-                <p className="mt-1.5 text-xs text-muted">
-                  {r.authorName || "Verified learner"} ·{" "}
-                  <span className="font-medium text-green-700">✓ Enrolled</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="text-3xl font-bold">{formatRupees(course.pricePaise)}</span>
+                    {course.compareAtPaise != null && course.compareAtPaise > course.pricePaise ? (
+                      <>
+                        <span className="text-lg text-muted line-through">
+                          {formatRupees(course.compareAtPaise)}
+                        </span>
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-sm font-medium text-green-700">
+                          {Math.round((1 - course.pricePaise / course.compareAtPaise) * 100)}% off
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                  {sellerReady ? (
+                    <CourseBuyBox
+                      course={{
+                        id: course.id,
+                        slug: course.slug,
+                        title: course.title,
+                        pricePaise: course.pricePaise,
+                      }}
+                      razorpayReady={razorpayReady}
+                      upi={
+                        upi
+                          ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }
+                          : null
+                      }
+                    />
+                  ) : (
+                    <p className="mt-5 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                      This seller hasn’t finished setting up payments yet.
+                    </p>
+                  )}
+                  <ul className="mt-5 space-y-1.5 border-t border-zinc-200 pt-4 text-sm text-muted">
+                    <li>✓ {course.lessons.length} on-demand lesson{course.lessons.length === 1 ? "" : "s"}</li>
+                    <li>✓ Lifetime access</li>
+                    <li>✓ Learn at your own pace</li>
+                    <li>✓ Paid securely to {tenant.name ?? tenant.username}</li>
+                  </ul>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <MoreFromStore tenantId={tenant.id} />
     </main>
