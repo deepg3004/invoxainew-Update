@@ -33,6 +33,7 @@ export async function MarketingShell({ children }: { children: ReactNode }) {
           <nav className="hidden items-center gap-8 text-sm text-muted sm:flex">
             <a className="transition hover:text-zinc-900" href="/">Home</a>
             <a className="transition hover:text-zinc-900" href="/features">Features</a>
+            <a className="transition hover:text-zinc-900" href="/templates">Templates</a>
             <a className="transition hover:text-zinc-900" href="/pricing">Pricing</a>
             <a className="transition hover:text-zinc-900" href="/faq">FAQ</a>
           </nav>
