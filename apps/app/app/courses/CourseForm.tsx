@@ -16,6 +16,7 @@ export interface CourseValues {
   compareAtPaise: number | null;
   imageUrl: string | null;
   sortOrder: number;
+  certificateEnabled: boolean;
 }
 
 type Action = (prev: CourseFormState, form: FormData) => Promise<CourseFormState>;
@@ -164,6 +165,21 @@ export function CourseForm({
           className={inputCls}
         />
         <span className="mt-1 block text-xs text-muted">Lower shows first.</span>
+      </label>
+
+      <label className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          name="certificateEnabled"
+          defaultChecked={initial?.certificateEnabled ?? false}
+          className="mt-0.5 h-4 w-4"
+        />
+        <span className="text-sm text-zinc-700">
+          Issue a completion certificate
+          <span className="mt-0.5 block text-xs text-muted">
+            Learners who finish every lesson automatically get a shareable, verifiable certificate.
+          </span>
+        </span>
       </label>
 
       {!isEdit ? (

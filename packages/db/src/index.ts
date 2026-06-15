@@ -531,6 +531,14 @@ export {
   joinFreeWorkshop,
   type CreateWorkshopResult,
 } from "./workshop";
+export {
+  isCourseComplete,
+  issueCertificateIfEligible,
+  listBuyerCertificates,
+  getCertificateBySerial,
+  countCourseCertificates,
+  type IssueResult,
+} from "./certificates";
 export type { WorkshopStatus } from "@prisma/client";
 export {
   BROADCAST_SEGMENTS,

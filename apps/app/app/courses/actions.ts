@@ -34,6 +34,7 @@ interface ParsedCourse {
   compareAtPaise: number | null;
   imageUrl: string | null;
   sortOrder: number;
+  certificateEnabled: boolean;
 }
 
 /** One non-empty line per item, trimmed + capped (for the learn/requirements textareas). */
@@ -97,6 +98,7 @@ function parseCourseFields(
       compareAtPaise,
       imageUrl: imageRaw || null,
       sortOrder,
+      certificateEnabled: form.get("certificateEnabled") === "on",
     },
   };
 }

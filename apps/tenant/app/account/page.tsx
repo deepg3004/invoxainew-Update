@@ -13,6 +13,7 @@ import {
   listEnrolledCourses,
   listJoinedCommunities,
   listRegisteredWorkshops,
+  listBuyerCertificates,
 } from "@invoxai/db";
 import { createSignedDownloadUrl } from "@invoxai/auth/server";
 import { getSessionUser } from "../../lib/auth";
@@ -42,7 +43,7 @@ export default async function BuyerCorner() {
   await upsertProfile({ id: user.id, email: user.email ?? null, fullName });
   await ensureBuyerAccount(tenant.id, user.id);
 
-  const [orders, courses, deliverables, communities, workshops] = await Promise.all([
+  const [orders, courses, deliverables, communities, workshops, certificates] = await Promise.all([
     listBuyerOrders({
       tenantId: tenant.id,
       profileId: user.id,
@@ -68,6 +69,7 @@ export default async function BuyerCorner() {
       profileId: user.id,
       email: user.email ?? null,
     }),
+    listBuyerCertificates({ tenantId: tenant.id, profileId: user.id }),
   ]);
 
   // "My Library": aggregate deliverables across ALL paid orders, de-duplicated,
@@ -268,6 +270,32 @@ export default async function BuyerCorner() {
                 <span className="min-w-0 flex-1 truncate text-sm font-medium">{w.title}</span>
                 <span className="text-xs text-cyan">View →</span>
               </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {certificates.length > 0 ? (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Your certificates
+          </h2>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            {certificates.map((c) => (
+              <a
+                key={c.id}
+                href={`/verify/${c.serial}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-surface p-3 transition hover:border-brand/40"
+              >
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-brand/10 text-xl">🏅</div>
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{c.course.title}</span>
+                  <span className="block text-xs text-muted">Completion certificate</span>
+                </div>
+                <span className="text-xs text-cyan">View →</span>
+              </a>
             ))}
           </div>
         </div>

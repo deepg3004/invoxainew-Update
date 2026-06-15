@@ -70,6 +70,7 @@ export default async function EditCoursePage({
             compareAtPaise: course.compareAtPaise,
             imageUrl: course.imageUrl,
             sortOrder: course.sortOrder,
+            certificateEnabled: course.certificateEnabled,
           }}
         />
       </GlassCard>

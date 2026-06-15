@@ -119,6 +119,8 @@ model Tenant {
   // Courses / LMS (Final Plan §10): the seller's courses + buyer enrolments.
   courses      Course[]
   enrolments   Enrolment[]
+  // Course-completion certificates issued to this tenant's learners.
+  certificates Certificate[]
   // Notifications (Final Plan §28): the seller's in-app notifications.
   notifications Notification[]
   // Custom domains (Final Plan §38): the seller's connected domains.
@@ -467,6 +469,9 @@ model Course {
   imageUrl    String?      @map("image_url")
   status      CourseStatus @default(DRAFT)
   sortOrder   Int          @default(0) @map("sort_order")
+  // When on, a completion certificate is auto-issued once a learner finishes every
+  // lesson (see issueCertificateIfEligible). Off by default.
+  certificateEnabled Boolean @default(false) @map("certificate_enabled")
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
@@ -475,6 +480,7 @@ model Course {
   enrolments    Enrolment[]
   buyerPayments BuyerPayment[]
   reviews       ProductReview[]
+  certificates  Certificate[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, status])
@@ -555,6 +561,26 @@ model LessonProgress {
   @@unique([lessonId, buyerProfileId])
   @@index([courseId, buyerProfileId])
   @@map("lesson_progress")
+}
+
+/// A course-completion certificate, auto-issued once a learner finishes every lesson
+/// of a certificate-enabled course (issueCertificateIfEligible — idempotent on the
+/// (course, buyer) unique). `serial` is an unguessable public code: anyone with the
+/// link at /verify/<serial> can view + verify it (good for sharing on LinkedIn).
+model Certificate {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courseId       String   @map("course_id") @db.Uuid
+  course         Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  buyerProfileId String   @map("buyer_profile_id") @db.Uuid
+  recipientName  String   @map("recipient_name")
+  serial         String   @unique
+  issuedAt       DateTime @default(now()) @map("issued_at")
+
+  @@unique([courseId, buyerProfileId])
+  @@index([tenantId])
+  @@map("certificates")
 }
 
 /// A buyer's access grant to a course (Courses / LMS). Created ONLY by the PAID
