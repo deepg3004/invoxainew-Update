@@ -13,11 +13,34 @@
  * ({title,tagline,sections,ctaLabel}) so existing pages keep rendering.
  */
 
+/** A button's action (Builder Part 7 — button-as-object). The renderer derives the
+ *  final href from this; all targets are validated. */
+export type ButtonAction =
+  | { type: "link"; href: string } // sanitized http(s)/site-relative
+  | { type: "scroll"; anchor: string } // an element id on the page
+  | { type: "whatsapp"; phone: string } // digits → wa.me
+  | { type: "call"; phone: string } // tel:
+  | { type: "email"; email: string }; // mailto:
+
+export type ButtonVariant = "primary" | "outline" | "ghost";
+export type ButtonSize = "sm" | "md" | "lg";
+
 export type Block =
   | { type: "heading"; text: string; level: 1 | 2 | 3 }
   | { type: "text"; text: string }
   | { type: "image"; url: string; alt: string }
-  | { type: "button"; label: string; href: string }
+  // Button is a first-class editable object. `href` is the legacy/link target (kept
+  // for back-compat); `action` (when set) drives the real destination + extras.
+  | {
+      type: "button";
+      label: string;
+      href: string;
+      action?: ButtonAction;
+      variant?: ButtonVariant;
+      size?: ButtonSize;
+      icon?: string;
+      fullWidth?: boolean;
+    }
   | { type: "video"; url: string } // url is ALWAYS a sanitized embed URL
   | { type: "divider" }
   // Builder Part 2 — static content widgets (no URLs, no raw HTML; all text capped).
@@ -439,6 +462,59 @@ function imageList(v: unknown, max: number): { url: string; alt: string }[] {
     .slice(0, max);
 }
 
+/** Validate an untrusted button action, or null to fall back to the legacy href. */
+function normalizeButtonAction(v: unknown): ButtonAction | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  switch (o.type) {
+    case "link": {
+      const href = safeUrl(o.href);
+      return href ? { type: "link", href } : null;
+    }
+    case "scroll": {
+      // an element id — restrict to a safe slug (no #, no injection surface).
+      const anchor = str(o.anchor, 64).trim().replace(/[^a-zA-Z0-9_-]/g, "");
+      return anchor ? { type: "scroll", anchor } : null;
+    }
+    case "whatsapp": {
+      const phone = str(o.phone, 20).replace(/[^\d]/g, "");
+      return phone.length >= 6 ? { type: "whatsapp", phone } : null;
+    }
+    case "call": {
+      const phone = str(o.phone, 20).replace(/[^\d+]/g, "");
+      return phone.replace(/\D/g, "").length >= 6 ? { type: "call", phone } : null;
+    }
+    case "email": {
+      const email = str(o.email, 200).trim();
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? { type: "email", email } : null;
+    }
+    default:
+      return null;
+  }
+}
+
+/** Resolve a button block to its final href + whether it leaves the page. The
+ *  renderer + editor use this so a button behaves the same everywhere. */
+export function buttonHref(b: {
+  href: string;
+  action?: ButtonAction;
+}): { href: string; external: boolean } {
+  const a = b.action;
+  if (!a) return { href: b.href, external: /^https?:/i.test(b.href) };
+  switch (a.type) {
+    case "link":
+      return { href: a.href, external: /^https?:/i.test(a.href) };
+    case "scroll":
+      return { href: `#${a.anchor}`, external: false };
+    case "whatsapp":
+      return { href: `https://wa.me/${a.phone}`, external: true };
+    case "call":
+      return { href: `tel:${a.phone}`, external: false };
+    case "email":
+      return { href: `mailto:${a.email}`, external: false };
+  }
+}
+
 /** Validate a datetime string into a canonical ISO string, or "" if unparseable.
  *  Used by the countdown widget; the value is rendered as text / fed to a client
  *  timer, never interpolated as code. */
@@ -495,7 +571,21 @@ function toBlock(raw: unknown): Block | null {
     case "button": {
       const label = str(b.label, 120).trim();
       const href = safeUrl(b.href);
-      return label && href ? { type: "button", label, href } : null;
+      const action = normalizeButtonAction(b.action);
+      // Needs a label + somewhere to go (a valid action OR a legacy href).
+      if (!label || (!action && !href)) return null;
+      const variant: ButtonVariant = ["primary", "outline", "ghost"].includes(b.variant as string)
+        ? (b.variant as ButtonVariant)
+        : "primary";
+      const size: ButtonSize = ["sm", "md", "lg"].includes(b.size as string)
+        ? (b.size as ButtonSize)
+        : "md";
+      const out: Extract<Block, { type: "button" }> = { type: "button", label, href, variant, size };
+      if (action) out.action = action;
+      const icon = str(b.icon, 8).trim();
+      if (icon) out.icon = icon;
+      if (b.fullWidth === true) out.fullWidth = true;
+      return out;
     }
     case "video": {
       const url = toEmbedUrl(b.url);

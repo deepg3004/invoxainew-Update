@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeUrl, toEmbedUrl, normalizeToBlocks, normalizeSeo, normalizeTheme, resolveTheme, ctaGradient, THEME_PRESETS, THEME_LIBRARY } from "./blocks";
+import { safeUrl, toEmbedUrl, normalizeToBlocks, normalizeSeo, normalizeTheme, resolveTheme, ctaGradient, buttonHref, THEME_PRESETS, THEME_LIBRARY } from "./blocks";
 
 // Per-page SEO overrides (audit). ogImage must pass the same URL trust boundary.
 describe("normalizeSeo", () => {
@@ -237,6 +237,38 @@ describe("normalizeToBlocks — Part 5 media blocks", () => {
     ]);
     // Nothing at all → dropped.
     expect(norm({ type: "imageText" })).toEqual([]);
+  });
+});
+
+// Builder Part 7 — button as a first-class object (actions + variant), back-compat.
+describe("normalizeToBlocks — button object", () => {
+  const norm = (block: unknown) => normalizeToBlocks({ blocks: [block] }).blocks;
+
+  it("keeps the legacy {label, href} button working", () => {
+    expect(norm({ type: "button", label: "Buy", href: "/store" })).toEqual([
+      { type: "button", label: "Buy", href: "/store", variant: "primary", size: "md" },
+    ]);
+  });
+
+  it("validates each action type and resolves its href", () => {
+    const wa = norm({ type: "button", label: "Chat", href: "", action: { type: "whatsapp", phone: "+91 98765-43210" } })[0];
+    expect(wa).toMatchObject({ action: { type: "whatsapp", phone: "919876543210" } });
+    expect(buttonHref(wa as { href: string; action?: unknown } & { href: string }).href).toBe("https://wa.me/919876543210");
+
+    const sc = norm({ type: "button", label: "See offer", href: "", action: { type: "scroll", anchor: "of fer!#x" } })[0];
+    expect(sc).toMatchObject({ action: { type: "scroll", anchor: "offerx" } }); // sanitized to a slug
+    expect(buttonHref(sc as never).href).toBe("#offerx");
+
+    const em = norm({ type: "button", label: "Email", href: "", action: { type: "email", email: "hi@brand.com" } })[0];
+    expect(buttonHref(em as never).href).toBe("mailto:hi@brand.com");
+    expect(buttonHref(em as never).external).toBe(false);
+  });
+
+  it("drops a button with no label or no destination, and a bad email action", () => {
+    expect(norm({ type: "button", label: "", href: "/x" })).toEqual([]);
+    expect(norm({ type: "button", label: "Nowhere", href: "" })).toEqual([]);
+    // bad email action + no href → no destination → dropped
+    expect(norm({ type: "button", label: "Bad", href: "", action: { type: "email", email: "nope" } })).toEqual([]);
   });
 });
 

@@ -538,14 +538,28 @@ function PreviewBlock({
         </div>
       );
     }
-    case "button":
+    case "button": {
+      const variant = block.variant ?? "primary";
       return (
         <div className="mt-4">
-          <span className="iv-cta inline-block px-5 py-2.5 text-sm font-medium text-white">
+          <span
+            className={`inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium ${
+              variant === "primary" ? "iv-cta text-white" : "rounded-lg"
+            }`}
+            style={
+              variant === "outline"
+                ? { border: `1px solid ${t.accent}`, color: t.accent }
+                : variant === "ghost"
+                  ? { color: t.accent }
+                  : undefined
+            }
+          >
+            {block.icon ? <span>{block.icon}</span> : null}
             {block.label || "Button"}
           </span>
         </div>
       );
+    }
     case "video": {
       const url = toEmbedUrl(block.url);
       return url ? (
@@ -1197,7 +1211,57 @@ export function PageEditor({
                 {b.type === "button" ? (
                   <div className="space-y-2">
                     <input value={b.label} onChange={(e) => update(i, { label: e.target.value })} placeholder="Button label" className={inputCls} />
-                    <input value={b.href} onChange={(e) => update(i, { href: e.target.value })} placeholder="https://… or /pay/your-link" className={inputCls} />
+                    <div className="flex gap-2">
+                      <select
+                        value={b.action?.type ?? "link"}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          update(
+                            i,
+                            v === "link"
+                              ? { action: undefined }
+                              : v === "scroll"
+                                ? { action: { type: "scroll", anchor: "" } }
+                                : v === "email"
+                                  ? { action: { type: "email", email: "" } }
+                                  : { action: { type: v as "whatsapp" | "call", phone: "" } },
+                          );
+                        }}
+                        className={inputCls}
+                      >
+                        <option value="link">Open a link</option>
+                        <option value="scroll">Scroll to section</option>
+                        <option value="whatsapp">WhatsApp chat</option>
+                        <option value="call">Phone call</option>
+                        <option value="email">Send email</option>
+                      </select>
+                    </div>
+                    {!b.action || b.action.type === "link" ? (
+                      <input value={b.href} onChange={(e) => update(i, { href: e.target.value })} placeholder="https://… or /pay/your-link" className={inputCls} />
+                    ) : b.action.type === "scroll" ? (
+                      <input value={b.action.anchor} onChange={(e) => update(i, { action: { type: "scroll", anchor: e.target.value } })} placeholder="Section id (e.g. offer)" className={inputCls} />
+                    ) : b.action.type === "email" ? (
+                      <input value={b.action.email} onChange={(e) => update(i, { action: { type: "email", email: e.target.value } })} placeholder="hi@brand.com" className={inputCls} />
+                    ) : (
+                      <input value={b.action.phone} onChange={(e) => update(i, { action: { type: b.action!.type as "whatsapp" | "call", phone: e.target.value } })} placeholder="+91…" className={inputCls} />
+                    )}
+                    <div className="flex gap-2">
+                      <select value={b.variant ?? "primary"} onChange={(e) => update(i, { variant: e.target.value as "primary" | "outline" | "ghost" })} className={inputCls}>
+                        <option value="primary">Primary (gradient)</option>
+                        <option value="outline">Outline</option>
+                        <option value="ghost">Ghost</option>
+                      </select>
+                      <select value={b.size ?? "md"} onChange={(e) => update(i, { size: e.target.value as "sm" | "md" | "lg" })} className={inputCls}>
+                        <option value="sm">Small</option>
+                        <option value="md">Medium</option>
+                        <option value="lg">Large</option>
+                      </select>
+                      <input value={b.icon ?? ""} onChange={(e) => update(i, { icon: e.target.value })} placeholder="Icon" className="w-20 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand" />
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-muted">
+                      <input type="checkbox" checked={b.fullWidth ?? false} onChange={(e) => update(i, { fullWidth: e.target.checked })} />
+                      Full width
+                    </label>
                   </div>
                 ) : null}
 

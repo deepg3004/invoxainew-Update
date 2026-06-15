@@ -15,7 +15,7 @@ import {
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { cachedAiPage } from "../../lib/content";
-import { normalizeToBlocks, resolveTheme, type Block, type ThemeTokens } from "@invoxai/utils/blocks";
+import { normalizeToBlocks, resolveTheme, buttonHref, type Block, type ThemeTokens } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
@@ -178,14 +178,34 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
     case "image":
       // eslint-disable-next-line @next/next/no-img-element
       return <img src={block.url} alt={block.alt} className="mt-6 w-full rounded-xl object-cover" style={{ border: `1px solid ${t.border}` }} />;
-    case "button":
+    case "button": {
+      const { href, external } = buttonHref(block);
+      const size = block.size ?? "md";
+      const pad = size === "sm" ? "px-4 py-2 text-sm" : size === "lg" ? "px-8 py-4 text-lg" : "px-6 py-3";
+      const variant = block.variant ?? "primary";
+      const primary = variant === "primary";
       return (
         <div className="mt-6">
-          <a href={block.href} className="iv-cta inline-block px-6 py-3 font-medium text-white no-underline">
+          <a
+            href={href}
+            {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+            className={`inline-flex items-center justify-center gap-2 font-medium no-underline ${pad} ${
+              primary ? "iv-cta text-white" : "rounded-lg transition hover:opacity-90"
+            } ${block.fullWidth ? "w-full" : ""}`}
+            style={
+              variant === "outline"
+                ? { border: `1px solid ${t.accent}`, color: t.accent }
+                : variant === "ghost"
+                  ? { color: t.accent }
+                  : undefined
+            }
+          >
+            {block.icon ? <span aria-hidden>{block.icon}</span> : null}
             {block.label}
           </a>
         </div>
       );
+    }
     case "video":
       // src is restricted to youtube/vimeo embed URLs by normalizeToBlocks.
       return (
