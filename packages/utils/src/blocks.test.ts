@@ -80,6 +80,18 @@ describe("normalizeToBlocks — Part 2 widgets", () => {
     expect(norm({ type: "countdown" })).toEqual([]);
   });
 
+  it("accepts a columns block, drops empty cells, caps at 4", () => {
+    const out = norm({ type: "columns", cells: [{ title: "A", text: "x" }, { title: "", text: "" }] });
+    expect(out).toEqual([{ type: "columns", cells: [{ title: "A", text: "x" }] }]);
+    const big = norm({ type: "columns", cells: Array.from({ length: 6 }, (_, i) => ({ title: `c${i}`, text: "t" })) });
+    expect((big[0] as { cells: unknown[] }).cells).toHaveLength(4);
+    expect(norm({ type: "columns", cells: [] })).toEqual([]);
+  });
+
+  it("accepts a socialProof block (no config)", () => {
+    expect(norm({ type: "socialProof" })).toEqual([{ type: "socialProof" }]);
+  });
+
   it("still drops unknown block types", () => {
     expect(norm({ type: "script", text: "alert(1)" })).toEqual([]);
   });

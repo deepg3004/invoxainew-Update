@@ -26,6 +26,8 @@ export type Block =
   | { type: "callout"; text: string } // highlighted note box
   | { type: "faq"; items: { q: string; a: string }[] } // accordion of Q&A pairs
   | { type: "countdown"; until: string; label: string } // until = ISO datetime; label optional
+  | { type: "columns"; cells: { title: string; text: string }[] } // 2–4 column feature/benefit grid
+  | { type: "socialProof" } // data-bound: recent masked sales, resolved tenant-scoped at render
   // Builder Part 3 — entity-bound widgets. These store ONLY a validated entity id
   // (UUID); this module stays pure (no data fetch). The server renderer resolves
   // each id TENANT-SCOPED, so a foreign/missing id renders nothing — the trust
@@ -198,6 +200,21 @@ function toBlock(raw: unknown): Block | null {
       const label = str(b.label, 120).trim();
       return until ? { type: "countdown", until, label } : null;
     }
+    case "columns": {
+      const raw = Array.isArray(b.cells) ? b.cells : [];
+      const cells = raw
+        .map((it) => {
+          const o = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+          const title = str(o.title, 120).trim();
+          const text = str(o.text, 1000).trim();
+          return title || text ? { title, text } : null;
+        })
+        .filter((x): x is { title: string; text: string } => x !== null)
+        .slice(0, 4);
+      return cells.length > 0 ? { type: "columns", cells } : null;
+    }
+    case "socialProof":
+      return { type: "socialProof" };
     case "product": {
       const productId = entityId(b.productId);
       return productId ? { type: "product", productId } : null;

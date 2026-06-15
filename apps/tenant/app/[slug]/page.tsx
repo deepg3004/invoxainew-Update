@@ -10,6 +10,8 @@ import {
   getPublishedCoursesByIds,
   getActivePaymentPagesByIds,
   getPublishedLeadFormsByIds,
+  listRecentSocialProof,
+  type SocialProofEvent,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { cachedAiPage } from "../../lib/content";
@@ -74,6 +76,7 @@ interface Resolved {
   pages: Map<string, EntityCard>;
   forms: Map<string, FormCard>;
   grids: Map<string, GridProduct[]>; // keyed by collectionId, or ALL_PRODUCTS for "all"
+  socialProof: SocialProofEvent[];
 }
 
 async function resolveEntities(tenantId: string, blocks: Block[]): Promise<Resolved> {
@@ -82,15 +85,17 @@ async function resolveEntities(tenantId: string, blocks: Block[]): Promise<Resol
   const pageIds = new Set<string>();
   const formIds = new Set<string>();
   const gridKeys = new Set<string>();
+  let needsSocialProof = false;
   for (const b of blocks) {
     if (b.type === "product") productIds.add(b.productId);
     else if (b.type === "course") courseIds.add(b.courseId);
     else if (b.type === "paymentButton") pageIds.add(b.pageId);
     else if (b.type === "leadForm") formIds.add(b.formId);
     else if (b.type === "storeGrid") gridKeys.add(b.collectionId ?? ALL_PRODUCTS);
+    else if (b.type === "socialProof") needsSocialProof = true;
   }
 
-  const [products, courses, pages, forms, gridEntries] = await Promise.all([
+  const [products, courses, pages, forms, gridEntries, socialProof] = await Promise.all([
     listPublishedProductsByIds(tenantId, [...productIds]),
     getPublishedCoursesByIds(tenantId, [...courseIds]),
     getActivePaymentPagesByIds(tenantId, [...pageIds]),
@@ -104,6 +109,7 @@ async function resolveEntities(tenantId: string, blocks: Block[]): Promise<Resol
         return [key, rows as GridProduct[]] as const;
       }),
     ),
+    needsSocialProof ? listRecentSocialProof(tenantId) : Promise.resolve([]),
   ]);
 
   const byId = <T extends { id: string }>(rows: T[]) => new Map(rows.map((r) => [r.id, r]));
@@ -117,6 +123,7 @@ async function resolveEntities(tenantId: string, blocks: Block[]): Promise<Resol
     pages: byId(pageCards),
     forms: byId(forms as FormCard[]),
     grids: new Map(gridEntries),
+    socialProof,
   };
 }
 
@@ -250,6 +257,32 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
           border={t.border}
         />
       );
+    case "columns": {
+      const cols = block.cells.length >= 3 ? "sm:grid-cols-3" : block.cells.length === 2 ? "sm:grid-cols-2" : "";
+      return (
+        <div className={`mt-6 grid gap-4 ${cols}`}>
+          {block.cells.map((c, i) => (
+            <div key={i} className="rounded-xl p-4" style={{ border: `1px solid ${t.border}` }}>
+              {c.title ? <div className="font-semibold" style={{ color: t.text }}>{c.title}</div> : null}
+              {c.text ? <p className="mt-1 whitespace-pre-line text-sm leading-relaxed" style={{ color: t.muted }}>{c.text}</p> : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case "socialProof": {
+      if (resolved.socialProof.length === 0) return null;
+      return (
+        <div className="mt-6 space-y-2">
+          {resolved.socialProof.map((e, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm" style={{ background: `${t.accent}0F`, color: t.text }}>
+              <span style={{ color: t.accent }}>✓</span>
+              <span><strong>{e.name}</strong> bought {e.item}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
     case "product": {
       const card = resolved.products.get(block.productId);
       return card ? <CatalogCard card={card} href={`/p/${card.slug}`} t={t} /> : null;

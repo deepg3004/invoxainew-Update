@@ -34,7 +34,7 @@ export interface EntityOptions {
 // (product/course/storeGrid/leadForm/paymentButton) are added + picked here.
 type AddType =
   | "heading" | "text" | "image" | "button" | "video" | "divider"
-  | "faq" | "countdown"
+  | "faq" | "countdown" | "columns" | "socialProof"
   | "product" | "course" | "storeGrid" | "leadForm" | "paymentButton";
 
 function newBlock(type: AddType, e: EntityOptions): Block {
@@ -59,6 +59,16 @@ function newBlock(type: AddType, e: EntityOptions): Block {
         until: new Date(Date.now() + 7 * 86_400_000).toISOString(),
         label: "Offer ends in",
       };
+    case "columns":
+      return {
+        type: "columns",
+        cells: [
+          { title: "Feature", text: "Describe it." },
+          { title: "Feature", text: "Describe it." },
+        ],
+      };
+    case "socialProof":
+      return { type: "socialProof" };
     case "product":
       return { type: "product", productId: e.products[0]?.id ?? "" };
     case "course":
@@ -133,6 +143,58 @@ function FaqEditor({
       >
         + Add question
       </button>
+    </div>
+  );
+}
+
+/** Editor for a columns block's cells (title + text), add / edit / remove, max 4. */
+function ColumnsEditor({
+  cells,
+  onChange,
+}: {
+  cells: { title: string; text: string }[];
+  onChange: (cells: { title: string; text: string }[]) => void;
+}) {
+  const set = (idx: number, patch: Partial<{ title: string; text: string }>) =>
+    onChange(cells.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
+  return (
+    <div className="space-y-3">
+      {cells.map((c, idx) => (
+        <div key={idx} className="space-y-1.5 rounded-lg border border-zinc-200 p-2">
+          <div className="flex gap-2">
+            <input
+              value={c.title}
+              onChange={(e) => set(idx, { title: e.target.value })}
+              placeholder={`Column ${idx + 1} title`}
+              className={inputCls}
+            />
+            <button
+              type="button"
+              onClick={() => onChange(cells.filter((_, i) => i !== idx))}
+              className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-700"
+              aria-label="Remove column"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <textarea
+            value={c.text}
+            onChange={(e) => set(idx, { text: e.target.value })}
+            placeholder="Column text"
+            rows={2}
+            className={inputCls}
+          />
+        </div>
+      ))}
+      {cells.length < 4 ? (
+        <button
+          type="button"
+          onClick={() => onChange([...cells, { title: "", text: "" }])}
+          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+        >
+          + Add column
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -288,6 +350,21 @@ function PreviewBlock({
         </div>
       );
     }
+    case "columns": {
+      const cols = block.cells.length >= 3 ? "grid-cols-3" : block.cells.length === 2 ? "grid-cols-2" : "grid-cols-1";
+      return (
+        <div className={`mt-4 grid gap-2 ${cols}`}>
+          {block.cells.map((c, i) => (
+            <div key={i} className="rounded-lg p-2" style={{ border: `1px solid ${t.border}` }}>
+              {c.title ? <div className="text-sm font-semibold" style={{ color: t.text }}>{c.title}</div> : null}
+              {c.text ? <p className="mt-0.5 text-xs" style={{ color: t.muted }}>{c.text}</p> : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case "socialProof":
+      return entityCard("Social proof", "Recent sales appear here automatically", "Recent sales appear here automatically");
     case "product":
       return entityCard("Product card", titleOf(entities.products, block.productId), "Pick a product");
     case "course":
@@ -651,6 +728,14 @@ export function PageEditor({
                   </div>
                 ) : null}
 
+                {b.type === "columns" ? (
+                  <ColumnsEditor cells={b.cells} onChange={(cells) => update(i, { cells })} />
+                ) : null}
+
+                {b.type === "socialProof" ? (
+                  <p className="text-xs text-muted">Automatically shows your recent sales (masked — first name + item only). Nothing to configure.</p>
+                ) : null}
+
                 {b.type === "product" ? (
                   <EntitySelect
                     value={b.productId}
@@ -719,7 +804,7 @@ export function PageEditor({
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {(["heading", "text", "image", "button", "video", "divider", "faq", "countdown"] as AddType[]).map((t) => (
+            {(["heading", "text", "image", "button", "video", "divider", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => add(t)}
