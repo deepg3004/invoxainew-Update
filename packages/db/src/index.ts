@@ -532,6 +532,27 @@ export {
   type CreateWorkshopResult,
 } from "./workshop";
 export {
+  createBookingType,
+  listBookingTypes,
+  countBookingTypes,
+  getBookingTypeById,
+  updateBookingType,
+  setBookingTypeStatus,
+  addBookingSlots,
+  listSlots,
+  deleteBookingSlot,
+  listPublishedBookingTypes,
+  getPublishedBookingType,
+  getPublishedBookingTypeById,
+  getPublishedBookingTypeMeta,
+  getOpenSlot,
+  getBuyerBookingForType,
+  listBuyerBookings,
+  listBookingsForType,
+  type CreateBookingTypeResult,
+} from "./booking";
+export type { BookingTypeStatus } from "@prisma/client";
+export {
   isCourseComplete,
   issueCertificateIfEligible,
   listBuyerCertificates,

@@ -211,6 +211,7 @@ export function createBuyerPayment(input: {
   courseId?: string | null;
   communityId?: string | null;
   workshopId?: string | null;
+  bookingSlotId?: string | null;
   quantity?: number;
   itemTitle: string;
   amountPaise: number;
@@ -244,6 +245,7 @@ export function createBuyerPayment(input: {
       courseId: input.courseId ?? null,
       communityId: input.communityId ?? null,
       workshopId: input.workshopId ?? null,
+      bookingSlotId: input.bookingSlotId ?? null,
       quantity: input.quantity ?? 1,
       itemTitle: input.itemTitle,
       // amountPaise is the POST-discount charged total (server-trusted).
@@ -902,6 +904,39 @@ async function applyPaidEffects(
       });
     }
 
+    // Grant a 1-on-1 booking for a booking order. Atomically claim the slot
+    // (OPEN→BOOKED); the winner gets the slot, and if it was taken in a rare race
+    // we STILL record the booking slot-less with the desired startsAt (the seller
+    // reschedules) — a payment is never lost. buyerPaymentId unique + skipDuplicates
+    // keeps it idempotent (claim-winner only, like every other grant here).
+    if (payment.bookingSlotId) {
+      const slot = await tx.bookingSlot.findUnique({
+        where: { id: payment.bookingSlotId },
+        select: { bookingTypeId: true, startsAt: true },
+      });
+      if (slot) {
+        const claimed = await tx.bookingSlot.updateMany({
+          where: { id: payment.bookingSlotId, status: "OPEN" },
+          data: { status: "BOOKED" },
+        });
+        await tx.booking.createMany({
+          data: [
+            {
+              tenantId: payment.tenantId,
+              bookingTypeId: slot.bookingTypeId,
+              slotId: claimed.count === 1 ? payment.bookingSlotId : null,
+              startsAt: slot.startsAt,
+              buyerProfileId: payment.buyerProfileId,
+              buyerEmail: payment.buyerEmail,
+              buyerPaymentId: payment.id,
+              source: "paid",
+            },
+          ],
+          skipDuplicates: true,
+        });
+      }
+    }
+
     const bps = await commissionBpsForTenant(tx, payment.tenantId);
     const commissionPaise = Math.floor((payment.amountPaise * bps) / 10000);
     if (commissionPaise <= 0) {
@@ -1036,6 +1071,7 @@ export async function createUpiSession(input: {
   courseId?: string | null;
   communityId?: string | null;
   workshopId?: string | null;
+  bookingSlotId?: string | null;
   quantity?: number;
   couponId?: string | null;
   couponCode?: string | null;
@@ -1063,6 +1099,7 @@ export async function createUpiSession(input: {
           courseId: input.courseId ?? null,
           communityId: input.communityId ?? null,
           workshopId: input.workshopId ?? null,
+          bookingSlotId: input.bookingSlotId ?? null,
           quantity: input.quantity ?? 1,
           itemTitle: input.itemTitle,
           amountPaise: input.amountPaise, // TRUE sale price — commission/receipt base
@@ -1157,8 +1194,9 @@ async function upiOrderGrantsInstantAccess(order: {
   courseId: string | null;
   communityId: string | null;
   workshopId: string | null;
+  bookingSlotId: string | null;
 }): Promise<boolean> {
-  if (order.courseId || order.communityId || order.workshopId) return true;
+  if (order.courseId || order.communityId || order.workshopId || order.bookingSlotId) return true;
 
   const [items, directProduct] = await Promise.all([
     prisma.orderItem.findMany({
@@ -1205,7 +1243,7 @@ export async function autoConfirmOrHoldUpiOrder(
     where: { id: buyerPaymentId, tenantId, paymentMethod: "UPI_MANUAL" },
     select: {
       id: true, status: true, amountPaise: true, itemTitle: true, upiRef: true, expiresAt: true,
-      productId: true, courseId: true, communityId: true, workshopId: true,
+      productId: true, courseId: true, communityId: true, workshopId: true, bookingSlotId: true,
     },
   });
   if (!order) return { ok: false, reason: "not_found" };

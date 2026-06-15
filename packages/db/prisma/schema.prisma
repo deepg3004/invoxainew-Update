@@ -132,6 +132,9 @@ model Tenant {
   // Phase: live workshops + their registrations.
   workshops             Workshop[]
   workshopRegistrations WorkshopRegistration[]
+  // Phase: 1-on-1 booking offerings + their bookings.
+  bookingTypes          BookingType[]
+  bookings              Booking[]
   // Phase: media library (cloud storage) assets.
   fileAssets            FileAsset[]
   // Phase 12: communities (members spaces) + their memberships.
@@ -1105,6 +1108,11 @@ model BuyerPayment {
   // exclusive with productId/courseId/communityId — same access-order pattern.
   workshopId        String?            @map("workshop_id") @db.Uuid
   workshop          Workshop?          @relation(fields: [workshopId], references: [id], onDelete: SetNull)
+  // Phase: set when this order is a booking (1-on-1) for a specific slot. On PAID it
+  // claims the slot + grants a Booking (markBuyerPaymentPaid). Mutually exclusive
+  // with the other sellable FKs — same access-order pattern.
+  bookingSlotId     String?            @map("booking_slot_id") @db.Uuid
+  bookingSlot       BookingSlot?       @relation(fields: [bookingSlotId], references: [id], onDelete: SetNull)
   quantity          Int                @default(1)
   itemTitle         String?            @map("item_title")
   // `amountPaise` is the CHARGED total the buyer actually paid. When a coupon was
@@ -1179,6 +1187,8 @@ model BuyerPayment {
   communityMembership CommunityMembership?
   // Phase: the workshop registration this purchase granted (workshop orders).
   workshopRegistration WorkshopRegistration?
+  // Phase: the booking this purchase granted (1-on-1 orders).
+  booking              Booking?
   // Growth G1.1 (OTO): when this order is a post-purchase one-time offer, it links
   // back to the parent order that triggered it + the Upsell it accepted. A partial
   // unique on (parentPaymentId, upsellId) makes acceptance idempotent — a buyer can
@@ -1508,6 +1518,84 @@ model FileAsset {
 
   @@index([tenantId, createdAt])
   @@map("file_assets")
+}
+
+enum BookingTypeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// A 1-on-1 / consultation offering — SAME money rail as a workshop, but the buyer
+/// books a specific time SLOT. `meetingUrl` (Zoom/Meet) is revealed only to a
+/// confirmed booker. Buyers pay on the seller's gateway; the PAID order claims the
+/// slot + grants a Booking (markBuyerPaymentPaid, claim-winner only). RLS: deny-anon.
+model BookingType {
+  id           String            @id @default(uuid()) @db.Uuid
+  tenantId     String            @map("tenant_id") @db.Uuid
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug         String
+  title        String
+  description  String?
+  pricePaise   Int               @map("price_paise")
+  compareAtPaise Int?            @map("compare_at_paise")
+  imageUrl     String?           @map("image_url")
+  meetingUrl   String?           @map("meeting_url")
+  durationMins Int?              @map("duration_mins")
+  status       BookingTypeStatus @default(DRAFT)
+  sortOrder    Int               @default(0) @map("sort_order")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  slots    BookingSlot[]
+  bookings Booking[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("booking_types")
+}
+
+/// One bookable time slot of a BookingType. status OPEN → BOOKED (claimed atomically
+/// on PAID — see markBuyerPaymentPaid). A slot holds one booking.
+model BookingSlot {
+  id            String         @id @default(uuid()) @db.Uuid
+  tenantId      String         @map("tenant_id") @db.Uuid
+  bookingTypeId String         @map("booking_type_id") @db.Uuid
+  bookingType   BookingType    @relation(fields: [bookingTypeId], references: [id], onDelete: Cascade)
+  startsAt      DateTime       @map("starts_at")
+  status        String         @default("OPEN") // OPEN | BOOKED
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  booking       Booking?
+  buyerPayments BuyerPayment[]
+
+  @@index([bookingTypeId, status])
+  @@map("booking_slots")
+}
+
+/// A confirmed booking, granted on PAID (claim-winner only; buyerPaymentId unique →
+/// no double-grant). Normally tied to a slot (unique); if the slot was taken in a
+/// rare race, the booking is recorded slot-less with the desired `startsAt` so the
+/// seller reschedules — a payment is NEVER lost.
+model Booking {
+  id             String        @id @default(uuid()) @db.Uuid
+  tenantId       String        @map("tenant_id") @db.Uuid
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bookingTypeId  String        @map("booking_type_id") @db.Uuid
+  bookingType    BookingType   @relation(fields: [bookingTypeId], references: [id], onDelete: Cascade)
+  slotId         String?       @unique @map("slot_id") @db.Uuid
+  slot           BookingSlot?  @relation(fields: [slotId], references: [id], onDelete: SetNull)
+  startsAt       DateTime?     @map("starts_at")
+  buyerProfileId String?       @map("buyer_profile_id") @db.Uuid
+  buyerEmail     String?       @map("buyer_email")
+  buyerPaymentId String?       @unique @map("buyer_payment_id") @db.Uuid
+  buyerPayment   BuyerPayment? @relation(fields: [buyerPaymentId], references: [id], onDelete: SetNull)
+  source         String        @default("paid")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([tenantId, bookingTypeId])
+  @@index([bookingTypeId, buyerProfileId])
+  @@map("bookings")
 }
 
 enum WorkshopStatus {
