@@ -263,6 +263,7 @@ model TenantTracking {
   ga4MeasurementId String?  @map("ga4_measurement_id")
   googleAdsId      String?  @map("google_ads_id")
   gtmId            String?  @map("gtm_id")
+  tiktokPixelId    String?  @map("tiktok_pixel_id")
   // Growth G1.5: show live "someone just bought …" social-proof popups on the
   // seller's public pages (derived from recent PAID orders, masked — no PII). On by
   // default; the seller can switch it off here.

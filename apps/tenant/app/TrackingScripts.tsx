@@ -7,11 +7,13 @@ export interface TrackingIds {
   ga4MeasurementId?: string | null;
   googleAdsId?: string | null;
   gtmId?: string | null;
+  tiktokPixelId?: string | null;
 }
 
 type PixelWindow = {
   fbq?: (...a: unknown[]) => void;
   gtag?: (...a: unknown[]) => void;
+  ttq?: { track: (...a: unknown[]) => void };
 };
 const pixels = (): PixelWindow | null =>
   typeof window === "undefined" ? null : (window as unknown as PixelWindow);
@@ -23,6 +25,7 @@ export function firePurchase(valuePaise: number, currency = "INR") {
   const value = valuePaise / 100;
   w.fbq?.("track", "Purchase", { value, currency });
   w.gtag?.("event", "purchase", { value, currency });
+  w.ttq?.track("CompletePayment", { value, currency });
 }
 
 /** Fire a Lead event (form submitted). */
@@ -31,6 +34,7 @@ export function fireLead() {
   if (!w) return;
   w.fbq?.("track", "Lead");
   w.gtag?.("event", "generate_lead");
+  w.ttq?.track("SubmitForm");
 }
 
 /** Fire a ViewContent event (buyer viewed a product/course). */
@@ -44,6 +48,7 @@ export function fireViewContent(name: string, valuePaise?: number, currency = "I
     currency,
     items: [{ item_name: name }],
   });
+  w.ttq?.track("ViewContent", { content_name: name, value, currency });
 }
 
 /** Fire an AddToCart event. */
@@ -57,6 +62,7 @@ export function fireAddToCart(name: string, valuePaise?: number, currency = "INR
     currency,
     items: [{ item_name: name }],
   });
+  w.ttq?.track("AddToCart", { content_name: name, value, currency });
 }
 
 /** Fire an InitiateCheckout event (buyer started paying). */
@@ -66,6 +72,7 @@ export function fireInitiateCheckout(valuePaise: number, currency = "INR") {
   const value = valuePaise / 100;
   w.fbq?.("track", "InitiateCheckout", { value, currency });
   w.gtag?.("event", "begin_checkout", { value, currency });
+  w.ttq?.track("InitiateCheckout", { value, currency });
 }
 
 /**
@@ -98,6 +105,12 @@ export function TrackingScripts({ ids }: { ids: TrackingIds }) {
       {ids.gtmId ? (
         <Script id="gtm" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${ids.gtmId}');`}
+        </Script>
+      ) : null}
+
+      {ids.tiktokPixelId ? (
+        <Script id="tiktok-pixel" strategy="afterInteractive">
+          {`!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load('${ids.tiktokPixelId}');ttq.page();}(window,document,'ttq');`}
         </Script>
       ) : null}
     </>

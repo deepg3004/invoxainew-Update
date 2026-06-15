@@ -39,6 +39,11 @@ export default async function TrackingPage() {
             <input name="gtmId" defaultValue={t?.gtmId ?? ""} placeholder="GTM-XXXXXXX" className={inputCls} />
           </label>
 
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-900">TikTok Pixel ID</span>
+            <input name="tiktokPixelId" defaultValue={t?.tiktokPixelId ?? ""} placeholder="CXXXXXXXXXXXXXXXXXXX" className={inputCls} />
+          </label>
+
           <div className="border-t border-zinc-100 pt-4">
             <label className="flex items-start gap-3">
               <input

@@ -16,6 +16,7 @@ export function upsertTenantTracking(input: {
   ga4MeasurementId: string | null;
   googleAdsId: string | null;
   gtmId: string | null;
+  tiktokPixelId: string | null;
   socialProofEnabled?: boolean;
 }) {
   const data = {
@@ -23,6 +24,7 @@ export function upsertTenantTracking(input: {
     ga4MeasurementId: input.ga4MeasurementId,
     googleAdsId: input.googleAdsId,
     gtmId: input.gtmId,
+    tiktokPixelId: input.tiktokPixelId,
     // Only touch the toggle when the caller provided it, so the create-default of
     // `true` and an existing value aren't clobbered by a pixel-only save.
     ...(input.socialProofEnabled !== undefined
