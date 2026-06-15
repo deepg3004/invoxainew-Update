@@ -253,7 +253,7 @@ describe("normalizeToBlocks — button object", () => {
   it("validates each action type and resolves its href", () => {
     const wa = norm({ type: "button", label: "Chat", href: "", action: { type: "whatsapp", phone: "+91 98765-43210" } })[0];
     expect(wa).toMatchObject({ action: { type: "whatsapp", phone: "919876543210" } });
-    expect(buttonHref(wa as { href: string; action?: unknown } & { href: string }).href).toBe("https://wa.me/919876543210");
+    expect(buttonHref(wa as never).href).toBe("https://wa.me/919876543210");
 
     const sc = norm({ type: "button", label: "See offer", href: "", action: { type: "scroll", anchor: "of fer!#x" } })[0];
     expect(sc).toMatchObject({ action: { type: "scroll", anchor: "offerx" } }); // sanitized to a slug

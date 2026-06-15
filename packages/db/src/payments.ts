@@ -557,6 +557,7 @@ export function listCheckoutsForRecovery(opts: {
         select: {
           username: true,
           name: true,
+          brandColor: true,
           domains: { where: { isPrimary: true }, select: { domain: true }, take: 1 },
         },
       },

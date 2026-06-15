@@ -6,7 +6,8 @@ import {
   finalizeCompletedBroadcasts,
   recordNotificationLog,
 } from "@invoxai/db";
-import { sendEmail, escapeHtml } from "@invoxai/utils/email";
+import { sendEmail } from "@invoxai/utils/email";
+import { renderEmail } from "@invoxai/utils/email-render";
 
 /**
  * Phase 14 — deliver QUEUED email broadcasts. Designed to run on a schedule
@@ -51,7 +52,14 @@ export async function sweepBroadcasts(opts?: { limit?: number }): Promise<{
       result = await sendEmail({
         to: r.email,
         subject: r.broadcast.subject,
-        html: broadcastEmailHtml({ storeName, body: escapeHtml(r.broadcast.body) }),
+        html: renderEmail({
+          storeName,
+          heading: r.broadcast.subject,
+          bodyText: r.broadcast.body,
+          accent: r.broadcast.tenant.brandColor,
+          preheader: r.broadcast.subject,
+          footerNote: "You’re receiving this because you’re a contact of this store.",
+        }),
       });
     } catch (e) {
       result = { status: "failed", error: e instanceof Error ? e.message : "send error" };
@@ -84,25 +92,4 @@ export async function sweepBroadcasts(opts?: { limit?: number }): Promise<{
 
   const finalized = await finalizeCompletedBroadcasts().catch(() => 0);
   return { considered: due.length, sent, failed, skipped, finalized };
-}
-
-/** Minimal, email-client-safe HTML for a broadcast (inline styles, line breaks). */
-export function broadcastEmailHtml(a: { storeName: string; body: string }): string {
-  const paragraphs = a.body
-    .split(/\n{2,}/)
-    .map(
-      (p) =>
-        `<p style="margin:0 0 14px;color:#3f3f46;font-size:14px;line-height:1.6">${p.replace(/\n/g, "<br>")}</p>`,
-    )
-    .join("");
-  return `<!doctype html><html><body style="margin:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 0">
-    <tr><td align="center">
-      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden">
-        <tr><td style="padding:24px 28px 8px"><div style="font-size:13px;color:#71717a">${escapeHtml(a.storeName)}</div></td></tr>
-        <tr><td style="padding:8px 28px 24px">${paragraphs}</td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
 }

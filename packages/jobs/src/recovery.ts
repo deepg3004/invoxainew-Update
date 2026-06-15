@@ -5,7 +5,8 @@ import {
   recordNotificationLog,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
-import { sendEmail, escapeHtml } from "@invoxai/utils/email";
+import { sendEmail } from "@invoxai/utils/email";
+import { renderEmail } from "@invoxai/utils/email-render";
 import { getNotifEvent, renderTemplate } from "@invoxai/utils/notifications";
 import { buildResumeUrl } from "./recovery-logic";
 
@@ -86,13 +87,14 @@ export async function sweepAbandonedRecovery(opts?: {
       const result = await sendEmail({
         to,
         subject,
-        html: recoveryEmailHtml({
+        html: renderEmail({
+          storeName,
           heading: event.heading,
-          intro: escapeHtml(intro),
-          item: escapeHtml(itemLabel),
-          amount: amountLabel,
-          button: { label: event.buttonLabel, url: resumeUrl },
-          footer: event.footer,
+          bodyText: `${intro}\n\n${itemLabel} — ${amountLabel}`,
+          cta: { label: event.buttonLabel, href: resumeUrl },
+          accent: row.tenant.brandColor,
+          footerNote: event.footer,
+          preheader: intro.slice(0, 120),
         }),
       });
       if (result.status === "sent") sent++;
@@ -116,33 +118,3 @@ export async function sweepAbandonedRecovery(opts?: {
   return { considered: due.length, sent, skipped };
 }
 
-/** Minimal, email-client-safe HTML for the recovery nudge (inline styles). */
-function recoveryEmailHtml(a: {
-  heading: string;
-  intro: string;
-  item: string;
-  amount: string;
-  button: { label: string; url: string };
-  footer: string;
-}): string {
-  return `<!doctype html><html><body style="margin:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 0">
-    <tr><td align="center">
-      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden">
-        <tr><td style="padding:28px 28px 8px"><h1 style="margin:0;font-size:20px;color:#18181b">${a.heading}</h1></td></tr>
-        <tr><td style="padding:0 28px 16px;color:#3f3f46;font-size:14px;line-height:1.6">${a.intro}</td></tr>
-        <tr><td style="padding:0 28px 16px">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e4e4e7;border-radius:8px">
-            <tr><td style="padding:10px 14px;color:#71717a;font-size:13px">Item</td><td style="padding:10px 14px;text-align:right;color:#18181b;font-size:13px">${a.item}</td></tr>
-            <tr><td style="padding:10px 14px;color:#71717a;font-size:13px;border-top:1px solid #f4f4f5">Amount</td><td style="padding:10px 14px;text-align:right;color:#18181b;font-size:13px;border-top:1px solid #f4f4f5">${a.amount}</td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:8px 28px 28px">
-          <a href="${a.button.url}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-size:14px;font-weight:600;padding:12px 20px;border-radius:8px">${a.button.label}</a>
-        </td></tr>
-        <tr><td style="padding:0 28px 24px;color:#a1a1aa;font-size:12px">${a.footer}</td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
-}

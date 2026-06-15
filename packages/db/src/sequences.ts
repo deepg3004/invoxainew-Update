@@ -259,7 +259,7 @@ export function listDueEnrollments(limit = 200) {
       sequence: {
         select: {
           active: true,
-          tenant: { select: { name: true, username: true } },
+          tenant: { select: { name: true, username: true, brandColor: true } },
           steps: {
             orderBy: { sortOrder: "asc" },
             select: { id: true, delayHours: true, subject: true, body: true },

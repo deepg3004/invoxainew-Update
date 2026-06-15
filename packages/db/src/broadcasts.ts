@@ -170,7 +170,7 @@ export function listDueBroadcastRecipients(limit = 200) {
           subject: true,
           body: true,
           status: true,
-          tenant: { select: { name: true, username: true } },
+          tenant: { select: { name: true, username: true, brandColor: true } },
         },
       },
     },
