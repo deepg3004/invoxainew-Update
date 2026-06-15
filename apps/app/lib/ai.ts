@@ -12,8 +12,10 @@ import { normalizeToBlocks, type BuilderContent } from "@invoxai/utils/blocks";
  * sanitized through normalizeToBlocks before storage. Uses the default model
  * (Opus 4.8) with adaptive thinking and structured outputs (json_schema).
  *
- * The generator emits only heading/text/divider blocks (no image/button — those
- * would be fabricated URLs); the seller adds links/images in the block editor.
+ * The generator emits text-only blocks (heading/text/divider + the Part-2 widgets
+ * list/testimonial/callout) — NO image/button, whose URLs it would fabricate; the
+ * seller adds links/images in the block editor. Every field is re-validated +
+ * capped by normalizeToBlocks before storage.
  */
 
 const SCHEMA = {
@@ -25,11 +27,19 @@ const SCHEMA = {
       items: {
         type: "object",
         properties: {
-          type: { type: "string", enum: ["heading", "text", "divider"] },
-          // Present for heading/text; omitted for divider.
+          type: {
+            type: "string",
+            enum: ["heading", "text", "divider", "list", "testimonial", "callout"],
+          },
+          // Present for heading/text; also the callout body. Omitted for divider/list.
           text: { type: "string" },
           // Heading level 1 (hero) → 3. Ignored for non-headings.
           level: { type: "integer", enum: [1, 2, 3] },
+          // For `list`: the bullet items.
+          items: { type: "array", items: { type: "string" } },
+          // For `testimonial`: the quote + who said it.
+          quote: { type: "string" },
+          author: { type: "string" },
         },
         required: ["type"],
         additionalProperties: false,
@@ -67,7 +77,7 @@ export async function generateLandingPage(input: {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
   const system =
-    "You are a senior landing-page copywriter and designer. Given a business name and a short brief, return a `title` and an ordered list of `blocks` that compose a compelling landing page. Use these block types: a single `heading` with level 1 (the hero headline), `text` blocks for taglines and body copy, `heading` blocks with level 2 for section titles, level 3 for sub-points, and `divider` blocks to separate major sections. Aim for ~8–16 blocks: hero heading, a one-line tagline, then 3–5 sections each with a level-2 heading and a 1–2 sentence text block, ending with a closing call-to-action text block. Make the copy specific and benefit-led for this exact business. Plain text only — no HTML, no markdown, no placeholder text.";
+    "You are a senior landing-page copywriter and designer. Given a business name and a short brief, return a `title` and an ordered list of `blocks` that compose a compelling landing page. Use these block types: a single `heading` with level 1 (the hero headline); `text` blocks for taglines and body copy; `heading` blocks with level 2 for section titles and level 3 for sub-points; `divider` blocks to separate major sections; a `list` block (with an `items` array of 3–6 short strings) for benefits or features; a `testimonial` block (a `quote` plus an `author`) for social proof; and a `callout` block (its `text` field) to highlight a key promise or offer. Aim for ~8–16 blocks: hero heading, a one-line tagline, then 3–5 sections — include at least one `list` of benefits and, where it fits, one `testimonial` and one `callout` — ending with a closing call-to-action text block. Make the copy specific and benefit-led for this exact business. Plain text only — no HTML, no markdown, no placeholder text; testimonials must be plausible but clearly illustrative.";
 
   try {
     const message = await client.messages.create({

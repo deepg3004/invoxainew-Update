@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getTenantTracking } from "@invoxai/db";
+import { getTenantTracking, getSiteNav } from "@invoxai/db";
 import { cachedAiPage } from "../../lib/content";
 import { normalizeToBlocks, THEME_PRESETS, type Block, type Theme } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
@@ -91,6 +91,42 @@ function BlockView({ block, t }: { block: Block; t: Tokens }) {
       );
     case "divider":
       return <hr className="mt-10" style={{ borderColor: t.border }} />;
+    case "list":
+      return (
+        <ul className="mt-4 space-y-2">
+          {block.items.map((it, i) => (
+            <li key={i} className="flex gap-2 leading-relaxed" style={{ color: t.muted }}>
+              <span style={{ color: t.accent }}>•</span>
+              <span>{it}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    case "testimonial":
+      return (
+        <figure
+          className="mt-8 rounded-xl p-6"
+          style={{ background: `${t.accent}14`, border: `1px solid ${t.border}` }}
+        >
+          <blockquote className="text-lg italic leading-relaxed" style={{ color: t.text }}>
+            “{block.quote}”
+          </blockquote>
+          {block.author ? (
+            <figcaption className="mt-3 text-sm font-medium" style={{ color: t.muted }}>
+              — {block.author}
+            </figcaption>
+          ) : null}
+        </figure>
+      );
+    case "callout":
+      return (
+        <div
+          className="mt-6 rounded-xl border-l-4 p-4"
+          style={{ borderColor: t.accent, background: `${t.accent}0F`, color: t.text }}
+        >
+          <p className="whitespace-pre-line leading-relaxed">{block.text}</p>
+        </div>
+      );
   }
 }
 
@@ -112,12 +148,31 @@ export default async function AiLandingPage({
   // the old behavior of 404ing instead of publishing an empty page.
   if (content.blocks.length === 0) notFound();
   const tracking = await getTenantTracking(tenant.id);
+  // Multi-page site: if this page belongs to a site, fetch its sibling published pages
+  // for a shared top nav (a single page in its site shows no nav).
+  const nav = page.siteId ? await getSiteNav(page.siteId) : [];
   const t: Tokens = { ...THEME_PRESETS[content.theme.preset], accent: content.theme.accent };
 
   return (
     <div style={{ background: t.bg, minHeight: "100vh" }}>
       <main className="mx-auto max-w-3xl px-6 py-20">
         <TrackingScripts ids={tracking ?? {}} />
+        {nav.length > 1 ? (
+          <nav
+            className="mb-10 flex flex-wrap gap-x-5 gap-y-2 border-b pb-4 text-sm font-medium"
+            style={{ borderColor: t.border }}
+          >
+            {nav.map((item) => (
+              <Link
+                key={item.slug}
+                href={`/${item.slug}`}
+                style={{ color: item.slug === slug ? t.accent : t.muted }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
         <article>
           {content.blocks.map((b, i) => (
             <BlockView key={i} block={b} t={t} />

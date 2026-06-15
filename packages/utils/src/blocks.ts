@@ -19,7 +19,11 @@ export type Block =
   | { type: "image"; url: string; alt: string }
   | { type: "button"; label: string; href: string }
   | { type: "video"; url: string } // url is ALWAYS a sanitized embed URL
-  | { type: "divider" };
+  | { type: "divider" }
+  // Builder Part 2 — static content widgets (no URLs, no raw HTML; all text capped).
+  | { type: "list"; items: string[] } // bullet list
+  | { type: "testimonial"; quote: string; author: string }
+  | { type: "callout"; text: string }; // highlighted note box
 
 // ── Theme (AI builder slice 2) ───────────────────────────────────────────────
 
@@ -128,6 +132,23 @@ function toBlock(raw: unknown): Block | null {
     }
     case "divider":
       return { type: "divider" };
+    case "list": {
+      const raw = Array.isArray(b.items) ? b.items : [];
+      const items = raw
+        .map((it) => str(it, 200).trim())
+        .filter((it) => it.length > 0)
+        .slice(0, 20);
+      return items.length > 0 ? { type: "list", items } : null;
+    }
+    case "testimonial": {
+      const quote = str(b.quote, 1000).trim();
+      const author = str(b.author, 120).trim();
+      return quote ? { type: "testimonial", quote, author } : null;
+    }
+    case "callout": {
+      const text = str(b.text, 1000).trim();
+      return text ? { type: "callout", text } : null;
+    }
     default:
       return null;
   }
