@@ -10,7 +10,12 @@ export async function submitLeadAction(input: {
   email?: string;
   phone?: string;
   message?: string;
+  company?: string; // honeypot — must be empty for a real human
 }): Promise<{ ok: boolean }> {
+  // Spam honeypot: a bot that auto-fills the hidden "company" field gets a fake
+  // success and is silently dropped (no row written, no notification).
+  if ((input.company ?? "").trim()) return { ok: true };
+
   // Tenant is resolved from the request HOST; submitLead then re-checks the form
   // belongs to this tenant AND is published, and stamps tenant_id server-side —
   // so a forged formId can't write under another tenant or into a draft.

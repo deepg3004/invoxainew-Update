@@ -1,6 +1,7 @@
 import { Prisma, type LeadFormStatus } from "@prisma/client";
 import { prisma } from "./client";
 import { enrollInSequences } from "./sequences";
+import { notifyTenant } from "./notifications";
 
 export type CreateLeadFormResult =
   | { ok: true; id: string }
@@ -13,6 +14,8 @@ export interface LeadFormInput {
   successMessage?: string | null;
   collectPhone?: boolean;
   collectMessage?: boolean;
+  notifyOnSubmit?: boolean;
+  redirectUrl?: string | null;
 }
 
 /** Create a lead form. Slug is passed in (app slugifies the title); a clash with
@@ -33,6 +36,8 @@ export async function createLeadForm(
         successMessage: input.successMessage ?? null,
         collectPhone: input.collectPhone ?? true,
         collectMessage: input.collectMessage ?? true,
+        notifyOnSubmit: input.notifyOnSubmit ?? true,
+        redirectUrl: input.redirectUrl ?? null,
       },
       select: { id: true },
     });
@@ -83,6 +88,8 @@ export function updateLeadForm(tenantId: string, id: string, input: LeadFormInpu
       successMessage: input.successMessage ?? null,
       collectPhone: input.collectPhone ?? true,
       collectMessage: input.collectMessage ?? true,
+      notifyOnSubmit: input.notifyOnSubmit ?? true,
+      redirectUrl: input.redirectUrl ?? null,
     },
   });
 }
@@ -111,7 +118,7 @@ export async function submitLead(input: {
 }): Promise<{ ok: boolean }> {
   const form = await prisma.leadForm.findFirst({
     where: { id: input.formId, tenantId: input.tenantId, status: "PUBLISHED" },
-    select: { id: true, tenantId: true },
+    select: { id: true, tenantId: true, title: true, notifyOnSubmit: true },
   });
   if (!form) return { ok: false };
 
@@ -129,6 +136,18 @@ export async function submitLead(input: {
       message: input.message?.trim().slice(0, 4000) || null,
     },
   });
+
+  // Notify the seller in-app on each submission (best-effort — never break the
+  // public submission). Audit batch 4.
+  if (form.notifyOnSubmit) {
+    const who = input.name?.trim() || email || "Someone";
+    await notifyTenant(form.tenantId, {
+      type: "lead.received",
+      title: `New lead: ${form.title}`,
+      body: `${who} submitted your “${form.title}” form.`,
+      link: "/contacts",
+    }).catch(() => {});
+  }
 
   // Growth G1.3: enrol the lead into any LEAD-triggered sequences (best-effort — a
   // failure must never break the public submission). Idempotent per (sequence, email).

@@ -199,6 +199,10 @@ model LeadForm {
   successMessage String?       @map("success_message")
   collectPhone   Boolean       @default(true) @map("collect_phone")
   collectMessage Boolean       @default(true) @map("collect_message")
+  // Audit batch 4: notify the seller on each submission, and optionally redirect
+  // the visitor to a thank-you / product URL after submitting.
+  notifyOnSubmit Boolean       @default(true) @map("notify_on_submit")
+  redirectUrl    String?       @map("redirect_url")
   status      LeadFormStatus   @default(DRAFT)
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")

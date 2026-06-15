@@ -7,7 +7,14 @@ import {
   setLeadFormStatus,
   type LeadFormStatus,
 } from "@invoxai/db";
+import { safeUrl } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../lib/tenant";
+
+/** Parse a redirect URL field → sanitized URL or null. */
+function parseRedirect(form: FormData): string | null {
+  const raw = String(form.get("redirectUrl") ?? "").trim();
+  return raw ? safeUrl(raw) || null : null;
+}
 
 function slugify(s: string): string {
   return (
@@ -32,6 +39,8 @@ export async function createLeadFormAction(form: FormData): Promise<void> {
     successMessage: String(form.get("successMessage") ?? "").trim() || null,
     collectPhone: form.get("collectPhone") === "on",
     collectMessage: form.get("collectMessage") === "on",
+    notifyOnSubmit: form.get("notifyOnSubmit") === "on",
+    redirectUrl: parseRedirect(form),
   };
   const publish = form.get("publish") === "on";
 

@@ -82,6 +82,20 @@ export default async function NewFormPage({
         </div>
 
         <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="notifyOnSubmit" defaultChecked /> Notify me on each submission
+        </label>
+
+        <div>
+          <label className="text-sm font-medium">Redirect after submit (optional)</label>
+          <input
+            name="redirectUrl"
+            placeholder="https://… or /thank-you"
+            className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
+          />
+          <p className="mt-1 text-xs text-muted">Sends the visitor here after submitting, instead of showing the success message.</p>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="publish" /> Publish now (make the form live)
         </label>
 

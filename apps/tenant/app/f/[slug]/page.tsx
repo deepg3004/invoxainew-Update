@@ -62,6 +62,7 @@ export default async function LeadFormPage({
           successMessage: form.successMessage,
           collectPhone: form.collectPhone,
           collectMessage: form.collectMessage,
+          redirectUrl: form.redirectUrl,
         }}
       />
     </main>

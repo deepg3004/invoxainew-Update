@@ -10,6 +10,7 @@ export interface LeadFormConfig {
   successMessage: string | null;
   collectPhone: boolean;
   collectMessage: boolean;
+  redirectUrl: string | null;
 }
 
 const inputCls =
@@ -20,6 +21,7 @@ export function LeadFormView({ form }: { form: LeadFormConfig }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const [company, setCompany] = useState(""); // honeypot — humans leave it blank
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -28,9 +30,13 @@ export function LeadFormView({ form }: { form: LeadFormConfig }) {
     setError(null);
     setStatus("sending");
     try {
-      const res = await submitLeadAction({ formId: form.id, name, email, phone, message });
+      const res = await submitLeadAction({ formId: form.id, name, email, phone, message, company });
       if (res.ok) {
         fireLead();
+        if (form.redirectUrl) {
+          window.location.href = form.redirectUrl;
+          return;
+        }
         setStatus("done");
       }
       else {
@@ -58,6 +64,17 @@ export function LeadFormView({ form }: { form: LeadFormConfig }) {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-3">
+      {/* Honeypot: hidden from humans; bots that auto-fill it get silently dropped. */}
+      <input
+        type="text"
+        name="company"
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-0 w-0 opacity-0"
+      />
       <input
         required
         value={name}
