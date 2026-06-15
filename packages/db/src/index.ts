@@ -513,6 +513,26 @@ export {
 } from "./sequences";
 export type { SequenceTrigger, SequenceChannel, EnrollmentStatus } from "@prisma/client";
 export {
+  seatsRemaining,
+  isSoldOut,
+  createWorkshop,
+  listWorkshops,
+  countWorkshops,
+  getWorkshopById,
+  updateWorkshop,
+  setWorkshopStatus,
+  listPublishedWorkshops,
+  getPublishedWorkshop,
+  getPublishedWorkshopById,
+  getPublishedWorkshopMeta,
+  countWorkshopRegistrations,
+  getWorkshopRegistration,
+  listRegisteredWorkshops,
+  joinFreeWorkshop,
+  type CreateWorkshopResult,
+} from "./workshop";
+export type { WorkshopStatus } from "@prisma/client";
+export {
   BROADCAST_SEGMENTS,
   normalizeSegment,
   matchesSegment,

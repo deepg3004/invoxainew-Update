@@ -210,6 +210,7 @@ export function createBuyerPayment(input: {
   productId?: string | null;
   courseId?: string | null;
   communityId?: string | null;
+  workshopId?: string | null;
   quantity?: number;
   itemTitle: string;
   amountPaise: number;
@@ -242,6 +243,7 @@ export function createBuyerPayment(input: {
       upsellId: input.upsellId ?? null,
       courseId: input.courseId ?? null,
       communityId: input.communityId ?? null,
+      workshopId: input.workshopId ?? null,
       quantity: input.quantity ?? 1,
       itemTitle: input.itemTitle,
       // amountPaise is the POST-discount charged total (server-trusted).
@@ -881,6 +883,25 @@ async function applyPaidEffects(
       });
     }
 
+    // Grant the buyer's workshop registration for a workshop order. Identical
+    // guard to enrolments/memberships — claim-winner only + buyerPaymentId unique
+    // + skipDuplicates (so a racing re-grant can't throw and poison the PAID claim).
+    if (payment.workshopId) {
+      await tx.workshopRegistration.createMany({
+        data: [
+          {
+            tenantId: payment.tenantId,
+            workshopId: payment.workshopId,
+            buyerProfileId: payment.buyerProfileId,
+            buyerEmail: payment.buyerEmail,
+            buyerPaymentId: payment.id,
+            source: "paid",
+          },
+        ],
+        skipDuplicates: true,
+      });
+    }
+
     const bps = await commissionBpsForTenant(tx, payment.tenantId);
     const commissionPaise = Math.floor((payment.amountPaise * bps) / 10000);
     if (commissionPaise <= 0) {
@@ -1014,6 +1035,7 @@ export async function createUpiSession(input: {
   productId?: string | null;
   courseId?: string | null;
   communityId?: string | null;
+  workshopId?: string | null;
   quantity?: number;
   couponId?: string | null;
   couponCode?: string | null;
@@ -1040,6 +1062,7 @@ export async function createUpiSession(input: {
           productId: input.productId ?? null,
           courseId: input.courseId ?? null,
           communityId: input.communityId ?? null,
+          workshopId: input.workshopId ?? null,
           quantity: input.quantity ?? 1,
           itemTitle: input.itemTitle,
           amountPaise: input.amountPaise, // TRUE sale price — commission/receipt base
@@ -1133,8 +1156,9 @@ async function upiOrderGrantsInstantAccess(order: {
   productId: string | null;
   courseId: string | null;
   communityId: string | null;
+  workshopId: string | null;
 }): Promise<boolean> {
-  if (order.courseId || order.communityId) return true;
+  if (order.courseId || order.communityId || order.workshopId) return true;
 
   const [items, directProduct] = await Promise.all([
     prisma.orderItem.findMany({
@@ -1181,7 +1205,7 @@ export async function autoConfirmOrHoldUpiOrder(
     where: { id: buyerPaymentId, tenantId, paymentMethod: "UPI_MANUAL" },
     select: {
       id: true, status: true, amountPaise: true, itemTitle: true, upiRef: true, expiresAt: true,
-      productId: true, courseId: true, communityId: true,
+      productId: true, courseId: true, communityId: true, workshopId: true,
     },
   });
   if (!order) return { ok: false, reason: "not_found" };

@@ -127,6 +127,9 @@ model Tenant {
   abuseReports  AbuseReport[]
   // Phase 16: admin-facing risk signals about this store.
   riskAlerts    RiskAlert[]
+  // Phase: live workshops + their registrations.
+  workshops             Workshop[]
+  workshopRegistrations WorkshopRegistration[]
   // Phase 12: communities (members spaces) + their memberships.
   communities          Community[]
   communityMemberships CommunityMembership[]
@@ -1018,6 +1021,11 @@ model BuyerPayment {
   // CommunityMembership (markBuyerPaymentPaid, claim-winner only).
   communityId       String?            @map("community_id") @db.Uuid
   community         Community?         @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  // Phase: set when this order is a workshop registration. On PAID it grants a
+  // WorkshopRegistration (markBuyerPaymentPaid, claim-winner only). Mutually
+  // exclusive with productId/courseId/communityId — same access-order pattern.
+  workshopId        String?            @map("workshop_id") @db.Uuid
+  workshop          Workshop?          @relation(fields: [workshopId], references: [id], onDelete: SetNull)
   quantity          Int                @default(1)
   itemTitle         String?            @map("item_title")
   // `amountPaise` is the CHARGED total the buyer actually paid. When a coupon was
@@ -1090,6 +1098,8 @@ model BuyerPayment {
   enrolment         Enrolment?
   // Phase 12: the community membership this purchase granted (community orders).
   communityMembership CommunityMembership?
+  // Phase: the workshop registration this purchase granted (workshop orders).
+  workshopRegistration WorkshopRegistration?
   // Growth G1.1 (OTO): when this order is a post-purchase one-time offer, it links
   // back to the parent order that triggered it + the Upsell it accepted. A partial
   // unique on (parentPaymentId, upsellId) makes acceptance idempotent — a buyer can
@@ -1400,6 +1410,66 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+}
+
+enum WorkshopStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// A live workshop / session — the SAME money model as a community/course: sold on
+/// the SELLER's gateway, and a PAID order grants a WorkshopRegistration (claim-
+/// winner only, in markBuyerPaymentPaid). Adds scheduling (`scheduledAt`,
+/// `durationMins`) and an optional `maxSeats` soft cap (checked best-effort at
+/// checkout — see startWorkshopCheckout). `joinUrl` (Zoom/Meet) is revealed ONLY to
+/// registrants in the account area, never on the public page. RLS: deny-anon.
+model Workshop {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slug           String
+  title          String
+  description    String?
+  pricePaise     Int            @map("price_paise")
+  compareAtPaise Int?           @map("compare_at_paise")
+  imageUrl       String?        @map("image_url")
+  joinUrl        String?        @map("join_url")
+  scheduledAt    DateTime?      @map("scheduled_at")
+  durationMins   Int?           @map("duration_mins")
+  maxSeats       Int?           @map("max_seats")
+  status         WorkshopStatus @default(DRAFT)
+  sortOrder      Int            @default(0) @map("sort_order")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  registrations WorkshopRegistration[]
+  buyerPayments BuyerPayment[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("workshops")
+}
+
+/// One buyer's registration in a workshop — granted on PAID (claim-winner only).
+/// `buyerPaymentId` is unique so a webhook replay can't double-grant. Attributed by
+/// profileId (logged in) OR buyerEmail (guest who later signs in with that email).
+model WorkshopRegistration {
+  id             String        @id @default(uuid()) @db.Uuid
+  tenantId       String        @map("tenant_id") @db.Uuid
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workshopId     String        @map("workshop_id") @db.Uuid
+  workshop       Workshop      @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  buyerProfileId String?       @map("buyer_profile_id") @db.Uuid
+  buyerEmail     String?       @map("buyer_email")
+  buyerPaymentId String?       @unique @map("buyer_payment_id") @db.Uuid
+  buyerPayment   BuyerPayment? @relation(fields: [buyerPaymentId], references: [id], onDelete: SetNull)
+  source         String        @default("paid")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@index([tenantId, workshopId])
+  @@index([workshopId, buyerProfileId])
+  @@map("workshop_registrations")
 }
 
 enum CommunityStatus {
