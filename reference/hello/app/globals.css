@@ -1,0 +1,570 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ════════════════════════════════════════════════════════════════════
+     PREMIUM MONOCHROME palette — warm cream surfaces, charcoal ink, ultra
+     light borders, near-invisible shadows. Black CTA buttons. Purple / cyan
+     / gold appear ONLY as restrained accents. (Linear + Stripe vibe.)
+     ════════════════════════════════════════════════════════════════════ */
+  :root {
+    /* LITE theme — clean white surfaces, blue primary CTA, pink accent.
+       Brand aliases repointed to blue/pink so existing utility usages follow. */
+    --brand-purple: 221 83% 53%;       /* repointed → blue #2563EB */
+    --brand-cyan:   199 89% 48%;       /* sky blue */
+    --brand-gold:   48 96% 53%;        /* #FACC15 */
+    --brand-violet: 330 81% 60%;       /* → pink #EC4899 */
+    --brand-indigo: 221 83% 53%;       /* → blue */
+    --brand-indigo-light: 214 100% 96%;
+    --brand-amber: 48 96% 53%;
+    --brand-emerald: 158 64% 40%;
+    --brand-rose: 330 81% 60%;         /* pink */
+    --brand-slate: 222 47% 11%;
+
+    /* shadcn tokens — Lite (white + blue + pink) */
+    --background: 0 0% 100%;           /* white */
+    --foreground: 222 47% 11%;         /* #0F172A slate */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;            /* #2563EB blue CTA */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214 48% 97%;          /* light blue-gray */
+    --secondary-foreground: 222 47% 15%;
+    --muted: 214 48% 97%;
+    --muted-foreground: 215 16% 47%;   /* slate-500 */
+    --accent: 327 73% 97%;             /* very light pink hover */
+    --accent-foreground: 222 47% 15%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 28% 91%;             /* light slate border */
+    --input: 215 28% 91%;
+    --ring: 221 83% 53%;               /* blue focus */
+    --radius: 0.875rem;                /* 14px cards */
+
+    --progress-fill: 221 83% 53%;      /* blue */
+    --progress-track: 214 30% 91%;
+
+    /* Sidebar — LIGHT in the Lite theme (faint tint vs white content) */
+    --sidebar-bg: 214 44% 98%;
+    --sidebar-fg: 215 16% 45%;
+    --sidebar-fg-strong: 222 47% 11%;  /* hover/active label text */
+    --sidebar-active-bg: 221 83% 53%;  /* blue */
+    --sidebar-active-fg: 0 0% 100%;
+    --sidebar-hover-bg: 214 48% 95%;
+    --sidebar-border: 215 28% 91%;
+    --metric-bg: 0 0% 100%;
+    --metric-shadow: 215 28% 91%;
+
+    /* Accent gradient — pink → blue */
+    --brand-gradient: linear-gradient(120deg, hsl(330 81% 60%), hsl(221 83% 53%));
+    --glow-indigo: 221 83% 53%;        /* var name kept; now blue */
+    /* Glass surface */
+    --glass-bg: 0 0% 100%;
+    --glass-alpha: 0.7;
+    /* Ambient glow tints — pink + blue, soft */
+    --aurora-1: 330 81% 62%;
+    --aurora-2: 221 83% 60%;
+    --aurora-3: 199 89% 60%;
+  }
+
+  .dark {
+    /* Modern Dark Glass — premium navy canvas with an indigo-forward CTA and
+       glowing glass surfaces. Unified with the dashboard navy so marketing,
+       auth, checkout and app all share one cohesive dark look. */
+    --background: 220 32% 7%;          /* deep obsidian-slate (cool, not pure black) */
+    --foreground: 210 22% 96%;         /* cool near-white */
+    --card: 222 47% 11%;               /* #0F172A elevated glass */
+    --card-foreground: 210 22% 96%;
+    --popover: 222 47% 12%;
+    --popover-foreground: 210 22% 96%;
+    --primary: 262 83% 62%;            /* indigo CTA */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 16%;
+    --secondary-foreground: 210 22% 96%;
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 66%;
+    --accent: 217 33% 18%;
+    --accent-foreground: 210 22% 96%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 34% 18%;             /* indigo-tinted hairline */
+    --input: 222 34% 18%;
+    --ring: 262 83% 66%;               /* indigo focus accent */
+
+    /* Sidebar — even darker than the canvas */
+    --sidebar-bg: 229 64% 4%;          /* #030615 */
+    --sidebar-fg: 215 20% 74%;
+    --sidebar-fg-strong: 0 0% 100%;
+    --sidebar-active-bg: 262 83% 60%;
+    --sidebar-hover-bg: 217 33% 16%;
+    --sidebar-border: 222 34% 16%;
+    --metric-bg: 222 47% 11%;
+
+    --progress-fill: 262 83% 64%;
+    --progress-track: 217 33% 20%;
+
+    /* Cyber-Premium accent — Electric Indigo → Cyan (dark only). Drives primary
+       buttons, active states, text-gradient, and the ambient aurora glows. */
+    --brand-gradient: linear-gradient(120deg, hsl(258 90% 66%), hsl(190 95% 55%));
+    --glow-indigo: 258 90% 66%;
+    --glass-bg: 222 47% 12%;
+    --glass-alpha: 0.55;
+    --aurora-1: 258 90% 62%;   /* electric indigo */
+    --aurora-2: 190 95% 55%;   /* cyan */
+    --aurora-3: 220 90% 60%;   /* blue link between them */
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+
+  /* App-shell height — 100vh fallback, then 100dvh (dynamic viewport) where
+     supported so the dashboard fills the VISIBLE area on mobile (the browser
+     toolbar no longer hides the bottom of the scroll area / sticky bars). */
+  .app-screen-h {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Seller dashboard premium navy palette — applied ONLY in dark mode. The
+     `.dash-surface` marker class sits on the DashboardShell root, so light mode
+     keeps the global cream theme and dark mode gets the navy SaaS look. This is
+     what lets the dashboard support BOTH light and dark. */
+  .dark .dash-surface {
+    --background: 229 64% 5%;          /* #050816 */
+    --card: 222 47% 11%;              /* #0F172A */
+    --popover: 222 47% 11%;
+    --secondary: 217 33% 17%;        /* #1E293B */
+    --muted: 217 33% 16%;
+    --accent: 217 33% 17%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --sidebar-bg: 229 84% 5%;        /* #020617 */
+    --sidebar-border: 217 33% 17%;
+    --sidebar-hover-bg: 217 33% 20%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1;
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Scrollbar — thin, unobtrusive, only visible on hover-capable surfaces */
+@layer utilities {
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-border; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/50; }
+  * { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+  /* Indigo-tinted text selection — small brand-consistent polish. */
+  ::selection { background: hsl(var(--ring) / 0.28); }
+
+  /* Tabular numerals — keeps currency/metric columns from jittering */
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  /* ── Sidebar links ──────────────────────────────────────────────── */
+  .sidebar-link {
+    @apply relative flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium
+           text-[hsl(var(--sidebar-fg))] transition-all duration-150
+           hover:bg-[hsl(var(--sidebar-hover-bg))] hover:text-white;
+  }
+  .sidebar-link.active {
+    @apply text-white ring-1 ring-inset ring-white/10;
+    background-image: linear-gradient(
+      90deg,
+      hsl(var(--sidebar-active-bg) / 0.22),
+      transparent 82%
+    );
+  }
+  /* A crisp accent rail on the active row's left edge — the small detail
+     that reads as "considered" rather than "templated". */
+  .sidebar-link.active::before {
+    content: "";
+    @apply absolute -left-1 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full;
+    background-image: var(--brand-gradient);
+  }
+
+  /* ── 3D icon chips ───────────────────────────────────────────────────
+     The premium "3D" menu-icon treatment: a raised, gradient-filled tile
+     with a soft inset top-highlight and a drop shadow for lift. Hover
+     brightens + rises; the active variants glow in the brand accent so the
+     chip — not the row fill — is the focal point. Used on both sidebars. */
+  .nav-icon {
+    @apply relative flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px]
+           ring-1 ring-inset ring-white/10 transition-all duration-200;
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.10),
+      rgb(255 255 255 / 0.02)
+    );
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.35),
+      inset 0 1px 0 rgb(255 255 255 / 0.10);
+  }
+  .sidebar-link:hover .nav-icon,
+  .group:hover .nav-icon {
+    @apply -translate-y-px ring-white/20;
+    background-image: linear-gradient(
+      to bottom,
+      rgb(255 255 255 / 0.18),
+      rgb(255 255 255 / 0.04)
+    );
+  }
+  .nav-icon-active-purple {
+    @apply text-white ring-white/25;
+    background-image: linear-gradient(160deg, hsl(262 83% 64%), hsl(248 84% 56%));
+    box-shadow: 0 6px 16px -4px hsl(262 83% 58% / 0.55),
+      inset 0 1px 0 rgb(255 255 255 / 0.30);
+  }
+  .nav-icon-active-amber {
+    @apply ring-amber-200/40;
+    color: #1c1917;
+    background-image: linear-gradient(160deg, hsl(45 96% 60%), hsl(38 95% 50%));
+    box-shadow: 0 6px 16px -4px rgb(245 158 11 / 0.55),
+      inset 0 1px 0 rgb(255 255 255 / 0.35);
+  }
+
+  /* Light-surface 3D chip — for feature/stat icons on cards + marketing.
+     Raised ivory tile with a bright top edge. */
+  .icon-tile-3d {
+    @apply relative flex items-center justify-center rounded-xl text-foreground
+           ring-1 ring-inset ring-border transition-all duration-200;
+    background-image: linear-gradient(
+      to bottom,
+      hsl(var(--card)),
+      hsl(var(--secondary))
+    );
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06),
+      0 6px 14px -6px rgb(0 0 0 / 0.12),
+      inset 0 1px 0 rgb(255 255 255 / 0.85);
+  }
+  .icon-tile-3d:hover {
+    @apply -translate-y-0.5;
+  }
+
+  /* ── Surfaces ───────────────────────────────────────────────────────
+     One elevation language for every dashboard panel: warm card surface,
+     hairline border, soft layered shadow. `card-surface-hover` adds the
+     lift used on interactive/clickable panels. */
+  .card-surface {
+    @apply rounded-2xl border border-border bg-card shadow-card
+           dark:bg-card/80 dark:backdrop-blur-xl dark:ring-1 dark:ring-inset dark:ring-white/[0.06];
+  }
+  .card-surface-hover {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-md;
+  }
+
+  /* Metric card — surface + hover lift. A faint primary-tinted border on hover
+     reads as "interactive" without a heavy fill, matching the card-surface lift. */
+  .metric-card {
+    @apply rounded-2xl border border-border bg-card p-5 shadow-card
+           transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-md;
+  }
+
+  /* ── Status badges — soft tint + inset ring (crisper than a border) ── */
+  .badge-success { @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/20; }
+  .badge-pending { @apply bg-amber-50  text-amber-700  ring-1 ring-inset ring-amber-600/20  dark:bg-amber-500/10  dark:text-amber-300  dark:ring-amber-400/20; }
+  .badge-failed  { @apply bg-rose-50   text-rose-700   ring-1 ring-inset ring-rose-600/20   dark:bg-rose-500/10   dark:text-rose-300   dark:ring-rose-400/20; }
+  .badge-info    { @apply bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-600/20 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-400/20; }
+  /* Matching dot colours, keyed off the same four groups */
+  .dot-success { @apply bg-emerald-500; }
+  .dot-pending { @apply bg-amber-500; }
+  .dot-failed  { @apply bg-rose-500; }
+  .dot-info    { @apply bg-indigo-500; }
+
+  /* ── Typography helpers — keep headings identical across every page ── */
+  .page-title    { @apply font-sora text-2xl font-semibold tracking-tight text-foreground; }
+  .page-subtitle { @apply text-sm text-muted-foreground; }
+  .section-title { @apply font-sora text-base font-semibold tracking-tight text-foreground; }
+  /* Uppercase micro-label used for table headers and stat captions */
+  .th-label { @apply text-[11px] font-semibold uppercase tracking-wider text-muted-foreground; }
+
+  /* Page entry animation — `both` so the element stays hidden through its
+     stagger delay instead of flashing the final state first. */
+  .animate-in-up {
+    animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes slideInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Button shine — a white strip that sweeps across on a loop ────────
+     Applied to filled button variants (see components/ui/button.tsx). The
+     element clips it and a skewed white gradient bar animates left→right with
+     a pause between sweeps. Honours prefers-reduced-motion. */
+  .btn-shine { position: relative; overflow: hidden; isolation: isolate; }
+  .btn-shine::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 45%;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.40) 50%,
+      transparent 100%
+    );
+    transform: translateX(-160%) skewX(-20deg);
+    animation: btn-shine 3.6s ease-in-out infinite;
+  }
+  @keyframes btn-shine {
+    0%        { transform: translateX(-160%) skewX(-20deg); }
+    35%, 100% { transform: translateX(360%)  skewX(-20deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-shine::after { animation: none; display: none; }
+  }
+
+  /* ── Premium "Elevated Ivory" vocabulary ─────────────────────────────
+     Frosted-glass surface for sticky chrome, dropdowns, and overlays. Sits
+     on a translucent tint of the card colour so it reads through whatever
+     scrolls beneath it. Dark-aware via the --glass-* tokens. */
+  .glass {
+    background-color: hsl(var(--glass-bg) / var(--glass-alpha));
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    /* A 1px top highlight gives the frosted chrome a crisp lit edge. */
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.06);
+    @apply border-border/70 ring-1 ring-inset ring-white/5;
+  }
+
+  /* Brand gradient helpers (indigo→violet, theme-aware). */
+  .bg-brand-gradient { background-image: var(--brand-gradient); }
+  .text-gradient {
+    background-image: var(--brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Soft gradient accent tiles — the "considered" icon chip used on metrics,
+     nav, empty states. Reuse instead of hand-rolling the gradient+ring. */
+  .tile-indigo  { @apply bg-gradient-to-br from-indigo-50  to-indigo-100/60  text-indigo-600  ring-1 ring-inset ring-indigo-200/70  dark:from-indigo-500/15  dark:to-indigo-500/5  dark:text-indigo-300  dark:ring-indigo-400/20; }
+  .tile-violet  { @apply bg-gradient-to-br from-violet-50  to-violet-100/60  text-violet-600  ring-1 ring-inset ring-violet-200/70  dark:from-violet-500/15  dark:to-violet-500/5  dark:text-violet-300  dark:ring-violet-400/20; }
+  .tile-emerald { @apply bg-gradient-to-br from-emerald-50 to-emerald-100/60 text-emerald-600 ring-1 ring-inset ring-emerald-200/70 dark:from-emerald-500/15 dark:to-emerald-500/5 dark:text-emerald-300 dark:ring-emerald-400/20; }
+  .tile-amber   { @apply bg-gradient-to-br from-amber-50   to-amber-100/60   text-amber-600   ring-1 ring-inset ring-amber-200/70   dark:from-amber-500/15   dark:to-amber-500/5   dark:text-amber-300   dark:ring-amber-400/20; }
+  .tile-rose    { @apply bg-gradient-to-br from-rose-50    to-rose-100/60    text-rose-600    ring-1 ring-inset ring-rose-200/70    dark:from-rose-500/15    dark:to-rose-500/5    dark:text-rose-300    dark:ring-rose-400/20; }
+  /* Monochrome tile — the default for the premium look: charcoal glyph on a
+     soft neutral fill with a hairline ring. Use for stat/metric icons. */
+  .tile-neutral { @apply bg-secondary text-foreground ring-1 ring-inset ring-border; }
+
+  /* Ambient aurora backdrop — fixed, soft brand glows behind a page. Used on
+     auth/marketing surfaces; subtle enough to sit under content. */
+  .aurora-bg { position: relative; isolation: isolate; }
+  .aurora-bg::before {
+    content: "";
+    @apply pointer-events-none absolute -z-10;
+    inset: -20%;
+    /* Four layered orbs — two bright anchors top-left/top-right, a soft mid
+       glow, and a wide low orb for depth. Tuned to read as a calm "studio
+       light" wash, not a loud banner. Colours come from the --aurora-* tokens
+       so light (pink/blue) and dark (indigo/cyan) both stay on-brand. */
+    background:
+      radial-gradient(44rem 34rem at 4% -10%, hsl(var(--aurora-1) / 0.34), transparent 60%),
+      radial-gradient(42rem 32rem at 100% 2%, hsl(var(--aurora-2) / 0.30), transparent 60%),
+      radial-gradient(30rem 24rem at 82% 64%, hsl(var(--aurora-3) / 0.18), transparent 64%),
+      radial-gradient(40rem 32rem at 38% 118%, hsl(var(--aurora-1) / 0.16), transparent 62%);
+    /* Slow drifting "moving lights" — premium living background. */
+    animation: auroraDrift 26s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aurora-bg::before { animation: none; }
+  }
+  /* Faint dot-grid overlay for engineered depth — a fine dotted matrix reads
+     cleaner under dense dashboards than ruled lines. Masked to fade out before
+     it reaches the content below, so it only textures the top band. */
+  .grid-overlay::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 -z-10;
+    background-image: radial-gradient(
+      hsl(var(--foreground) / 0.065) 1px,
+      transparent 1.5px
+    );
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% -4%, black 26%, transparent 72%);
+    mask-image: radial-gradient(ellipse at 50% -4%, black 26%, transparent 72%);
+  }
+}
+
+@layer utilities {
+  /* Staggered entry — children animate in sequence. Pair with .animate-in-up
+     and set --d via inline style, or use these presets. */
+  .delay-1 { animation-delay: 60ms; }
+  .delay-2 { animation-delay: 120ms; }
+  .delay-3 { animation-delay: 180ms; }
+  .delay-4 { animation-delay: 240ms; }
+  .delay-5 { animation-delay: 300ms; }
+  .delay-6 { animation-delay: 360ms; }
+
+  /* Hover-glow for premium CTAs / interactive tiles. */
+  .hover-glow { @apply transition-shadow duration-300 hover:shadow-glow; }
+
+  /* App canvas — a faint brand wash at the very top of the dashboard/admin
+     background. Adds depth behind the chrome without distracting from dense
+     content below. Subtle by design. */
+  .app-canvas { position: relative; }
+  .app-canvas::before {
+    content: "";
+    @apply pointer-events-none fixed inset-x-0 top-0 -z-10 h-80;
+    background:
+      radial-gradient(54rem 20rem at 50% -14%, hsl(var(--aurora-1) / 0.12), transparent 70%),
+      radial-gradient(42rem 18rem at 90% -10%, hsl(var(--aurora-2) / 0.10), transparent 72%),
+      radial-gradient(40rem 18rem at 8% -10%, hsl(var(--aurora-3) / 0.08), transparent 72%);
+  }
+}
+
+/* ============================================================================
+   Storefront themes (store + course pages). Tokens (--sf-*) are set inline on
+   the .sf-root wrapper by StorefrontShell from lib/storefront-theme.ts.
+   ========================================================================== */
+.sf-root {
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font-family: var(--sf-body);
+}
+.sf-display {
+  font-family: var(--sf-display);
+}
+.sf-muted {
+  color: var(--sf-muted);
+}
+.sf-band {
+  background: var(--sf-bg2);
+}
+.sf-card {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius);
+}
+.sf-card-glass {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  border-radius: var(--sf-radius);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.sf-border {
+  border-color: var(--sf-border);
+}
+.sf-accent {
+  color: var(--sf-accent);
+}
+.sf-accent-bg {
+  background: var(--sf-accent);
+  color: var(--sf-accent-fg);
+}
+.sf-btn {
+  background: var(--sf-accent);
+  color: var(--sf-accent-fg);
+  border-radius: 999px;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+.sf-btn:hover {
+  filter: brightness(1.08);
+}
+.sf-btn-outline {
+  border: 1px solid var(--sf-border);
+  color: var(--sf-fg);
+  border-radius: 999px;
+}
+
+/* Looping white-stripe shine on storefront buttons (Buy now, Enroll, Add to
+   cart, etc.) — mirrors the .btn-shine sweep used on dashboard buttons. */
+.sf-btn,
+.sf-btn-outline {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.sf-btn::after,
+.sf-btn-outline::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.42) 50%,
+    transparent 100%
+  );
+  transform: translateX(-160%) skewX(-20deg);
+  animation: btn-shine 3.6s ease-in-out infinite;
+}
+.sf-btn-outline::after {
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.22) 50%,
+    transparent 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .sf-btn::after,
+  .sf-btn-outline::after {
+    animation: none;
+    display: none;
+  }
+}
+.sf-chip {
+  border: 1px solid var(--sf-border);
+  color: var(--sf-fg);
+  border-radius: 999px;
+}
+.sf-chip-active {
+  background: var(--sf-accent);
+  color: var(--sf-accent-fg);
+  border-radius: 999px;
+}
+.sf-input {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-border);
+  color: var(--sf-fg);
+  border-radius: var(--sf-radius);
+}
+.sf-input::placeholder {
+  color: var(--sf-muted);
+}
+
+/* Storefront brand-logo marquee (infinite loop). */
+@keyframes sf-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.sf-marquee {
+  animation: sf-marquee 28s linear infinite;
+  width: max-content;
+}
+.sf-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Drifting aurora orbs — subtle "moving lights" behind app/marketing/auth
+   surfaces (see .aurora-bg). Transform-only so it's GPU-cheap. */
+@keyframes auroraDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(-1.5%, 1.6%, 0) scale(1.05); }
+  100% { transform: translate3d(2.6%, -2%, 0) scale(1.08); }
+}
