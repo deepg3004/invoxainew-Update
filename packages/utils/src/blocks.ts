@@ -75,7 +75,11 @@ export type Block =
       ctaLabel: string;
       ctaHref: string; // sanitized, or ""
       flip: boolean; // image on the right instead of the left
-    };
+    }
+  // Builder Part 6 — conversion blocks. All capped plain text; no URLs.
+  | { type: "priceTag"; offer: string; compareAt: string } // bold offer + struck retail + %off
+  | { type: "limitedTag"; text: string } // pulsing scarcity pill
+  | { type: "marquee"; items: string[] }; // infinite-scrolling strip
 
 // ── Theme model v2 (Premium Theme System) ────────────────────────────────────
 //
@@ -328,6 +332,11 @@ ${scope} .iv-cta::after{content:"";position:absolute;top:0;left:-60%;width:45%;h
 ${scope} .iv-reveal{opacity:0;transform:translateY(24px);
   transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1);}
 ${scope} .iv-reveal.in{opacity:1;transform:none;}
+${scope} .iv-pulse{animation:iv-pulse 1.8s ease-in-out infinite;}
+@keyframes iv-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+${scope} .iv-marquee{overflow:hidden;}
+${scope} .iv-marquee-track{display:flex;gap:48px;width:max-content;animation:iv-marq 22s linear infinite;}
+@keyframes iv-marq{to{transform:translateX(-50%)}}
 ${scope} .iv-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
 ${scope} .iv-bg-mesh::before,${scope} .iv-bg-mesh::after{content:"";position:absolute;width:60vmax;height:60vmax;
   border-radius:50%;filter:blur(90px);opacity:.4;will-change:transform;}
@@ -375,6 +384,7 @@ ${scope} .iv-bg-floats span:nth-child(3){width:160px;height:160px;left:75%;botto
   ${scope} .iv-cta::after{animation:none}${scope} .iv-cta:active{transform:none}
   ${scope} .iv-reveal{opacity:1;transform:none;transition:none}
   ${scope} .iv-bg,${scope} .iv-bg *{animation:none!important}
+  ${scope} .iv-pulse,${scope} .iv-marquee-track{animation:none!important}
 }`;
 }
 
@@ -636,6 +646,19 @@ function toBlock(raw: unknown): Block | null {
     case "logoStrip": {
       const logos = imageList(b.logos, 12);
       return logos.length > 0 ? { type: "logoStrip", logos } : null;
+    }
+    case "priceTag": {
+      const offer = str(b.offer, 40).trim();
+      if (!offer) return null;
+      return { type: "priceTag", offer, compareAt: str(b.compareAt, 40).trim() };
+    }
+    case "limitedTag": {
+      const text = str(b.text, 120).trim();
+      return text ? { type: "limitedTag", text } : null;
+    }
+    case "marquee": {
+      const items = strList(b.items, 12, 120);
+      return items.length > 0 ? { type: "marquee", items } : null;
     }
     case "imageText": {
       const imageUrl = safeUrl(b.imageUrl);

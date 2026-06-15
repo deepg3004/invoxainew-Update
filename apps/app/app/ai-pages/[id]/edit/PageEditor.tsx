@@ -40,6 +40,7 @@ type AddType =
   | "heading" | "text" | "image" | "button" | "video" | "divider"
   | "hero" | "pricingTable" | "featureGrid" | "stats"
   | "gallery" | "logoStrip" | "imageText"
+  | "priceTag" | "limitedTag" | "marquee"
   | "faq" | "countdown" | "columns" | "socialProof"
   | "product" | "course" | "storeGrid" | "leadForm" | "paymentButton";
 
@@ -92,6 +93,12 @@ function newBlock(type: AddType, e: EntityOptions): Block {
           { value: "99.9%", label: "Uptime" },
         ],
       };
+    case "priceTag":
+      return { type: "priceTag", offer: "₹999", compareAt: "₹1,999" };
+    case "limitedTag":
+      return { type: "limitedTag", text: "🔥 Only a few left" };
+    case "marquee":
+      return { type: "marquee", items: ["★ Trusted by 10,000+", "Free updates", "30-day guarantee"] };
     case "gallery":
       return { type: "gallery", images: [] };
     case "logoStrip":
@@ -749,6 +756,40 @@ function PreviewBlock({
         </div>
       );
     }
+    case "priceTag": {
+      const num = (s: string) => {
+        const n = Number(s.replace(/[^\d.]/g, ""));
+        return Number.isFinite(n) && n > 0 ? n : null;
+      };
+      const o = num(block.offer);
+      const c = num(block.compareAt);
+      const pct = o && c && c > o ? Math.round((1 - o / c) * 100) : 0;
+      return (
+        <div className="mt-4 flex flex-wrap items-baseline gap-2">
+          <span className="text-2xl font-bold" style={{ color: t.text }}>{block.offer || "—"}</span>
+          {block.compareAt ? <span className="text-base line-through" style={{ color: t.muted }}>{block.compareAt}</span> : null}
+          {pct > 0 ? <span className="rounded-full px-2 py-0.5 text-xs font-semibold text-white" style={{ background: t.accent }}>{pct}% OFF</span> : null}
+        </div>
+      );
+    }
+    case "limitedTag":
+      return (
+        <div className="mt-4">
+          <span className="iv-pulse inline-flex rounded-full px-3 py-1.5 text-sm font-semibold" style={{ background: `${t.accent}1A`, color: t.accent }}>
+            {block.text || "Limited"}
+          </span>
+        </div>
+      );
+    case "marquee":
+      return (
+        <div className="iv-marquee mt-4" style={{ borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`, padding: "8px 0" }}>
+          <div className="iv-marquee-track">
+            {[...block.items, ...block.items].map((it, i) => (
+              <span key={i} className="shrink-0 text-xs font-medium" style={{ color: t.muted }}>{it}</span>
+            ))}
+          </div>
+        </div>
+      );
   }
 }
 
@@ -1125,6 +1166,27 @@ export function PageEditor({
                   </div>
                 ) : null}
 
+                {b.type === "priceTag" ? (
+                  <div className="flex gap-2">
+                    <input value={b.offer} onChange={(e) => update(i, { offer: e.target.value })} placeholder="Offer price (e.g. ₹999)" className={inputCls} />
+                    <input value={b.compareAt} onChange={(e) => update(i, { compareAt: e.target.value })} placeholder="Compare-at (e.g. ₹1,999)" className={inputCls} />
+                  </div>
+                ) : null}
+
+                {b.type === "limitedTag" ? (
+                  <input value={b.text} onChange={(e) => update(i, { text: e.target.value })} placeholder="🔥 Only 8 left" className={inputCls} />
+                ) : null}
+
+                {b.type === "marquee" ? (
+                  <textarea
+                    value={b.items.join("\n")}
+                    onChange={(e) => update(i, { items: e.target.value.split("\n") })}
+                    placeholder="One item per line"
+                    rows={4}
+                    className={inputCls}
+                  />
+                ) : null}
+
                 {b.type === "faq" ? (
                   <FaqEditor items={b.items} onChange={(items) => update(i, { items })} />
                 ) : null}
@@ -1223,7 +1285,7 @@ export function PageEditor({
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {(["hero", "heading", "text", "image", "button", "video", "divider", "imageText", "gallery", "logoStrip", "pricingTable", "featureGrid", "stats", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
+            {(["hero", "heading", "text", "image", "button", "video", "divider", "imageText", "gallery", "logoStrip", "pricingTable", "priceTag", "limitedTag", "marquee", "featureGrid", "stats", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => add(t)}

@@ -522,6 +522,52 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
         </section>
       );
     }
+    case "priceTag": {
+      const num = (s: string) => {
+        const n = Number(s.replace(/[^\d.]/g, ""));
+        return Number.isFinite(n) && n > 0 ? n : null;
+      };
+      const o = num(block.offer);
+      const c = num(block.compareAt);
+      const pct = o && c && c > o ? Math.round((1 - o / c) * 100) : 0;
+      return (
+        <div className="mt-6 flex flex-wrap items-baseline gap-3">
+          <span className="text-4xl font-bold" style={{ color: t.text }}>{block.offer}</span>
+          {block.compareAt ? (
+            <span className="text-xl line-through" style={{ color: t.muted }}>{block.compareAt}</span>
+          ) : null}
+          {pct > 0 ? (
+            <span className="rounded-full px-2.5 py-1 text-sm font-semibold text-white" style={{ background: t.accent }}>
+              {pct}% OFF
+            </span>
+          ) : null}
+        </div>
+      );
+    }
+    case "limitedTag":
+      return (
+        <div className="mt-6">
+          <span
+            className="iv-pulse inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold"
+            style={{ background: `${t.accent}1A`, color: t.accent }}
+          >
+            {block.text}
+          </span>
+        </div>
+      );
+    case "marquee":
+      return (
+        <div
+          className="iv-marquee mt-8"
+          style={{ borderTop: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`, padding: "12px 0" }}
+        >
+          <div className="iv-marquee-track">
+            {[...block.items, ...block.items].map((it, i) => (
+              <span key={i} className="shrink-0 text-sm font-medium" style={{ color: t.muted }}>{it}</span>
+            ))}
+          </div>
+        </div>
+      );
   }
 }
 

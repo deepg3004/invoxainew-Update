@@ -240,6 +240,31 @@ describe("normalizeToBlocks — Part 5 media blocks", () => {
   });
 });
 
+// Builder Part 6 — conversion blocks (priceTag / limitedTag / marquee).
+describe("normalizeToBlocks — Part 6 conversion blocks", () => {
+  const norm = (block: unknown) => normalizeToBlocks({ blocks: [block] }).blocks;
+
+  it("accepts a priceTag (offer required, compareAt optional)", () => {
+    expect(norm({ type: "priceTag", offer: "₹999", compareAt: "₹1,999" })).toEqual([
+      { type: "priceTag", offer: "₹999", compareAt: "₹1,999" },
+    ]);
+    expect(norm({ type: "priceTag", offer: "Free" })).toEqual([{ type: "priceTag", offer: "Free", compareAt: "" }]);
+    expect(norm({ type: "priceTag", compareAt: "₹1,999" })).toEqual([]); // no offer → dropped
+  });
+
+  it("accepts a limitedTag and requires text", () => {
+    expect(norm({ type: "limitedTag", text: "Only 8 left" })).toEqual([{ type: "limitedTag", text: "Only 8 left" }]);
+    expect(norm({ type: "limitedTag", text: "   " })).toEqual([]);
+  });
+
+  it("accepts a marquee, drops empty items, caps at 12", () => {
+    expect(norm({ type: "marquee", items: ["A", "", "B"] })).toEqual([{ type: "marquee", items: ["A", "B"] }]);
+    const big = norm({ type: "marquee", items: Array.from({ length: 20 }, (_, i) => `i${i}`) });
+    expect((big[0] as { items: string[] }).items).toHaveLength(12);
+    expect(norm({ type: "marquee", items: [] })).toEqual([]);
+  });
+});
+
 describe("normalizeTheme / resolveTheme — theme v2", () => {
   it("ships the 24-theme premium library + legacy presets", () => {
     expect(THEME_LIBRARY).toHaveLength(24);
