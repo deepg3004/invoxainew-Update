@@ -7,6 +7,7 @@ import {
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../lib/resolve";
+import { StoreThemeShell } from "./StoreThemeShell";
 import { StoreUnavailable } from "./StoreUnavailable";
 import { TrackingScripts } from "./TrackingScripts";
 import { CartLink } from "./CartLink";
@@ -67,7 +68,7 @@ export default async function TenantHome() {
   const hasContent = products.length > 0 || courses.length > 0;
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-12">
+    <StoreThemeShell storeTheme={tenant.storeTheme} className="mx-auto max-w-4xl px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <header className="flex items-center justify-between border-b border-zinc-200 pb-5">
         <h1 className="text-2xl font-bold text-zinc-900">{name}</h1>
@@ -151,6 +152,6 @@ export default async function TenantHome() {
           ) : null}
         </>
       )}
-    </main>
+    </StoreThemeShell>
   );
 }

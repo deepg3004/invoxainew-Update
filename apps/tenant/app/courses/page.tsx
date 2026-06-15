@@ -11,6 +11,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 import { CartLink } from "../CartLink";
+import { StoreThemeShell } from "../StoreThemeShell";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export default async function CoursesListPage({
     : courses;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <StoreThemeShell storeTheme={tenant.storeTheme} className="mx-auto max-w-3xl px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">{tenant.name ?? tenant.username} · Courses</h1>
@@ -124,6 +125,6 @@ export default async function CoursesListPage({
           )}
         </>
       )}
-    </main>
+    </StoreThemeShell>
   );
 }

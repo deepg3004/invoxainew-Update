@@ -5,6 +5,7 @@ import { getTenantTracking, getPublishedLeadForm } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
+import { StoreThemeShell } from "../../StoreThemeShell";
 import { LeadFormView } from "./LeadFormView";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,7 @@ export default async function LeadFormPage({
   const tracking = await getTenantTracking(tenant.id);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
+    <StoreThemeShell storeTheme={tenant.storeTheme} className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <p className="text-sm font-medium uppercase tracking-wide text-muted">
         {tenant.name ?? tenant.username}
@@ -65,6 +66,6 @@ export default async function LeadFormPage({
           redirectUrl: form.redirectUrl,
         }}
       />
-    </main>
+    </StoreThemeShell>
   );
 }

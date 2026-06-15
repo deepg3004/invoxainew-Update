@@ -6,6 +6,7 @@ import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { CartLink } from "../CartLink";
+import { StoreThemeShell } from "../StoreThemeShell";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function CommunitiesPage() {
   const communities = await listPublishedCommunities(tenant.id);
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <StoreThemeShell storeTheme={tenant.storeTheme} className="mx-auto max-w-2xl px-6 py-12">
       <div className="flex items-center justify-between">
         <Link href="/store" className="text-sm text-cyan underline">
           ← {tenant.name ?? tenant.username}
@@ -55,6 +56,6 @@ export default async function CommunitiesPage() {
           ))}
         </ul>
       )}
-    </main>
+    </StoreThemeShell>
   );
 }

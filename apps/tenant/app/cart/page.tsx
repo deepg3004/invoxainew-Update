@@ -7,6 +7,7 @@ import {
   getTenantTracking,
   getOrderBumpProduct,
 } from "@invoxai/db";
+import { StoreThemeShell } from "../StoreThemeShell";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 import { CartView } from "./CartView";
@@ -39,7 +40,7 @@ export default async function CartPage() {
     : null;
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
+    <StoreThemeShell storeTheme={tenant.storeTheme} className="mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <Link href="/store" className="text-sm text-cyan underline">
         ← {tenant.name ?? tenant.username} store
@@ -54,6 +55,6 @@ export default async function CartPage() {
         }
         bump={bump}
       />
-    </main>
+    </StoreThemeShell>
   );
 }
