@@ -14,7 +14,11 @@ import {
   renameSection,
   deleteSection,
   getSellerGateway,
+  getLesson,
+  saveQuiz,
+  deleteQuiz,
   type CourseStatus,
+  type QuizQuestionInput,
 } from "@invoxai/db";
 import { rupeeStringToPaise } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
@@ -281,4 +285,62 @@ export async function deleteSectionAction(courseId: string, sectionId: string) {
   if (!course) return;
   await deleteSection(tenant.id, sectionId);
   revalidatePath(`/courses/${courseId}`);
+}
+
+// ── Per-lesson quiz authoring ─────────────────────────────────────────────────
+
+export type QuizSaveResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Create/replace a lesson's quiz. Verifies the course + lesson belong to this
+ * tenant (ownership), then validates every question before saving. Called directly
+ * from the QuizEditor client with a structured payload.
+ */
+export async function saveQuizAction(
+  courseId: string,
+  lessonId: string,
+  data: { passPercent: number; questions: QuizQuestionInput[] },
+): Promise<QuizSaveResult> {
+  const { tenant } = await requireTenant();
+  const course = await getCourseById(tenant.id, courseId);
+  if (!course) return { ok: false, error: "Course not found." };
+  const lesson = await getLesson(course.id, lessonId);
+  if (!lesson) return { ok: false, error: "Lesson not found." };
+
+  const passPercent = Number(data.passPercent);
+  if (!Number.isFinite(passPercent) || passPercent < 1 || passPercent > 100) {
+    return { ok: false, error: "Pass mark must be between 1 and 100." };
+  }
+  const questions = Array.isArray(data.questions) ? data.questions : [];
+  if (questions.length < 1 || questions.length > 20) {
+    return { ok: false, error: "A quiz needs 1–20 questions." };
+  }
+  const clean: QuizQuestionInput[] = [];
+  for (const q of questions) {
+    const prompt = String(q.prompt ?? "").trim().slice(0, 500);
+    if (!prompt) return { ok: false, error: "Every question needs a prompt." };
+    const options = (Array.isArray(q.options) ? q.options : [])
+      .map((o) => String(o ?? "").trim().slice(0, 200))
+      .filter(Boolean);
+    if (options.length < 2 || options.length > 6) {
+      return { ok: false, error: `"${prompt.slice(0, 30)}…" needs 2–6 answer options.` };
+    }
+    const correctIndex = Number(q.correctIndex);
+    if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= options.length) {
+      return { ok: false, error: `Pick the correct answer for "${prompt.slice(0, 30)}…".` };
+    }
+    clean.push({ prompt, options, correctIndex });
+  }
+
+  await saveQuiz({ tenantId: tenant.id, lessonId, passPercent: Math.round(passPercent), questions: clean });
+  revalidatePath(`/courses/${courseId}/lessons/${lessonId}`);
+  return { ok: true };
+}
+
+export async function deleteQuizAction(courseId: string, lessonId: string): Promise<void> {
+  const { tenant } = await requireTenant();
+  const course = await getCourseById(tenant.id, courseId);
+  if (!course) return;
+  await deleteQuiz(tenant.id, lessonId);
+  revalidatePath(`/courses/${courseId}/lessons/${lessonId}`);
 }

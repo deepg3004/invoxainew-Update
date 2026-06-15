@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import {
   getPublishedCourseMeta,
   getEnrolment,
+  getLesson,
   toggleLessonProgress,
   issueCertificateIfEligible,
+  gradeAndRecordAttempt,
 } from "@invoxai/db";
 import { getSessionUser } from "../../../../lib/auth";
 import { resolveTenantByHost } from "../../../../lib/resolve";
@@ -64,4 +66,51 @@ export async function toggleLessonAction(slug: string, lessonId: string): Promis
   }
 
   revalidatePath(`/account/learn/${slug}`);
+}
+
+export type QuizResult =
+  | { ok: true; correct: number; total: number; scorePercent: number; passed: boolean }
+  | { ok: false };
+
+/**
+ * Grade a learner's quiz submission. Re-verifies tenant + session + enrolment, and
+ * that the lesson belongs to the enrolled course, then grades SERVER-SIDE (the
+ * client never sees the answer key) and records the attempt.
+ */
+export async function submitQuizAction(
+  slug: string,
+  lessonId: string,
+  answers: number[],
+): Promise<QuizResult> {
+  const host = (await headers()).get("host");
+  const tenant = await resolveTenantByHost(host);
+  if (!tenant) return { ok: false };
+
+  const user = await getSessionUser();
+  if (!user) return { ok: false };
+
+  const course = await getPublishedCourseMeta(tenant.id, slug);
+  if (!course) return { ok: false };
+
+  const enrolment = await getEnrolment({
+    tenantId: tenant.id,
+    courseId: course.id,
+    profileId: user.id,
+    email: user.email ?? null,
+  });
+  if (!enrolment) return { ok: false };
+
+  // The lesson must belong to this enrolled course (getLesson scopes by course).
+  const lesson = await getLesson(course.id, lessonId);
+  if (!lesson) return { ok: false };
+
+  const result = await gradeAndRecordAttempt({
+    tenantId: tenant.id,
+    lessonId,
+    profileId: user.id,
+    answers: Array.isArray(answers) ? answers.map((a) => Number(a)) : [],
+  });
+  if (!result) return { ok: false };
+  revalidatePath(`/account/learn/${slug}`);
+  return { ok: true, ...result };
 }

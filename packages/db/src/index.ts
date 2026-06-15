@@ -546,6 +546,17 @@ export {
   deleteFileAsset,
   tenantStorageBytes,
 } from "./media";
+export {
+  gradeQuiz,
+  saveQuiz,
+  deleteQuiz,
+  getQuizForEditing,
+  getQuizForLearner,
+  gradeAndRecordAttempt,
+  getBestQuizAttempt,
+  type QuizQuestionInput,
+  type LearnerQuiz,
+} from "./quiz";
 export type { WorkshopStatus } from "@prisma/client";
 export {
   BROADCAST_SEGMENTS,

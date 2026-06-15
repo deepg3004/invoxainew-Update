@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { GlassCard, PageHeader } from "@invoxai/ui";
-import { getCourseById, getLesson, listCourseSections } from "@invoxai/db";
+import { getCourseById, getLesson, listCourseSections, getQuizForEditing } from "@invoxai/db";
 import { requireTenant } from "../../../../../lib/tenant";
 import { LessonForm } from "../../../LessonForm";
+import { QuizEditor } from "../../../QuizEditor";
 import { updateLessonAction } from "../../../actions";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +17,10 @@ export default async function EditLessonPage({
   const { id, lessonId } = await params;
   const course = await getCourseById(tenant.id, id);
   if (!course) notFound();
-  const [lesson, sections] = await Promise.all([
+  const [lesson, sections, quiz] = await Promise.all([
     getLesson(course.id, lessonId),
     listCourseSections(course.id),
+    getQuizForEditing(lessonId),
   ]);
   if (!lesson) notFound();
 
@@ -46,6 +48,28 @@ export default async function EditLessonPage({
             isPreview: lesson.isPreview,
             sortOrder: lesson.sortOrder,
           }}
+        />
+      </GlassCard>
+
+      <GlassCard className="mt-6" title="Quiz (optional)">
+        <p className="mb-4 text-sm text-muted">
+          Add a short multiple-choice quiz learners can take on this lesson as a self-check.
+        </p>
+        <QuizEditor
+          courseId={course.id}
+          lessonId={lesson.id}
+          initial={
+            quiz
+              ? {
+                  passPercent: quiz.passPercent,
+                  questions: quiz.questions.map((q) => ({
+                    prompt: q.prompt,
+                    options: q.options,
+                    correctIndex: q.correctIndex,
+                  })),
+                }
+              : null
+          }
         />
       </GlassCard>
     </div>

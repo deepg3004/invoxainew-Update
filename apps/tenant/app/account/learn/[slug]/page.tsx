@@ -9,11 +9,14 @@ import {
   groupLessonsBySection,
   getBuyerReviewForCourse,
   getCourseProgress,
+  getQuizForLearner,
+  getBestQuizAttempt,
 } from "@invoxai/db";
 import { toEmbedUrl } from "@invoxai/utils/blocks";
 import { getSessionUser } from "../../../../lib/auth";
 import { resolveTenantByHost } from "../../../../lib/resolve";
 import { ReviewForm } from "../../orders/[id]/ReviewForm";
+import { QuizPanel } from "./QuizPanel";
 import { toggleLessonAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -90,6 +93,10 @@ export default async function LearnPage({
   const activeIdx = ordered.findIndex((l) => l.id === activeId);
   const active = activeIdx >= 0 ? ordered[activeIdx] : null;
   const next = active && activeIdx < ordered.length - 1 ? ordered[activeIdx + 1] : null;
+
+  // Optional self-check quiz for the active lesson (answers stripped server-side).
+  const activeQuiz = active ? await getQuizForLearner(active.id) : null;
+  const activeQuizBest = active && activeQuiz ? await getBestQuizAttempt(active.id, user.id) : null;
 
   const reviewBlock = (
     <div className="rounded-xl border border-zinc-200 bg-surface p-5">
@@ -248,6 +255,15 @@ export default async function LearnPage({
                   <span className="text-sm text-muted">Last lesson 🎉</span>
                 )}
               </div>
+
+              {activeQuiz ? (
+                <QuizPanel
+                  slug={slug}
+                  lessonId={active.id}
+                  quiz={activeQuiz}
+                  best={activeQuizBest}
+                />
+              ) : null}
             </article>
           ) : null}
 

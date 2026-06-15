@@ -512,9 +512,60 @@ model Lesson {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   progress  LessonProgress[]
+  quiz      Quiz?
 
   @@index([courseId])
   @@map("lessons")
+}
+
+/// An optional multiple-choice quiz attached to a lesson (one per lesson). Buyers
+/// take it on the learn page as a self-check; `passPercent` is the bar. NOT a money
+/// path. tenantId is denormalised for scoped seller reads (cascade cleanup comes
+/// via the lesson FK). RLS: deny-anon.
+model Quiz {
+  id          String         @id @default(uuid()) @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  lessonId    String         @unique @map("lesson_id") @db.Uuid
+  lesson      Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  passPercent Int            @default(70) @map("pass_percent")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+
+  @@index([tenantId])
+  @@map("quizzes")
+}
+
+/// One question of a quiz. `options` are the choices (2–6); `correctIndex` points at
+/// the right one — NEVER sent to the buyer (the learner read strips it). Ordered by
+/// sortOrder.
+model QuizQuestion {
+  id           String   @id @default(uuid()) @db.Uuid
+  quizId       String   @map("quiz_id") @db.Uuid
+  quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  prompt       String
+  options      String[]
+  correctIndex Int      @map("correct_index")
+  sortOrder    Int      @default(0) @map("sort_order")
+
+  @@index([quizId, sortOrder])
+  @@map("quiz_questions")
+}
+
+/// A buyer's graded attempt at a quiz (history; the best/last drives the UI badge).
+model QuizAttempt {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  quizId         String   @map("quiz_id") @db.Uuid
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  buyerProfileId String   @map("buyer_profile_id") @db.Uuid
+  scorePercent   Int      @map("score_percent")
+  passed         Boolean
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([quizId, buyerProfileId])
+  @@map("quiz_attempts")
 }
 
 /// A storefront collection/category grouping products (Shopify-style). Optional —
