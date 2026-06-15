@@ -133,7 +133,8 @@ export function getLesson(courseId: string, lessonId: string) {
   return prisma.lesson.findFirst({ where: { id: lessonId, courseId } });
 }
 
-export function createLesson(input: {
+export async function createLesson(input: {
+  tenantId: string;
   courseId: string;
   title: string;
   content?: string | null;
@@ -142,7 +143,15 @@ export function createLesson(input: {
   sectionId?: string | null;
   isPreview?: boolean;
   sortOrder?: number;
-}) {
+}): Promise<{ id: string } | null> {
+  // Self-enforce parent ownership (F3): only create the lesson when the course
+  // belongs to this tenant, so a forged courseId can't graft a lesson onto
+  // another tenant's course even if an action precheck is ever missed.
+  const course = await prisma.course.findFirst({
+    where: { id: input.courseId, tenantId: input.tenantId },
+    select: { id: true },
+  });
+  if (!course) return null;
   return prisma.lesson.create({
     data: {
       courseId: input.courseId,
@@ -204,9 +213,19 @@ export function listCourseSections(courseId: string) {
   });
 }
 
-/** Create a module/section. Caller verifies course ownership first; tenantId is
- *  stamped + the courseId is trusted from that verified course. */
-export async function createSection(tenantId: string, courseId: string, title: string) {
+/** Create a module/section. Self-enforces parent ownership (F3): the section is
+ *  only created when the course belongs to this tenant, so a forged courseId
+ *  can't attach a section to another tenant's course. */
+export async function createSection(
+  tenantId: string,
+  courseId: string,
+  title: string,
+): Promise<{ id: string } | null> {
+  const course = await prisma.course.findFirst({
+    where: { id: courseId, tenantId },
+    select: { id: true },
+  });
+  if (!course) return null;
   const count = await prisma.courseSection.count({ where: { courseId } });
   return prisma.courseSection.create({
     data: { tenantId, courseId, title, sortOrder: count },

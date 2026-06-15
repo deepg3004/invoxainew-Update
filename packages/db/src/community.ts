@@ -112,11 +112,20 @@ export function listCommunityPosts(communityId: string) {
   });
 }
 
-export function createCommunityPost(input: {
+export async function createCommunityPost(input: {
+  tenantId: string;
   communityId: string;
   title: string;
   body?: string | null;
-}) {
+}): Promise<{ id: string } | null> {
+  // Self-enforce parent ownership (F3): only post into a community that belongs
+  // to this tenant, so a forged communityId can't drop a post under another
+  // tenant's community even if an action precheck is ever missed.
+  const community = await prisma.community.findFirst({
+    where: { id: input.communityId, tenantId: input.tenantId },
+    select: { id: true },
+  });
+  if (!community) return null;
   return prisma.communityPost.create({
     data: { communityId: input.communityId, title: input.title, body: input.body ?? null },
     select: { id: true },

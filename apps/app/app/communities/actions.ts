@@ -160,7 +160,8 @@ export async function createPostAction(
   if (!title) return { error: "Post title is required." };
   const body = String(form.get("body") ?? "").trim() || null;
 
-  await createCommunityPost({ communityId, title, body });
+  const post = await createCommunityPost({ tenantId: tenant.id, communityId, title, body });
+  if (!post) return { error: "Community not found." };
   revalidatePath(`/communities/${communityId}`);
   redirect(`/communities/${communityId}`);
 }

@@ -219,7 +219,8 @@ export async function createLessonAction(
   const parsed = parseLessonFields(form);
   if (!parsed.ok) return { error: parsed.message };
 
-  await createLesson({ courseId, ...parsed.value });
+  const lesson = await createLesson({ tenantId: tenant.id, courseId, ...parsed.value });
+  if (!lesson) return { error: "Course not found." };
   revalidatePath(`/courses/${courseId}`);
   redirect(`/courses/${courseId}`);
 }
