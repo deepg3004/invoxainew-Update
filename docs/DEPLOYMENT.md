@@ -57,6 +57,26 @@ pnpm build
 systemctl restart invox-web invox-app invox-admin invox-tenant
 ```
 
+⚠️ **Verify the restart actually replaced the processes.** A stale `next-server`
+can keep holding a port (if it was ever started outside the systemd cgroup), so
+`systemctl restart` reports "active" while the OLD build keeps serving and new
+routes 404. Always confirm fresh PIDs + that a new route serves:
+
+```bash
+ps -eo pid,etimes,args | grep next-server | grep -v grep   # etimes should be small (seconds)
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3003/workshops -H 'Host: <a-tenant>.invoxai.io'  # expect 200, not 404
+```
+
+If a new route 404s but exists in `apps/tenant/.next/server/app/<route>/`, the old
+process is still bound. Hard-reset:
+
+```bash
+systemctl stop invox-web invox-app invox-admin invox-tenant
+pkill -9 -f next-server ; pkill -9 -f 'next start'          # kill orphans holding the ports
+ss -ltnp | grep -E ':300[0-3]' || echo "ports free"
+systemctl start invox-web invox-app invox-admin invox-tenant
+```
+
 ## 4. Environment keys (set in `.env`, then rebuild/restart)
 
 Most features work after the migrations. These keys unlock the email + scheduled
