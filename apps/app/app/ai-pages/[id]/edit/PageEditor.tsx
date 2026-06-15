@@ -12,6 +12,8 @@ import {
   THEME_PRESETS,
   THEME_LIBRARY,
   resolveTheme,
+  themeCss,
+  themeFontHref,
   safeUrl,
   toEmbedUrl,
 } from "@invoxai/utils/blocks";
@@ -528,7 +530,7 @@ function PreviewBlock({
     case "button":
       return (
         <div className="mt-4">
-          <span className="inline-block rounded-lg px-5 py-2.5 text-sm font-medium text-white" style={{ background: t.accent }}>
+          <span className="iv-cta inline-block px-5 py-2.5 text-sm font-medium text-white">
             {block.label || "Button"}
           </span>
         </div>
@@ -626,7 +628,7 @@ function PreviewBlock({
     case "paymentButton":
       return (
         <div className="mt-4">
-          <span className="inline-block rounded-lg px-5 py-2.5 text-sm font-medium text-white" style={{ background: t.accent }}>
+          <span className="iv-cta inline-block px-5 py-2.5 text-sm font-medium text-white">
             {block.label || "Buy now"}
           </span>
           <span className="ml-2 text-xs" style={{ color: t.muted }}>
@@ -1300,7 +1302,11 @@ export function PageEditor({
                   </button>
                 </div>
               </div>
-              <div className="max-h-[70vh] overflow-y-auto px-6 py-8" style={{ background: previewTokens.bg }}>
+              {/* Full theme runtime for the preview — fonts + gradient CTAs + shimmer,
+                  scoped to .iv-prev so it can't touch the editor UI. */}
+              <link rel="stylesheet" href={themeFontHref(previewTokens)} />
+              <style dangerouslySetInnerHTML={{ __html: themeCss(previewTokens, ".iv-prev") }} />
+              <div className="iv-prev max-h-[70vh] overflow-y-auto px-6 py-8" style={{ background: previewTokens.bg }}>
                 <div
                   className={`mx-auto w-full transition-[max-width] duration-200 ${
                     device === "mobile" ? "max-w-[390px]" : ""

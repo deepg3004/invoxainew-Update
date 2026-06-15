@@ -290,6 +290,94 @@ export function ctaGradient(t: ThemeTokens): string {
   return `linear-gradient(135deg, ${t.primary}, ${t.primary2})`;
 }
 
+/** The Google-Fonts stylesheet href for a theme's heading + body fonts. */
+export function themeFontHref(t: ThemeTokens): string {
+  const fonts = Array.from(new Set([t.fontHeading, t.fontBody]));
+  return `https://fonts.googleapis.com/css2?${fonts
+    .map((f) => `family=${f.replace(/ /g, "+")}:wght@400;500;600;700;800`)
+    .join("&")}&display=swap`;
+}
+
+/**
+ * The scoped CSS for a resolved theme — CSS variables + motion (gradient-CTA
+ * shimmer, scroll-reveal, animated backgrounds). Shared by the public renderer
+ * (ThemeStyle) and the editor preview so a theme looks identical in both. All values
+ * come from resolveTheme (validated), so the inlined CSS is injection-safe. `scope`
+ * defaults to `.iv-page`; the editor passes its own container so the page UI is
+ * unaffected.
+ */
+export function themeCss(t: ThemeTokens, scope = ".iv-page"): string {
+  return `
+${scope}{
+  --iv-primary:${t.primary};--iv-primary2:${t.primary2};--iv-accent:${t.accent};
+  --iv-surface:${t.surface};--iv-text:${t.text};--iv-muted:${t.muted};--iv-border:${t.border};
+  --iv-radius:${t.radius}px;--iv-cta:${ctaGradient(t)};--iv-shimmer:${t.ctaShimmer};
+  --iv-fh:'${t.fontHeading}',system-ui,-apple-system,sans-serif;
+  --iv-fb:'${t.fontBody}',system-ui,-apple-system,sans-serif;
+  font-family:var(--iv-fb);color:var(--iv-text);
+}
+${scope} h1,${scope} h2,${scope} h3,${scope} .iv-h{font-family:var(--iv-fh);}
+${scope} .iv-cta{position:relative;overflow:hidden;background:var(--iv-cta);color:#fff;
+  border-radius:var(--iv-radius);transition:transform .12s ease,filter .2s ease;}
+${scope} .iv-cta:hover{filter:brightness(1.04);}
+${scope} .iv-cta:active{transform:scale(.97);}
+${scope} .iv-cta::after{content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;
+  background:linear-gradient(120deg,transparent,var(--iv-shimmer),transparent);
+  transform:skewX(-20deg);animation:iv-shimmer 2.6s ease-in-out infinite;}
+@keyframes iv-shimmer{0%{left:-60%}55%{left:130%}100%{left:130%}}
+${scope} .iv-reveal{opacity:0;transform:translateY(24px);
+  transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1);}
+${scope} .iv-reveal.in{opacity:1;transform:none;}
+${scope} .iv-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+${scope} .iv-bg-mesh::before,${scope} .iv-bg-mesh::after{content:"";position:absolute;width:60vmax;height:60vmax;
+  border-radius:50%;filter:blur(90px);opacity:.4;will-change:transform;}
+${scope} .iv-bg-mesh::before{background:var(--iv-primary);top:-12%;left:-10%;animation:iv-d1 20s ease-in-out infinite;}
+${scope} .iv-bg-mesh::after{background:var(--iv-primary2);bottom:-12%;right:-10%;animation:iv-d2 26s ease-in-out infinite;}
+@keyframes iv-d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(16vw,8vh) scale(1.12)}}
+@keyframes iv-d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-12vw,-10vh) scale(1.08)}}
+${scope} .iv-bg-aurora{background:
+  radial-gradient(45% 60% at 20% 20%, color-mix(in srgb,var(--iv-primary) 40%,transparent), transparent 60%),
+  radial-gradient(45% 60% at 80% 30%, color-mix(in srgb,var(--iv-primary2) 40%,transparent), transparent 60%);
+  background-size:200% 200%;animation:iv-aurora 18s ease infinite;}
+@keyframes iv-aurora{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+${scope} .iv-bg-stars::before{content:"";position:absolute;inset:0;
+  background-image:radial-gradient(1.5px 1.5px at 20% 30%,var(--iv-accent),transparent),
+    radial-gradient(1px 1px at 60% 70%,#fff,transparent),
+    radial-gradient(1.5px 1.5px at 80% 20%,#fff,transparent),
+    radial-gradient(1px 1px at 35% 85%,var(--iv-accent),transparent);
+  background-size:300px 300px;animation:iv-tw 5s ease-in-out infinite;}
+@keyframes iv-tw{0%,100%{opacity:.5}50%{opacity:1}}
+${scope} .iv-bg-grid{background-image:linear-gradient(var(--iv-border) 1px,transparent 1px),
+  linear-gradient(90deg,var(--iv-border) 1px,transparent 1px);background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,#000 35%,transparent 75%);
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,#000 35%,transparent 75%);
+  animation:iv-grid 30s linear infinite;}
+@keyframes iv-grid{from{background-position:0 0}to{background-position:44px 44px}}
+${scope} .iv-bg-scan::after{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(transparent 0 2px,rgba(255,255,255,.035) 2px 4px);
+  animation:iv-scan 9s linear infinite;}
+@keyframes iv-scan{from{background-position:0 0}to{background-position:0 120px}}
+${scope} .iv-bg-stripes{background-image:repeating-linear-gradient(45deg,
+  color-mix(in srgb,var(--iv-primary) 8%,transparent) 0 24px,transparent 24px 48px);
+  background-size:200% 200%;animation:iv-stripe 6s linear infinite;}
+@keyframes iv-stripe{to{background-position:96px 96px}}
+${scope} .iv-bg-blob::before{content:"";position:absolute;width:55vmax;height:55vmax;left:50%;top:40%;
+  transform:translate(-50%,-50%);background:var(--iv-primary);opacity:.14;filter:blur(40px);
+  border-radius:42% 58% 70% 30%/45% 45% 55% 55%;animation:iv-morph 16s ease-in-out infinite;}
+@keyframes iv-morph{0%,100%{border-radius:42% 58% 70% 30%/45% 45% 55% 55%;transform:translate(-50%,-50%) rotate(0)}
+  50%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%;transform:translate(-50%,-50%) rotate(180deg)}}
+${scope} .iv-bg-floats span{position:absolute;display:block;border-radius:50%;opacity:.16;will-change:transform;}
+${scope} .iv-bg-floats span:nth-child(1){width:120px;height:120px;left:10%;bottom:-140px;background:var(--iv-primary);animation:iv-rise 18s linear infinite;}
+${scope} .iv-bg-floats span:nth-child(2){width:80px;height:80px;left:45%;bottom:-100px;background:var(--iv-accent);animation:iv-rise 24s linear infinite 3s;}
+${scope} .iv-bg-floats span:nth-child(3){width:160px;height:160px;left:75%;bottom:-180px;background:var(--iv-primary2);animation:iv-rise 20s linear infinite 6s;}
+@keyframes iv-rise{to{transform:translateY(-120vh) rotate(180deg)}}
+@media (prefers-reduced-motion:reduce){
+  ${scope} .iv-cta::after{animation:none}${scope} .iv-cta:active{transform:none}
+  ${scope} .iv-reveal{opacity:1;transform:none;transition:none}
+  ${scope} .iv-bg,${scope} .iv-bg *{animation:none!important}
+}`;
+}
+
 const MAX_BLOCKS = 100;
 
 function str(v: unknown, max = 4000): string {
