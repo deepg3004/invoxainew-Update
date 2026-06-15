@@ -108,6 +108,8 @@ model Tenant {
   upsells      Upsell[]
   // Growth G1.3: email/DM drip sequences.
   emailSequences EmailSequence[]
+  // Phase 14: one-off email broadcasts to contact segments.
+  broadcasts     Broadcast[]
   // Growth G1.6: A/B tests on payment pages.
   pageExperiments PageExperiment[]
   // Ops: buyer support tickets.
@@ -1813,6 +1815,58 @@ model SequenceEnrollment {
   @@index([status, nextRunAt])
   @@index([tenantId])
   @@map("sequence_enrollments")
+}
+
+/// Phase 14 — email Broadcasts (one-off blast to a segment of contacts). A
+/// broadcast is composed as a DRAFT, then "sent" → it SNAPSHOTS its recipient list
+/// (one BroadcastRecipient row per contact) and goes QUEUED. A scheduled worker
+/// (/api/cron/broadcasts) sweeps PENDING recipients, claims each atomically (so two
+/// runs can't double-send), sends via the env-gated email channel, and finalises the
+/// broadcast to SENT. Contacts are derived (no contacts table), so the snapshot is
+/// the durable record of who a given broadcast went to. RLS: deny-anon.
+model Broadcast {
+  id             String               @id @default(uuid()) @db.Uuid
+  tenantId       String               @map("tenant_id") @db.Uuid
+  tenant         Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String // internal label for the seller's list
+  subject        String
+  body           String // plain text (line breaks preserved); rendered to safe HTML
+  segment        String               @default("ALL") // ALL | CUSTOMERS | LEADS
+  status         String               @default("DRAFT") // DRAFT | QUEUED | SENDING | SENT | CANCELLED
+  recipientCount Int                  @default(0) @map("recipient_count")
+  sentCount      Int                  @default(0) @map("sent_count")
+  failedCount    Int                  @default(0) @map("failed_count")
+  queuedAt       DateTime?            @map("queued_at")
+  sentAt         DateTime?            @map("sent_at")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  recipients BroadcastRecipient[]
+
+  @@index([tenantId, createdAt])
+  @@index([status])
+  @@map("broadcasts")
+}
+
+/// One recipient of a broadcast — a frozen snapshot of a contact at send time.
+/// Unique per (broadcast, email) so re-queuing/concurrent sweeps can't duplicate.
+/// status: PENDING → SENDING (claimed) → SENT|FAILED (SKIPPED when env-gated off).
+model BroadcastRecipient {
+  id                String    @id @default(uuid()) @db.Uuid
+  broadcastId       String    @map("broadcast_id") @db.Uuid
+  broadcast         Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  email             String // lowercased recipient
+  name              String?
+  status            String    @default("PENDING") // PENDING | SENDING | SENT | FAILED | SKIPPED
+  providerMessageId String?   @map("provider_message_id")
+  error             String?
+  sentAt            DateTime? @map("sent_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  @@unique([broadcastId, email])
+  @@index([status])
+  @@index([broadcastId])
+  @@map("broadcast_recipients")
 }
 
 enum ExperimentStatus {

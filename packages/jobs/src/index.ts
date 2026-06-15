@@ -6,5 +6,6 @@ export { processSaleNotification, type SaleNotificationPayload } from "./process
 export { sweepAbandonedRecovery } from "./recovery";
 export { buildResumeUrl, isInRecoveryWindow } from "./recovery-logic";
 export { sweepSequences } from "./sequences";
+export { sweepBroadcasts, broadcastEmailHtml } from "./broadcasts";
 export { planAdvance, type AdvancePlan } from "./sequences-logic";
 export { NOTIFICATIONS_QUEUE } from "./connection";

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { DashboardShell, type NavGroup } from "@invoxai/ui";
-import { LayoutDashboard, Store, Users, BarChart3, Layers, Star, Tag, Settings, Mail, ShieldAlert, Siren, Activity, LayoutTemplate } from "lucide-react";
+import { LayoutDashboard, Store, Users, BarChart3, Layers, Star, Tag, Settings, Mail, ShieldAlert, Siren, Activity, LayoutTemplate, Send } from "lucide-react";
 
 const ADMIN_NAV: NavGroup[] = [
   { heading: "Overview", items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }] },
@@ -19,6 +19,10 @@ const ADMIN_NAV: NavGroup[] = [
   {
     heading: "Revenue",
     items: [{ href: "/reports", label: "Reports", icon: BarChart3 }],
+  },
+  {
+    heading: "Growth",
+    items: [{ href: "/broadcasts", label: "Broadcasts", icon: Send }],
   },
   {
     heading: "Config",
