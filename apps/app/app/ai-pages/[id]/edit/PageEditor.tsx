@@ -11,12 +11,16 @@ import {
   type BuilderSeo,
   THEME_PRESETS,
   THEME_LIBRARY,
+  THEME_FONTS,
   resolveTheme,
   themeCss,
   themeFontHref,
   safeUrl,
   toEmbedUrl,
 } from "@invoxai/utils/blocks";
+
+const IV_BG_OPTIONS = ["plain", "mesh", "aurora", "stars", "grid", "scan", "floats", "stripes", "blob"] as const;
+const hex6 = (v: string) => (/^#[0-9a-fA-F]{6}$/.test(v) ? v : "#7c3aed");
 import { saveAiPageAction } from "../../actions";
 import { uploadTenantImageAction } from "../../../upload-actions";
 
@@ -949,6 +953,113 @@ export function PageEditor({
               />
               <span className="font-mono text-xs text-muted">{theme.accent}</span>
             </label>
+
+            {/* Per-page token overrides — tweak any of the base theme's tokens. */}
+            <details className="mt-3">
+              <summary className="cursor-pointer text-sm font-medium text-zinc-900">Customize colours &amp; fonts</summary>
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      ["primary", "Primary"],
+                      ["primary2", "Gradient end"],
+                      ["text", "Text"],
+                      ["surface", "Card"],
+                      ["muted", "Muted"],
+                    ] as const
+                  ).map(([k, label]) => (
+                    <label key={k} className="flex items-center gap-2 text-xs text-muted">
+                      <input
+                        type="color"
+                        value={hex6(previewTokens[k])}
+                        onChange={(e) => {
+                          setStatus("idle");
+                          setTheme((t) => ({ ...t, overrides: { ...(t.overrides ?? {}), [k]: e.target.value } }));
+                        }}
+                        className="h-7 w-9 cursor-pointer rounded border border-zinc-300"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <label className="block text-xs text-muted">
+                  Corner radius: {previewTokens.radius}px
+                  <input
+                    type="range"
+                    min={0}
+                    max={32}
+                    value={previewTokens.radius}
+                    onChange={(e) => {
+                      setStatus("idle");
+                      setTheme((t) => ({ ...t, overrides: { ...(t.overrides ?? {}), radius: Number(e.target.value) } }));
+                    }}
+                    className="mt-1 w-full"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-xs text-muted">
+                    Heading font
+                    <select
+                      value={previewTokens.fontHeading}
+                      onChange={(e) => {
+                        setStatus("idle");
+                        setTheme((t) => ({ ...t, overrides: { ...(t.overrides ?? {}), fontHeading: e.target.value } }));
+                      }}
+                      className={inputCls}
+                    >
+                      {THEME_FONTS.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block text-xs text-muted">
+                    Body font
+                    <select
+                      value={previewTokens.fontBody}
+                      onChange={(e) => {
+                        setStatus("idle");
+                        setTheme((t) => ({ ...t, overrides: { ...(t.overrides ?? {}), fontBody: e.target.value } }));
+                      }}
+                      className={inputCls}
+                    >
+                      {THEME_FONTS.map((f) => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label className="block text-xs text-muted">
+                  Animated background
+                  <select
+                    value={previewTokens.background}
+                    onChange={(e) => {
+                      setStatus("idle");
+                      setTheme((t) => ({
+                        ...t,
+                        overrides: { ...(t.overrides ?? {}), background: e.target.value as (typeof IV_BG_OPTIONS)[number] },
+                      }));
+                    }}
+                    className={inputCls}
+                  >
+                    {IV_BG_OPTIONS.map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </label>
+                {theme.overrides && Object.keys(theme.overrides).length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatus("idle");
+                      setTheme((t) => ({ ...t, overrides: {} }));
+                    }}
+                    className="text-xs text-red-600 underline"
+                  >
+                    Reset to theme defaults
+                  </button>
+                ) : null}
+              </div>
+            </details>
           </div>
 
           {/* SEO — overrides the auto-derived title/description/share image. */}
