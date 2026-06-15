@@ -130,6 +130,36 @@ export function deleteCoupon(tenantId: string, id: string) {
   return prisma.coupon.deleteMany({ where: { id, tenantId } });
 }
 
+export interface CouponStat {
+  uses: number;
+  revenuePaise: number; // post-discount total the buyers actually paid
+  discountPaise: number; // total discount given away
+}
+
+/**
+ * Derived coupon analytics: for each coupon, how many PAID orders used it, the
+ * revenue those orders brought, and the total discount given. Tenant-scoped,
+ * grouped in one query off the [couponId] index. Returns a Map by couponId.
+ */
+export async function getCouponStats(tenantId: string): Promise<Map<string, CouponStat>> {
+  const rows = await prisma.buyerPayment.groupBy({
+    by: ["couponId"],
+    where: { tenantId, status: "PAID", couponId: { not: null } },
+    _count: { _all: true },
+    _sum: { amountPaise: true, discountPaise: true },
+  });
+  const m = new Map<string, CouponStat>();
+  for (const r of rows) {
+    if (!r.couponId) continue;
+    m.set(r.couponId, {
+      uses: r._count._all,
+      revenuePaise: r._sum.amountPaise ?? 0,
+      discountPaise: r._sum.discountPaise ?? 0,
+    });
+  }
+  return m;
+}
+
 export type ApplyCouponResult =
   | { ok: true; couponId: string; code: string; discountPaise: number }
   | {

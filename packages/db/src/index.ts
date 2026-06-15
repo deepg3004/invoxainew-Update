@@ -308,9 +308,11 @@ export {
   setCouponActive,
   deleteCoupon,
   applyCoupon,
+  getCouponStats,
   type CouponInput,
   type CreateCouponResult,
   type ApplyCouponResult,
+  type CouponStat,
 } from "./coupons";
 export {
   createCourse,

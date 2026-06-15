@@ -1,7 +1,7 @@
 import {formatDateIST} from "@invoxai/utils/date";
 import Link from "next/link";
 import { Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
-import { listCoupons, countCoupons, getSellerGateway } from "@invoxai/db";
+import { listCoupons, countCoupons, getSellerGateway, getCouponStats } from "@invoxai/db";
 import { formatRupees, bpsToPercentString } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 import { setCouponActiveAction, deleteCouponAction } from "./actions";
@@ -31,9 +31,10 @@ export default async function CouponsPage({
   const { page: rawPage, size: rawSize } = await searchParams;
   const total = await countCoupons(tenant.id);
   const { page, totalPages, skip, take, pageSize } = pageSlice(total, rawPage, rawSize);
-  const [coupons, gateway] = await Promise.all([
+  const [coupons, gateway, stats] = await Promise.all([
     listCoupons(tenant.id, { skip, take }),
     getSellerGateway(tenant.id),
+    getCouponStats(tenant.id),
   ]);
   const firstOnPage = total === 0 ? 0 : skip + 1;
   const lastOnPage = skip + coupons.length;
@@ -105,6 +106,11 @@ export default async function CouponsPage({
                       {usage}
                       {win ? ` · ${win}` : ""}
                     </span>
+                    {stats.get(c.id) ? (
+                      <span className="mt-1 block text-xs font-medium text-emerald-700">
+                        {stats.get(c.id)!.uses} paid · {formatRupees(stats.get(c.id)!.revenuePaise)} revenue · {formatRupees(stats.get(c.id)!.discountPaise)} given
+                      </span>
+                    ) : null}
                   </div>
                   <div className="shrink-0 text-right text-sm">
                     <div className="flex items-center gap-3">
