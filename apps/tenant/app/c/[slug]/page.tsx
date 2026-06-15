@@ -295,7 +295,7 @@ export default async function CoursePage({
 
         {/* ── Sticky purchase card (Udemy-style) ──────────────────────── */}
         <aside className="lg:col-span-1">
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-surface lg:sticky lg:top-6">
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-surface shadow-card lg:sticky lg:top-6">
             {course.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={course.imageUrl} alt={course.title} className="aspect-video w-full object-cover" />

@@ -60,11 +60,17 @@ export default async function PayPage({
   const sellerReady = razorpayReady || Boolean(upi);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
-      <p className="text-sm font-medium uppercase tracking-wide text-muted">
-        {tenant.name ?? tenant.username}
-      </p>
+      <div className="flex items-center gap-2.5">
+        {tenant.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={tenant.logoUrl} alt={`${tenant.name ?? tenant.username} logo`} className="h-9 w-9 rounded-lg object-cover" />
+        ) : null}
+        <p className="text-sm font-medium uppercase tracking-wide text-muted">
+          {tenant.name ?? tenant.username}
+        </p>
+      </div>
       {experiment ? (
         <ExperimentTitle
           experiment={experiment}
@@ -89,7 +95,7 @@ export default async function PayPage({
         />
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-6">
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-card">
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-3xl font-bold">{formatRupees(page.amountPaise)}</span>
           {page.compareAtPaise != null && page.compareAtPaise > page.amountPaise ? (
@@ -126,6 +132,14 @@ export default async function PayPage({
           </p>
         )}
       </div>
+
+      {sellerReady ? (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs text-muted">
+          <span className="inline-flex items-center gap-1">🔒 Secure checkout</span>
+          <span className="inline-flex items-center gap-1">⚡ Instant confirmation</span>
+          {razorpayReady ? <span className="inline-flex items-center gap-1">💳 Cards · UPI · Netbanking</span> : null}
+        </div>
+      ) : null}
     </main>
   );
 }
