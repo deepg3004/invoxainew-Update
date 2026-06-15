@@ -63,6 +63,7 @@ export default async function EditAiPage({
         initialTitle={content.title}
         initialBlocks={content.blocks}
         initialTheme={content.theme}
+        initialSeo={content.seo ?? { metaTitle: "", description: "", ogImage: "" }}
         entities={entities}
       />
       <VersionHistory pageId={page.id} versions={versions} />

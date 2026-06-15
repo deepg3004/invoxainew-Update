@@ -39,15 +39,18 @@ export async function generateMetadata({
   const imageBlock = content.blocks.find(
     (b): b is Extract<Block, { type: "image" }> => b.type === "image",
   );
-  const description = textBlock?.text.slice(0, 200);
-  const images = imageBlock ? [imageBlock.url] : undefined;
+  // Per-page SEO overrides (audit) win over derived defaults when set.
+  const metaTitle = content.seo?.metaTitle || content.title;
+  const description = content.seo?.description || textBlock?.text.slice(0, 200);
+  const ogImage = content.seo?.ogImage || imageBlock?.url;
+  const images = ogImage ? [ogImage] : undefined;
   return {
-    title: content.title,
+    title: metaTitle,
     description,
-    openGraph: { title: content.title, description, images, type: "website" },
+    openGraph: { title: metaTitle, description, images, type: "website" },
     twitter: {
       card: images ? "summary_large_image" : "summary",
-      title: content.title,
+      title: metaTitle,
       description,
       images,
     },

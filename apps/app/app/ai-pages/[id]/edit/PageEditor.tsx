@@ -8,6 +8,7 @@ import {
   type Block,
   type Theme,
   type ThemePreset,
+  type BuilderSeo,
   THEME_PRESETS,
   safeUrl,
   toEmbedUrl,
@@ -320,6 +321,7 @@ export function PageEditor({
   initialTitle,
   initialBlocks,
   initialTheme,
+  initialSeo,
   entities,
 }: {
   pageId: string;
@@ -328,11 +330,13 @@ export function PageEditor({
   initialTitle: string;
   initialBlocks: Block[];
   initialTheme: Theme;
+  initialSeo: BuilderSeo;
   entities: EntityOptions;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [theme, setTheme] = useState<Theme>(initialTheme);
+  const [seo, setSeo] = useState<BuilderSeo>(initialSeo);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -381,7 +385,7 @@ export function PageEditor({
     setStatus("saving");
     setError(null);
     try {
-      const res = await saveAiPageAction(pageId, title, blocks, theme);
+      const res = await saveAiPageAction(pageId, title, blocks, theme, seo);
       if (res.ok) setStatus("saved");
       else {
         setError(res.error);
@@ -466,6 +470,44 @@ export function PageEditor({
               />
               <span className="font-mono text-xs text-muted">{theme.accent}</span>
             </label>
+          </div>
+
+          {/* SEO — overrides the auto-derived title/description/share image. */}
+          <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-4">
+            <span className="text-sm font-medium text-zinc-900">SEO &amp; social sharing</span>
+            <p className="mt-0.5 text-xs text-muted">Optional. Left blank, we use the page title, first paragraph, and first image.</p>
+            <div className="mt-3 space-y-2">
+              <label className="block">
+                <span className="text-xs text-muted">Meta title (browser tab + search result)</span>
+                <input
+                  value={seo.metaTitle}
+                  onChange={(e) => { setStatus("idle"); setSeo((s) => ({ ...s, metaTitle: e.target.value })); }}
+                  maxLength={200}
+                  placeholder={title || "Page title"}
+                  className={`mt-1 ${inputCls}`}
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs text-muted">Meta description</span>
+                <textarea
+                  value={seo.description}
+                  onChange={(e) => { setStatus("idle"); setSeo((s) => ({ ...s, description: e.target.value })); }}
+                  maxLength={300}
+                  rows={2}
+                  placeholder="A one-line summary shown in search results and link previews."
+                  className={`mt-1 ${inputCls}`}
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs text-muted">Share image URL (Open Graph)</span>
+                <input
+                  value={seo.ogImage}
+                  onChange={(e) => { setStatus("idle"); setSeo((s) => ({ ...s, ogImage: e.target.value })); }}
+                  placeholder="https://… (shown when the link is shared)"
+                  className={`mt-1 ${inputCls}`}
+                />
+              </label>
+            </div>
           </div>
 
           {blocks.length > 1 ? (

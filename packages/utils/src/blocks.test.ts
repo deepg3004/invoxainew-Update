@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { safeUrl, toEmbedUrl, normalizeToBlocks } from "./blocks";
+import { safeUrl, toEmbedUrl, normalizeToBlocks, normalizeSeo } from "./blocks";
+
+// Per-page SEO overrides (audit). ogImage must pass the same URL trust boundary.
+describe("normalizeSeo", () => {
+  it("caps text fields and sanitizes ogImage", () => {
+    expect(normalizeSeo({ seo: { metaTitle: " Hi ", description: " desc ", ogImage: "https://x.com/a.png" } })).toEqual({
+      metaTitle: "Hi",
+      description: "desc",
+      ogImage: "https://x.com/a.png",
+    });
+  });
+  it("drops a javascript: ogImage and defaults missing fields to empty", () => {
+    expect(normalizeSeo({ seo: { ogImage: "javascript:alert(1)" } })).toEqual({ metaTitle: "", description: "", ogImage: "" });
+    expect(normalizeSeo({})).toEqual({ metaTitle: "", description: "", ogImage: "" });
+  });
+  it("is included in normalizeToBlocks output", () => {
+    expect(normalizeToBlocks({ title: "T", blocks: [], seo: { description: "d" } }).seo).toEqual({
+      metaTitle: "",
+      description: "d",
+      ogImage: "",
+    });
+  });
+});
 
 // Builder Part 2 — widget blocks must be validated + capped by normalizeToBlocks (the
 // trust boundary) so AI-generated / edited content stays safe and well-formed.

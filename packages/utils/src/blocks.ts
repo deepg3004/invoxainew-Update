@@ -246,10 +246,31 @@ function fromLegacy(c: Record<string, unknown>): Block[] {
   return blocks;
 }
 
+/** Optional per-page SEO overrides. Empty strings mean "fall back to derived
+ *  defaults" (title / first text block / first image). ogImage is URL-sanitized. */
+export interface BuilderSeo {
+  metaTitle: string;
+  description: string;
+  ogImage: string;
+}
+
+/** Validate stored SEO fields. metaTitle/description are capped plain text;
+ *  ogImage runs through safeUrl so only http(s)/site-relative URLs survive. */
+export function normalizeSeo(content: unknown): BuilderSeo {
+  const c = (content && typeof content === "object" ? content : {}) as Record<string, unknown>;
+  const s = (c.seo && typeof c.seo === "object" ? c.seo : {}) as Record<string, unknown>;
+  return {
+    metaTitle: str(s.metaTitle, 200).trim(),
+    description: str(s.description, 300).trim(),
+    ogImage: safeUrl(s.ogImage),
+  };
+}
+
 export interface BuilderContent {
   title: string;
   blocks: Block[];
   theme: Theme;
+  seo?: BuilderSeo;
 }
 
 /**
@@ -268,5 +289,5 @@ export function normalizeToBlocks(content: unknown): BuilderContent {
   } else {
     blocks = fromLegacy(c);
   }
-  return { title, blocks: blocks.slice(0, MAX_BLOCKS), theme: normalizeTheme(content) };
+  return { title, blocks: blocks.slice(0, MAX_BLOCKS), theme: normalizeTheme(content), seo: normalizeSeo(content) };
 }
