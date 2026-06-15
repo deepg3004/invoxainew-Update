@@ -15,7 +15,7 @@ import {
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { cachedAiPage } from "../../lib/content";
-import { normalizeToBlocks, THEME_PRESETS, type Block, type Theme } from "@invoxai/utils/blocks";
+import { normalizeToBlocks, resolveTheme, type Block, type ThemeTokens } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
@@ -59,7 +59,7 @@ export async function generateMetadata({
   };
 }
 
-type Tokens = (typeof THEME_PRESETS)[Theme["preset"]] & { accent: string };
+type Tokens = ThemeTokens;
 
 // ── Entity-bound widgets (Builder Part 3) ────────────────────────────────────
 // Resolve the ids stored in product/course/leadForm/paymentButton/storeGrid
@@ -551,7 +551,7 @@ export default async function AiLandingPage({
   // Multi-page site: if this page belongs to a site, fetch its sibling published pages
   // for a shared top nav (a single page in its site shows no nav).
   const nav = page.siteId ? await getSiteNav(page.siteId) : [];
-  const t: Tokens = { ...THEME_PRESETS[content.theme.preset], accent: content.theme.accent };
+  const t: Tokens = resolveTheme(content.theme);
 
   return (
     <div style={{ background: t.bg, minHeight: "100vh" }}>

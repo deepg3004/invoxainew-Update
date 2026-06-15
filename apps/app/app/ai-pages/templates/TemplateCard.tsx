@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { THEME_PRESETS, type ThemePreset } from "@invoxai/utils/blocks";
+import { resolveTheme, type ThemePreset } from "@invoxai/utils/blocks";
 import { createFromTemplateAction, type AiPageFormState } from "../actions";
 
 export function TemplateCard({
@@ -23,7 +23,7 @@ export function TemplateCard({
 }) {
   const action = createFromTemplateAction.bind(null, id);
   const [state, formAction, pending] = useActionState<AiPageFormState, FormData>(action, {});
-  const t = THEME_PRESETS[preset];
+  const t = resolveTheme({ preset, accent: "" });
 
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-surface">

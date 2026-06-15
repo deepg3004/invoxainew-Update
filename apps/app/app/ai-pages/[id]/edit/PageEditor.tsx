@@ -7,9 +7,11 @@ import { ImageUpload } from "@invoxai/ui";
 import {
   type Block,
   type Theme,
-  type ThemePreset,
+  type ThemeTokens,
   type BuilderSeo,
   THEME_PRESETS,
+  THEME_LIBRARY,
+  resolveTheme,
   safeUrl,
   toEmbedUrl,
 } from "@invoxai/utils/blocks";
@@ -484,7 +486,7 @@ function PreviewBlock({
   entities,
 }: {
   block: Block;
-  t: (typeof THEME_PRESETS)[ThemePreset] & { accent: string };
+  t: ThemeTokens;
   entities: EntityOptions;
 }) {
   // A themed placeholder card for entity widgets — the editor doesn't have live
@@ -777,8 +779,8 @@ export function PageEditor({
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
 
-  const presetIds = Object.keys(THEME_PRESETS) as ThemePreset[];
-  const previewTokens = { ...THEME_PRESETS[theme.preset], accent: theme.accent };
+  const presetIds = THEME_LIBRARY;
+  const previewTokens = resolveTheme(theme);
 
   function update(i: number, patch: Partial<Block>) {
     setStatus("idle");
@@ -868,7 +870,7 @@ export function PageEditor({
             <span className="text-sm font-medium text-zinc-900">Theme</span>
             <div className="mt-2 flex flex-wrap gap-2">
               {presetIds.map((id) => {
-                const p = THEME_PRESETS[id];
+                const p = THEME_PRESETS[id]!;
                 const selected = theme.preset === id;
                 return (
                   <button

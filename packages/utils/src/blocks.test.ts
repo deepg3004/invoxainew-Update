@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeUrl, toEmbedUrl, normalizeToBlocks, normalizeSeo, normalizeTheme, THEME_PRESETS } from "./blocks";
+import { safeUrl, toEmbedUrl, normalizeToBlocks, normalizeSeo, normalizeTheme, resolveTheme, ctaGradient, THEME_PRESETS, THEME_LIBRARY } from "./blocks";
 
 // Per-page SEO overrides (audit). ogImage must pass the same URL trust boundary.
 describe("normalizeSeo", () => {
@@ -240,15 +240,44 @@ describe("normalizeToBlocks — Part 5 media blocks", () => {
   });
 });
 
-describe("normalizeTheme — premium presets", () => {
-  it("exposes the new premium presets", () => {
-    for (const id of ["blossom", "noir", "ocean", "forest"]) {
-      expect(THEME_PRESETS[id as keyof typeof THEME_PRESETS]).toBeTruthy();
-    }
+describe("normalizeTheme / resolveTheme — theme v2", () => {
+  it("ships the 24-theme premium library + legacy presets", () => {
+    expect(THEME_LIBRARY).toHaveLength(24);
+    for (const id of THEME_LIBRARY) expect(THEME_PRESETS[id]).toBeTruthy();
+    // legacy keys kept so old stored pages still resolve
+    for (const id of ["light", "midnight", "aurora", "blossom"]) expect(THEME_PRESETS[id]).toBeTruthy();
   });
-  it("resolves a valid new preset and falls back on a bad one", () => {
-    expect(normalizeTheme({ theme: { preset: "blossom" } }).preset).toBe("blossom");
-    expect(normalizeTheme({ theme: { preset: "neon-disco" } }).preset).toBe("light");
+
+  it("resolves a valid preset and falls back to the default on a bad one", () => {
+    expect(normalizeTheme({ theme: { preset: "midnight-pro" } }).preset).toBe("midnight-pro");
+    expect(normalizeTheme({ theme: { preset: "neon-disco" } }).preset).toBe("aurora-glow");
+    // accepts `base` as an alias for `preset`
+    expect(normalizeTheme({ theme: { base: "cyber-neon" } }).preset).toBe("cyber-neon");
+  });
+
+  it("keeps the legacy {preset, accent} shape working (back-compat)", () => {
+    const t = normalizeTheme({ theme: { preset: "aurora", accent: "#123456" } });
+    expect(t.preset).toBe("aurora");
+    expect(resolveTheme(t).accent).toBe("#123456"); // legacy accent folds into resolved accent
+  });
+
+  it("validates per-token overrides and drops bad ones", () => {
+    const t = normalizeTheme({
+      theme: {
+        preset: "pure-snow",
+        overrides: { primary: "#FF0000", radius: 999, fontHeading: "Comic Sans", bg: "linear-gradient(135deg,#000,#111)" },
+      },
+    });
+    const r = resolveTheme(t);
+    expect(r.primary).toBe("#FF0000"); // valid hex kept
+    expect(r.radius).toBe(THEME_PRESETS["pure-snow"]!.radius); // 999 out of range → base
+    expect(r.fontHeading).toBe(THEME_PRESETS["pure-snow"]!.fontHeading); // not allow-listed → base
+    expect(r.bg).toBe("linear-gradient(135deg,#000,#111)"); // gradient allowed for bg
+  });
+
+  it("ctaGradient builds a primary→primary2 gradient", () => {
+    const r = resolveTheme(normalizeTheme({ theme: { preset: "aurora-glow" } }));
+    expect(ctaGradient(r)).toBe(`linear-gradient(135deg, ${r.primary}, ${r.primary2})`);
   });
 });
 
