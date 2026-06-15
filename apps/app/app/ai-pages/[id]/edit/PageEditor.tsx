@@ -35,6 +35,7 @@ export interface EntityOptions {
 type AddType =
   | "heading" | "text" | "image" | "button" | "video" | "divider"
   | "hero" | "pricingTable" | "featureGrid" | "stats"
+  | "gallery" | "logoStrip" | "imageText"
   | "faq" | "countdown" | "columns" | "socialProof"
   | "product" | "course" | "storeGrid" | "leadForm" | "paymentButton";
 
@@ -87,6 +88,12 @@ function newBlock(type: AddType, e: EntityOptions): Block {
           { value: "99.9%", label: "Uptime" },
         ],
       };
+    case "gallery":
+      return { type: "gallery", images: [] };
+    case "logoStrip":
+      return { type: "logoStrip", logos: [] };
+    case "imageText":
+      return { type: "imageText", imageUrl: "", heading: "Section heading", text: "Describe this section.", ctaLabel: "", ctaHref: "", flip: false };
     case "faq":
       return { type: "faq", items: [{ q: "Your question?", a: "Your answer." }] };
     case "countdown":
@@ -381,6 +388,61 @@ function StatsEditor({
   );
 }
 
+type ImageItem = { url: string; alt: string };
+
+/** Editor for a list of images (upload or URL + alt). Shared by gallery + logoStrip. */
+function ImageListEditor({
+  images,
+  onChange,
+  max,
+  addLabel,
+}: {
+  images: ImageItem[];
+  onChange: (images: ImageItem[]) => void;
+  max: number;
+  addLabel: string;
+}) {
+  const set = (idx: number, patch: Partial<ImageItem>) =>
+    onChange(images.map((im, i) => (i === idx ? { ...im, ...patch } : im)));
+  return (
+    <div className="space-y-3">
+      {images.map((im, idx) => (
+        <div key={idx} className="space-y-1.5 rounded-lg border border-zinc-200 p-2">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <ImageUpload
+                defaultValue={im.url}
+                action={uploadTenantImageAction}
+                onChange={(url) => set(idx, { url })}
+                recommend="Upload or paste an image URL."
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => onChange(images.filter((_, i) => i !== idx))}
+              className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-700"
+              aria-label="Remove image"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <input value={im.alt} onChange={(e) => set(idx, { alt: e.target.value })} placeholder="Alt text" className={inputCls} />
+        </div>
+      ))}
+      {images.length < max ? (
+        <button
+          type="button"
+          onClick={() => onChange([...images, { url: "", alt: "" }])}
+          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+        >
+          {addLabel}
+        </button>
+      ) : null}
+      {images.length === 0 ? <p className="text-xs text-muted">No images yet — add one above.</p> : null}
+    </div>
+  );
+}
+
 /** A dropdown to pick an entity id for an entity-bound block. Shows a hint when
  *  the seller has none of that entity yet. */
 function EntitySelect({
@@ -634,6 +696,52 @@ function PreviewBlock({
               {s.label ? <div className="text-[11px]" style={{ color: t.muted }}>{s.label}</div> : null}
             </div>
           ))}
+        </div>
+      );
+    }
+    case "gallery": {
+      const imgs = block.images.map((im) => safeUrl(im.url)).filter(Boolean);
+      if (imgs.length === 0) return <div className="mt-4 grid h-24 place-items-center rounded-lg text-xs" style={{ border: `1px dashed ${t.border}`, color: t.muted }}>gallery — add images</div>;
+      const cols = imgs.length >= 3 ? "grid-cols-3" : imgs.length === 2 ? "grid-cols-2" : "grid-cols-1";
+      return (
+        <div className={`mt-4 grid gap-2 ${cols}`}>
+          {imgs.map((u, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={u} alt="" className="aspect-square w-full rounded-lg object-cover" style={{ border: `1px solid ${t.border}` }} />
+          ))}
+        </div>
+      );
+    }
+    case "logoStrip": {
+      const imgs = block.logos.map((lg) => safeUrl(lg.url)).filter(Boolean);
+      if (imgs.length === 0) return <div className="mt-4 grid h-16 place-items-center rounded-lg text-xs" style={{ border: `1px dashed ${t.border}`, color: t.muted }}>logo strip — add logos</div>;
+      return (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 opacity-80">
+          {imgs.map((u, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={u} alt="" className="h-7 w-auto object-contain" />
+          ))}
+        </div>
+      );
+    }
+    case "imageText": {
+      const img = safeUrl(block.imageUrl);
+      const imgEl = img ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={img} alt="" className="w-full rounded-lg object-cover" style={{ border: `1px solid ${t.border}` }} />
+      ) : (
+        <div className="grid h-24 place-items-center rounded-lg text-xs" style={{ border: `1px dashed ${t.border}`, color: t.muted }}>image</div>
+      );
+      const copy = (
+        <div>
+          {block.heading ? <div className="text-base font-semibold" style={{ color: t.text }}>{block.heading}</div> : null}
+          {block.text ? <p className="mt-1 text-sm" style={{ color: t.muted }}>{block.text}</p> : null}
+          {block.ctaLabel ? <span className="mt-2 inline-block rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ background: t.accent, opacity: block.ctaHref ? 1 : 0.5 }}>{block.ctaLabel}</span> : null}
+        </div>
+      );
+      return (
+        <div className="mt-4 grid items-center gap-3 sm:grid-cols-2">
+          {block.flip ? (<>{copy}{imgEl}</>) : (<>{imgEl}{copy}</>)}
         </div>
       );
     }
@@ -984,6 +1092,35 @@ export function PageEditor({
                   <StatsEditor items={b.items} onChange={(items) => update(i, { items })} />
                 ) : null}
 
+                {b.type === "gallery" ? (
+                  <ImageListEditor images={b.images} onChange={(images) => update(i, { images })} max={12} addLabel="+ Add image" />
+                ) : null}
+
+                {b.type === "logoStrip" ? (
+                  <ImageListEditor images={b.logos} onChange={(logos) => update(i, { logos })} max={12} addLabel="+ Add logo" />
+                ) : null}
+
+                {b.type === "imageText" ? (
+                  <div className="space-y-2">
+                    <ImageUpload
+                      defaultValue={b.imageUrl}
+                      action={uploadTenantImageAction}
+                      onChange={(url) => update(i, { imageUrl: url })}
+                      recommend="Image shown beside the text."
+                    />
+                    <input value={b.heading} onChange={(e) => update(i, { heading: e.target.value })} placeholder="Heading" className={inputCls} />
+                    <textarea value={b.text} onChange={(e) => update(i, { text: e.target.value })} placeholder="Body text" rows={3} className={inputCls} />
+                    <div className="flex gap-2">
+                      <input value={b.ctaLabel} onChange={(e) => update(i, { ctaLabel: e.target.value })} placeholder="Button label (optional)" className={inputCls} />
+                      <input value={b.ctaHref} onChange={(e) => update(i, { ctaHref: e.target.value })} placeholder="https://… or /pay/your-link" className={inputCls} />
+                    </div>
+                    <label className="flex items-center gap-2 text-xs text-muted">
+                      <input type="checkbox" checked={b.flip} onChange={(e) => update(i, { flip: e.target.checked })} />
+                      Image on the right
+                    </label>
+                  </div>
+                ) : null}
+
                 {b.type === "faq" ? (
                   <FaqEditor items={b.items} onChange={(items) => update(i, { items })} />
                 ) : null}
@@ -1082,7 +1219,7 @@ export function PageEditor({
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {(["hero", "heading", "text", "image", "button", "video", "divider", "pricingTable", "featureGrid", "stats", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
+            {(["hero", "heading", "text", "image", "button", "video", "divider", "imageText", "gallery", "logoStrip", "pricingTable", "featureGrid", "stats", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => add(t)}

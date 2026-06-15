@@ -469,6 +469,61 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
         </div>
       );
     }
+    case "gallery": {
+      const cols = block.images.length >= 3 ? "sm:grid-cols-3" : block.images.length === 2 ? "sm:grid-cols-2" : "";
+      return (
+        <div className={`mt-8 grid gap-3 ${cols}`}>
+          {block.images.map((im, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={im.url}
+              alt={im.alt}
+              className="aspect-square w-full rounded-xl object-cover"
+              style={{ border: `1px solid ${t.border}` }}
+            />
+          ))}
+        </div>
+      );
+    }
+    case "logoStrip":
+      return (
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-10 gap-y-6 opacity-80">
+          {block.logos.map((lg, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={lg.url} alt={lg.alt} className="h-8 w-auto object-contain sm:h-10" />
+          ))}
+        </div>
+      );
+    case "imageText": {
+      const img = block.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={block.imageUrl}
+          alt={block.heading}
+          className="w-full rounded-2xl object-cover shadow-sm"
+          style={{ border: `1px solid ${t.border}` }}
+        />
+      ) : null;
+      const copy = (
+        <div>
+          {block.heading ? <h2 className="text-2xl font-semibold" style={{ color: t.text }}>{block.heading}</h2> : null}
+          {block.text ? <p className="mt-3 whitespace-pre-line leading-relaxed" style={{ color: t.muted }}>{block.text}</p> : null}
+          {block.ctaLabel && block.ctaHref ? (
+            <div className="mt-6">
+              <a href={block.ctaHref} className="inline-block rounded-lg px-6 py-3 font-medium text-white no-underline transition hover:opacity-90" style={{ background: t.accent }}>
+                {block.ctaLabel}
+              </a>
+            </div>
+          ) : null}
+        </div>
+      );
+      return (
+        <section className="mt-10 grid items-center gap-8 sm:grid-cols-2">
+          {block.flip ? (<>{copy}{img}</>) : (<>{img}{copy}</>)}
+        </section>
+      );
+    }
   }
 }
 

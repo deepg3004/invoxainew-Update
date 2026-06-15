@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeUrl, toEmbedUrl, normalizeToBlocks, normalizeSeo } from "./blocks";
+import { safeUrl, toEmbedUrl, normalizeToBlocks, normalizeSeo, normalizeTheme, THEME_PRESETS } from "./blocks";
 
 // Per-page SEO overrides (audit). ogImage must pass the same URL trust boundary.
 describe("normalizeSeo", () => {
@@ -202,6 +202,53 @@ describe("normalizeToBlocks — Part 4 premium blocks", () => {
 
   it("UUID-only blocks are unaffected (sanity)", () => {
     expect(norm({ type: "product", productId: UUID })).toEqual([{ type: "product", productId: UUID }]);
+  });
+});
+
+// Builder Part 5 — premium media blocks (gallery / logoStrip / imageText) and the
+// new premium theme presets.
+describe("normalizeToBlocks — Part 5 media blocks", () => {
+  const norm = (block: unknown) => normalizeToBlocks({ blocks: [block] }).blocks;
+
+  it("accepts a gallery, drops images with a bad url, caps at 12", () => {
+    expect(norm({ type: "gallery", images: [{ url: "https://x.com/a.png", alt: "A" }, { url: "javascript:bad" }, { alt: "no url" }] })).toEqual([
+      { type: "gallery", images: [{ url: "https://x.com/a.png", alt: "A" }] },
+    ]);
+    const big = norm({ type: "gallery", images: Array.from({ length: 15 }, (_, i) => ({ url: `/img/${i}.png` })) });
+    expect((big[0] as { images: unknown[] }).images).toHaveLength(12);
+    expect(norm({ type: "gallery", images: [] })).toEqual([]);
+    expect(norm({ type: "gallery", images: [{ url: "//evil.com" }] })).toEqual([]);
+  });
+
+  it("accepts a logoStrip with the same image rules", () => {
+    expect(norm({ type: "logoStrip", logos: [{ url: "/logo.svg", alt: "Co" }] })).toEqual([
+      { type: "logoStrip", logos: [{ url: "/logo.svg", alt: "Co" }] },
+    ]);
+    expect(norm({ type: "logoStrip", logos: [] })).toEqual([]);
+  });
+
+  it("accepts an imageText, sanitizes URLs, needs image or copy", () => {
+    expect(norm({ type: "imageText", imageUrl: "https://x.com/i.png", heading: "H", text: "T", ctaLabel: "Go", ctaHref: "/pay/x", flip: true })).toEqual([
+      { type: "imageText", imageUrl: "https://x.com/i.png", heading: "H", text: "T", ctaLabel: "Go", ctaHref: "/pay/x", flip: true },
+    ]);
+    // Hostile URLs stripped, but copy keeps it alive (flip coerced to false).
+    expect(norm({ type: "imageText", heading: "H", imageUrl: "javascript:x", ctaHref: "//evil.com", flip: "yes" })).toEqual([
+      { type: "imageText", imageUrl: "", heading: "H", text: "", ctaLabel: "", ctaHref: "", flip: false },
+    ]);
+    // Nothing at all → dropped.
+    expect(norm({ type: "imageText" })).toEqual([]);
+  });
+});
+
+describe("normalizeTheme — premium presets", () => {
+  it("exposes the new premium presets", () => {
+    for (const id of ["blossom", "noir", "ocean", "forest"]) {
+      expect(THEME_PRESETS[id as keyof typeof THEME_PRESETS]).toBeTruthy();
+    }
+  });
+  it("resolves a valid new preset and falls back on a bad one", () => {
+    expect(normalizeTheme({ theme: { preset: "blossom" } }).preset).toBe("blossom");
+    expect(normalizeTheme({ theme: { preset: "neon-disco" } }).preset).toBe("light");
   });
 });
 

@@ -63,11 +63,31 @@ export type Block =
       }[];
     }
   | { type: "featureGrid"; items: { icon: string; title: string; text: string }[] } // icon = short text/emoji
-  | { type: "stats"; items: { value: string; label: string }[] }; // big-number counters
+  | { type: "stats"; items: { value: string; label: string }[] } // big-number counters
+  // Builder Part 5 — premium media blocks. Images run through safeUrl; all text capped.
+  | { type: "gallery"; images: { url: string; alt: string }[] } // responsive image grid
+  | { type: "logoStrip"; logos: { url: string; alt: string }[] } // "as seen in" trust bar
+  | {
+      type: "imageText";
+      imageUrl: string; // sanitized
+      heading: string;
+      text: string;
+      ctaLabel: string;
+      ctaHref: string; // sanitized, or ""
+      flip: boolean; // image on the right instead of the left
+    };
 
 // ── Theme (AI builder slice 2) ───────────────────────────────────────────────
 
-export type ThemePreset = "light" | "midnight" | "aurora" | "sand";
+export type ThemePreset =
+  | "light"
+  | "midnight"
+  | "aurora"
+  | "sand"
+  | "blossom"
+  | "noir"
+  | "ocean"
+  | "forest";
 
 export interface Theme {
   preset: ThemePreset;
@@ -84,6 +104,11 @@ export const THEME_PRESETS: Record<
   midnight: { label: "Midnight", bg: "#050816", text: "#F8FAFC", muted: "#94A3B8", accent: "#06B6D4", border: "#1E293B" },
   aurora: { label: "Aurora", bg: "linear-gradient(135deg,#1E1B4B,#312E81 45%,#0F172A)", text: "#F8FAFC", muted: "#C4B5FD", accent: "#A855F7", border: "#312E81" },
   sand: { label: "Warm sand", bg: "#F4F1EA", text: "#292524", muted: "#78716C", accent: "#C2682E", border: "#E7E2D6" },
+  // Premium presets (Builder Part 5) — including a brand-pink light theme.
+  blossom: { label: "Blossom", bg: "#FFF1F5", text: "#500724", muted: "#9D174D", accent: "#EC4899", border: "#FBCFE8" },
+  noir: { label: "Noir", bg: "#0A0A0A", text: "#FAFAFA", muted: "#A1A1AA", accent: "#F5C518", border: "#262626" },
+  ocean: { label: "Ocean", bg: "linear-gradient(135deg,#0C4A6E,#075985 45%,#0C4A6E)", text: "#F0F9FF", muted: "#BAE6FD", accent: "#38BDF8", border: "#0E7490" },
+  forest: { label: "Forest", bg: "linear-gradient(135deg,#052E16,#064E3B 45%,#022C22)", text: "#ECFDF5", muted: "#A7F3D0", accent: "#34D399", border: "#065F46" },
 };
 
 const PRESET_IDS = Object.keys(THEME_PRESETS) as ThemePreset[];
@@ -137,6 +162,20 @@ function strList(v: unknown, max: number, itemMax = 200): string[] {
   return raw
     .map((it) => str(it, itemMax).trim())
     .filter((it) => it.length > 0)
+    .slice(0, max);
+}
+
+/** Validate an untrusted array of {url,alt} into sanitized images (drops any whose
+ *  url fails safeUrl), capped. Shared by gallery + logoStrip. */
+function imageList(v: unknown, max: number): { url: string; alt: string }[] {
+  const raw = Array.isArray(v) ? v : [];
+  return raw
+    .map((it) => {
+      const o = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+      const url = safeUrl(o.url);
+      return url ? { url, alt: str(o.alt, 300).trim() } : null;
+    })
+    .filter((x): x is { url: string; alt: string } => x !== null)
     .slice(0, max);
 }
 
@@ -339,6 +378,30 @@ function toBlock(raw: unknown): Block | null {
         .filter((x): x is { value: string; label: string } => x !== null)
         .slice(0, 4);
       return items.length > 0 ? { type: "stats", items } : null;
+    }
+    case "gallery": {
+      const images = imageList(b.images, 12);
+      return images.length > 0 ? { type: "gallery", images } : null;
+    }
+    case "logoStrip": {
+      const logos = imageList(b.logos, 12);
+      return logos.length > 0 ? { type: "logoStrip", logos } : null;
+    }
+    case "imageText": {
+      const imageUrl = safeUrl(b.imageUrl);
+      const heading = str(b.heading, 200).trim();
+      const text = str(b.text, 2000).trim();
+      // Needs at least an image or some copy to be worth rendering.
+      if (!imageUrl && !heading && !text) return null;
+      return {
+        type: "imageText",
+        imageUrl,
+        heading,
+        text,
+        ctaLabel: str(b.ctaLabel, 120).trim(),
+        ctaHref: safeUrl(b.ctaHref),
+        flip: bool(b.flip),
+      };
     }
     default:
       return null;
