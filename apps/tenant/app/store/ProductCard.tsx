@@ -31,9 +31,9 @@ export function ProductCard({
     ? Math.round((1 - product.pricePaise / product.compareAtPaise!) * 100)
     : 0;
   return (
-    <div className="flex flex-col rounded-xl border border-zinc-200 bg-surface p-4">
+    <div className="flex flex-col rounded-2xl border border-zinc-200 bg-surface p-4 transition duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-card">
       <Link href={`/p/${product.slug}`} className="group">
-        <div className="relative">
+        <div className="relative overflow-hidden rounded-lg">
           {bestseller ? (
             <span className="absolute left-2 top-2 z-10 rounded-full bg-brand-gradient px-2 py-0.5 text-xs font-medium text-white shadow-glow">
               ★ Bestseller
@@ -44,7 +44,7 @@ export function ProductCard({
             <img
               src={product.imageUrl}
               alt={product.title}
-              className="aspect-square w-full rounded-lg border border-zinc-200 object-cover"
+              className="aspect-square w-full rounded-lg border border-zinc-200 object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-zinc-50 text-muted">
