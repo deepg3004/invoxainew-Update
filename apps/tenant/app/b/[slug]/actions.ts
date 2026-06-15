@@ -16,6 +16,7 @@ import { getSessionUser } from "../../../lib/auth";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { readUtmCookie } from "../../../lib/utm";
+import { readClickIds } from "../../../lib/click";
 import { affiliateAttribution } from "../../../lib/affiliate";
 import type { StartUpiSessionResult } from "../../../lib/upi";
 
@@ -90,6 +91,7 @@ export async function startBookingCheckout(
     buyerEmail,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    click: await readClickIds(),
     affiliate: await affiliateAttribution(tenant.id, amountPaise),
   });
 
@@ -151,6 +153,7 @@ export async function startBookingUpiSession(
     buyerEmail,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    click: await readClickIds(),
     affiliate: await affiliateAttribution(tenant.id, amountPaise),
   });
   if (!session.ok) {

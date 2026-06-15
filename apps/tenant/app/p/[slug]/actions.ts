@@ -17,6 +17,7 @@ import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
 import { getSessionUser } from "../../../lib/auth";
 import { readUtmCookie } from "../../../lib/utm";
+import { readClickIds } from "../../../lib/click";
 import { affiliateAttribution } from "../../../lib/affiliate";
 import { couponErrorMessage } from "../../../lib/coupon-message";
 import type { StartUpiSessionResult } from "../../../lib/upi";
@@ -189,6 +190,7 @@ export async function startProductCheckout(
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    click: await readClickIds(),
     affiliate: await affiliateAttribution(product.tenantId, amountPaise),
   };
 
@@ -319,6 +321,7 @@ export async function startProductUpiSession(
     buyerEmail: buyer.email ?? user?.email ?? null,
     buyerContact: buyer.contact ?? null,
     utm: await readUtmCookie(),
+    click: await readClickIds(),
     affiliate: await affiliateAttribution(product.tenantId, amountPaise),
   });
   if (!session.ok) {

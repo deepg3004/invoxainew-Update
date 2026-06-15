@@ -185,6 +185,23 @@ function utmData(u?: UtmFields | null) {
   };
 }
 
+/** Ad-click attribution stamped on an order (captured client-side on landing). */
+export interface ClickFields {
+  fbclid?: string | null;
+  gclid?: string | null;
+  ttclid?: string | null;
+  fbp?: string | null;
+}
+
+function clickData(c?: ClickFields | null) {
+  return {
+    fbclid: c?.fbclid ?? null,
+    gclid: c?.gclid ?? null,
+    ttclid: c?.ttclid ?? null,
+    fbp: c?.fbp ?? null,
+  };
+}
+
 /** Affiliate attribution stamped on an order. Resolved server-side (see
  * resolveAffiliateAttribution in affiliates.ts); all-null/zero when the order
  * carries no valid affiliate ref. The commission is a RECORDED figure the seller
@@ -222,6 +239,7 @@ export function createBuyerPayment(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  click?: ClickFields | null;
   affiliate?: AffiliateFields | null;
   // Manual UPI: status PENDING + method/ref. Defaults keep the Razorpay path
   // (CREATED, RAZORPAY) byte-identical to before.
@@ -260,6 +278,7 @@ export function createBuyerPayment(input: {
       paymentMethod: input.paymentMethod ?? "RAZORPAY",
       upiRef: input.upiRef ?? null,
       ...utmData(input.utm),
+      ...clickData(input.click),
       ...affiliateData(input.affiliate),
     },
     select: { id: true, razorpayOrderId: true },
@@ -299,6 +318,7 @@ export function createCartOrder(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  click?: ClickFields | null;
   affiliate?: AffiliateFields | null;
   // Manual UPI: same defaults as createBuyerPayment — a Razorpay cart order is
   // CREATED/RAZORPAY (byte-identical to before); a manual-UPI cart order is
@@ -326,6 +346,7 @@ export function createCartOrder(input: {
       paymentMethod: input.paymentMethod ?? "RAZORPAY",
       upiRef: input.upiRef ?? null,
       ...utmData(input.utm),
+      ...clickData(input.click),
       ...affiliateData(input.affiliate),
       orderItems: {
         create: input.items.map((it) => ({
@@ -1081,6 +1102,7 @@ export async function createUpiSession(input: {
   buyerEmail?: string | null;
   buyerContact?: string | null;
   utm?: UtmFields | null;
+  click?: ClickFields | null;
   affiliate?: AffiliateFields | null;
 }): Promise<UpiSessionResult> {
   await expireStaleUpiOrders(input.tenantId); // free stale amounts before allocating
@@ -1114,6 +1136,7 @@ export async function createUpiSession(input: {
           buyerEmail: input.buyerEmail ?? null,
           buyerContact: input.buyerContact ?? null,
           ...utmData(input.utm),
+          ...clickData(input.click),
       ...affiliateData(input.affiliate),
           ...(input.items && input.items.length > 0
             ? {

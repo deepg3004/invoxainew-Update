@@ -1154,6 +1154,13 @@ model BuyerPayment {
   utmCampaign       String?            @map("utm_campaign")
   utmContent        String?            @map("utm_content")
   utmTerm           String?            @map("utm_term")
+  // Ad-click attribution: the click IDs captured on landing (cookie), stamped at
+  // checkout. Used for ad-platform conversion matching (Meta CAPI / Google
+  // enhanced conversions) + per-campaign reporting. All nullable.
+  fbclid            String?            @map("fbclid")
+  gclid             String?            @map("gclid")
+  ttclid            String?            @map("ttclid")
+  fbp               String?            @map("fbp")
   // Affiliates: when the buyer arrived via an affiliate link (?ref=CODE captured
   // to a cookie), the order is attributed to that affiliate. `affiliateCommissionPaise`
   // is the amount the SELLER owes the affiliate (computed off the post-discount
