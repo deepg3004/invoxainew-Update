@@ -40,6 +40,43 @@ describe("normalizeToBlocks — Part 2 widgets", () => {
   });
 });
 
+// Builder Part 3 — entity-bound widgets store ONLY a validated UUID; the renderer
+// resolves it tenant-scoped. normalizeToBlocks must accept well-formed ids and
+// drop anything that isn't a UUID (so a malformed/injected ref never persists).
+describe("normalizeToBlocks — Part 3 entity widgets", () => {
+  const norm = (block: unknown) => normalizeToBlocks({ blocks: [block] }).blocks;
+  const UUID = "11111111-2222-4333-8444-555555555555";
+
+  it("accepts product/course/leadForm with a valid UUID", () => {
+    expect(norm({ type: "product", productId: UUID })).toEqual([{ type: "product", productId: UUID }]);
+    expect(norm({ type: "course", courseId: UUID })).toEqual([{ type: "course", courseId: UUID }]);
+    expect(norm({ type: "leadForm", formId: UUID })).toEqual([{ type: "leadForm", formId: UUID }]);
+  });
+
+  it("drops an entity widget whose id isn't a UUID", () => {
+    expect(norm({ type: "product", productId: "not-a-uuid" })).toEqual([]);
+    expect(norm({ type: "product", productId: "../../etc/passwd" })).toEqual([]);
+    expect(norm({ type: "course" })).toEqual([]);
+    expect(norm({ type: "leadForm", formId: 123 })).toEqual([]);
+  });
+
+  it("storeGrid is valid with no collection, and keeps a valid collectionId", () => {
+    expect(norm({ type: "storeGrid" })).toEqual([{ type: "storeGrid", collectionId: null }]);
+    expect(norm({ type: "storeGrid", collectionId: "bad" })).toEqual([{ type: "storeGrid", collectionId: null }]);
+    expect(norm({ type: "storeGrid", collectionId: UUID })).toEqual([{ type: "storeGrid", collectionId: UUID }]);
+  });
+
+  it("paymentButton requires a valid pageId and defaults the label", () => {
+    expect(norm({ type: "paymentButton", pageId: UUID })).toEqual([
+      { type: "paymentButton", pageId: UUID, label: "Buy now" },
+    ]);
+    expect(norm({ type: "paymentButton", pageId: UUID, label: "Enrol now" })).toEqual([
+      { type: "paymentButton", pageId: UUID, label: "Enrol now" },
+    ]);
+    expect(norm({ type: "paymentButton", label: "no id" })).toEqual([]);
+  });
+});
+
 // safeUrl feeds hrefs/srcs rendered on PUBLIC tenant pages (AI pages, bio links)
 // — these tests pin the trust boundary.
 describe("safeUrl", () => {

@@ -182,6 +182,11 @@ export {
   type BuilderTemplateInput,
 } from "./templates";
 export {
+  getPublishedCoursesByIds,
+  getActivePaymentPagesByIds,
+  getPublishedLeadFormsByIds,
+} from "./builder-entities";
+export {
   notifyTenant,
   listNotifications,
   countNotifications,

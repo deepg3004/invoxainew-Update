@@ -23,7 +23,17 @@ export type Block =
   // Builder Part 2 — static content widgets (no URLs, no raw HTML; all text capped).
   | { type: "list"; items: string[] } // bullet list
   | { type: "testimonial"; quote: string; author: string }
-  | { type: "callout"; text: string }; // highlighted note box
+  | { type: "callout"; text: string } // highlighted note box
+  // Builder Part 3 — entity-bound widgets. These store ONLY a validated entity id
+  // (UUID); this module stays pure (no data fetch). The server renderer resolves
+  // each id TENANT-SCOPED, so a foreign/missing id renders nothing — the trust
+  // boundary for entity references. They render as themed cards/buttons that link
+  // to the existing public pages (/p /c /store /f /pay), reusing every flow.
+  | { type: "product"; productId: string } // single product card → /p/<slug>
+  | { type: "course"; courseId: string } // single course card → /c/<slug>
+  | { type: "storeGrid"; collectionId: string | null } // products grid → /store, optionally one collection
+  | { type: "leadForm"; formId: string } // lead-form card → /f/<slug>
+  | { type: "paymentButton"; pageId: string; label: string }; // payment link → /pay/<slug>
 
 // ── Theme (AI builder slice 2) ───────────────────────────────────────────────
 
@@ -87,6 +97,15 @@ function asLevel(v: unknown): 1 | 2 | 3 {
   return v === 1 || v === 2 || v === 3 ? v : 2;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** A validated entity id (UUID) for entity-bound blocks, or "" to drop the ref.
+ *  The renderer resolves it tenant-scoped, so the only requirement here is that
+ *  it's a well-formed id (no injection surface — it's never interpolated raw). */
+function entityId(v: unknown): string {
+  const s = str(v, 64).trim().toLowerCase();
+  return UUID_RE.test(s) ? s : "";
+}
+
 /**
  * Convert any YouTube/Vimeo URL into a canonical, embed-safe iframe URL — or ""
  * if it isn't a recognized provider. SECURITY: the renderer puts this straight
@@ -148,6 +167,28 @@ function toBlock(raw: unknown): Block | null {
     case "callout": {
       const text = str(b.text, 1000).trim();
       return text ? { type: "callout", text } : null;
+    }
+    case "product": {
+      const productId = entityId(b.productId);
+      return productId ? { type: "product", productId } : null;
+    }
+    case "course": {
+      const courseId = entityId(b.courseId);
+      return courseId ? { type: "course", courseId } : null;
+    }
+    case "storeGrid": {
+      // A store grid is valid with no collection (shows all published products).
+      const collectionId = entityId(b.collectionId);
+      return { type: "storeGrid", collectionId: collectionId || null };
+    }
+    case "leadForm": {
+      const formId = entityId(b.formId);
+      return formId ? { type: "leadForm", formId } : null;
+    }
+    case "paymentButton": {
+      const pageId = entityId(b.pageId);
+      const label = str(b.label, 120).trim() || "Buy now";
+      return pageId ? { type: "paymentButton", pageId, label } : null;
     }
     default:
       return null;

@@ -1,8 +1,16 @@
 import { notFound } from "next/navigation";
-import { getAiPageForOwner, listAiPageVersions } from "@invoxai/db";
+import {
+  getAiPageForOwner,
+  listAiPageVersions,
+  listProducts,
+  listCourses,
+  listLeadForms,
+  listPaymentPages,
+  listCollections,
+} from "@invoxai/db";
 import { normalizeToBlocks } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../../../lib/tenant";
-import { PageEditor } from "./PageEditor";
+import { PageEditor, type EntityOptions } from "./PageEditor";
 import { VersionHistory } from "./VersionHistory";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +33,23 @@ export default async function EditAiPage({
 
   const content = normalizeToBlocks(page.content);
   const liveUrl = `${buyerBase(tenant.username)}/${page.slug}`;
-  const versions = await listAiPageVersions(tenant.id, page.id);
+  // Entity-widget pickers: the seller's catalog, mapped to {id,title} options.
+  const [versions, products, courses, forms, pages, collections] = await Promise.all([
+    listAiPageVersions(tenant.id, page.id),
+    listProducts(tenant.id),
+    listCourses(tenant.id),
+    listLeadForms(tenant.id),
+    listPaymentPages(tenant.id),
+    listCollections(tenant.id),
+  ]);
+  const opt = (rows: { id: string; title: string }[]) => rows.map((r) => ({ id: r.id, title: r.title }));
+  const entities: EntityOptions = {
+    products: opt(products),
+    courses: opt(courses),
+    forms: opt(forms),
+    pages: opt(pages),
+    collections: opt(collections),
+  };
 
   return (
     <>
@@ -39,6 +63,7 @@ export default async function EditAiPage({
         initialTitle={content.title}
         initialBlocks={content.blocks}
         initialTheme={content.theme}
+        entities={entities}
       />
       <VersionHistory pageId={page.id} versions={versions} />
     </>

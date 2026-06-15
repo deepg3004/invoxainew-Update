@@ -2,7 +2,16 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getTenantTracking, getSiteNav } from "@invoxai/db";
+import {
+  getTenantTracking,
+  getSiteNav,
+  listPublishedProductsByIds,
+  listPublishedProducts,
+  getPublishedCoursesByIds,
+  getActivePaymentPagesByIds,
+  getPublishedLeadFormsByIds,
+} from "@invoxai/db";
+import { formatRupees } from "@invoxai/utils/money";
 import { cachedAiPage } from "../../lib/content";
 import { normalizeToBlocks, THEME_PRESETS, type Block, type Theme } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
@@ -46,11 +55,99 @@ export async function generateMetadata({
 
 type Tokens = (typeof THEME_PRESETS)[Theme["preset"]] & { accent: string };
 
+// ── Entity-bound widgets (Builder Part 3) ────────────────────────────────────
+// Resolve the ids stored in product/course/leadForm/paymentButton/storeGrid
+// blocks into live card data — ALL queries are tenant-scoped + published-only, so
+// a block referencing a foreign/draft/deleted id resolves to nothing.
+type EntityCard = { id: string; slug: string; title: string; pricePaise: number; compareAtPaise: number | null; imageUrl: string | null };
+type FormCard = { id: string; slug: string; title: string };
+type GridProduct = { id: string; slug: string; title: string; pricePaise: number; compareAtPaise: number | null; imageUrl: string | null };
+const ALL_PRODUCTS = "__all__";
+
+interface Resolved {
+  products: Map<string, EntityCard>;
+  courses: Map<string, EntityCard>;
+  pages: Map<string, EntityCard>;
+  forms: Map<string, FormCard>;
+  grids: Map<string, GridProduct[]>; // keyed by collectionId, or ALL_PRODUCTS for "all"
+}
+
+async function resolveEntities(tenantId: string, blocks: Block[]): Promise<Resolved> {
+  const productIds = new Set<string>();
+  const courseIds = new Set<string>();
+  const pageIds = new Set<string>();
+  const formIds = new Set<string>();
+  const gridKeys = new Set<string>();
+  for (const b of blocks) {
+    if (b.type === "product") productIds.add(b.productId);
+    else if (b.type === "course") courseIds.add(b.courseId);
+    else if (b.type === "paymentButton") pageIds.add(b.pageId);
+    else if (b.type === "leadForm") formIds.add(b.formId);
+    else if (b.type === "storeGrid") gridKeys.add(b.collectionId ?? ALL_PRODUCTS);
+  }
+
+  const [products, courses, pages, forms, gridEntries] = await Promise.all([
+    listPublishedProductsByIds(tenantId, [...productIds]),
+    getPublishedCoursesByIds(tenantId, [...courseIds]),
+    getActivePaymentPagesByIds(tenantId, [...pageIds]),
+    getPublishedLeadFormsByIds(tenantId, [...formIds]),
+    Promise.all(
+      [...gridKeys].map(async (key) => {
+        const rows = await listPublishedProducts(
+          tenantId,
+          key === ALL_PRODUCTS ? {} : { collectionId: key },
+        );
+        return [key, rows as GridProduct[]] as const;
+      }),
+    ),
+  ]);
+
+  const byId = <T extends { id: string }>(rows: T[]) => new Map(rows.map((r) => [r.id, r]));
+  // Payment pages store amountPaise; normalise to the shared pricePaise card shape.
+  const pageCards: EntityCard[] = pages.map((p) => ({
+    id: p.id, slug: p.slug, title: p.title, pricePaise: p.amountPaise, compareAtPaise: p.compareAtPaise, imageUrl: p.imageUrl,
+  }));
+  return {
+    products: byId(products as EntityCard[]),
+    courses: byId(courses as EntityCard[]),
+    pages: byId(pageCards),
+    forms: byId(forms as FormCard[]),
+    grids: new Map(gridEntries),
+  };
+}
+
+// A themed catalog card linking to a public buy page (/p, /c). Shows image,
+// title, price + optional struck compare-at.
+function CatalogCard({ card, href, t }: { card: EntityCard; href: string; t: Tokens }) {
+  const onSale = card.compareAtPaise != null && card.compareAtPaise > card.pricePaise;
+  return (
+    <Link
+      href={href}
+      className="mt-6 flex gap-4 rounded-xl p-4 no-underline transition hover:opacity-90"
+      style={{ border: `1px solid ${t.border}` }}
+    >
+      {card.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={card.imageUrl} alt={card.title} className="h-20 w-20 shrink-0 rounded-lg object-cover" />
+      ) : null}
+      <div className="min-w-0">
+        <div className="font-semibold" style={{ color: t.text }}>{card.title}</div>
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="font-medium" style={{ color: t.accent }}>{formatRupees(card.pricePaise)}</span>
+          {onSale ? (
+            <span className="text-sm line-through" style={{ color: t.muted }}>{formatRupees(card.compareAtPaise!)}</span>
+          ) : null}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 // Render one block as structured markup, styled by the page theme tokens.
 // SECURITY: blocks are validated + sanitized by normalizeToBlocks (server-side),
 // theme colours are validated to hex/preset tokens, and we never inject raw HTML
 // — so a generated or edited page can't run scripts on the seller's site.
-function BlockView({ block, t }: { block: Block; t: Tokens }) {
+function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: Resolved }) {
   switch (block.type) {
     case "heading": {
       const cls =
@@ -127,6 +224,65 @@ function BlockView({ block, t }: { block: Block; t: Tokens }) {
           <p className="whitespace-pre-line leading-relaxed">{block.text}</p>
         </div>
       );
+    case "product": {
+      const card = resolved.products.get(block.productId);
+      return card ? <CatalogCard card={card} href={`/p/${card.slug}`} t={t} /> : null;
+    }
+    case "course": {
+      const card = resolved.courses.get(block.courseId);
+      return card ? <CatalogCard card={card} href={`/c/${card.slug}`} t={t} /> : null;
+    }
+    case "storeGrid": {
+      const rows = resolved.grids.get(block.collectionId ?? ALL_PRODUCTS) ?? [];
+      if (rows.length === 0) return null;
+      return (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {rows.map((p) => (
+            <Link
+              key={p.id}
+              href={`/p/${p.slug}`}
+              className="flex flex-col rounded-xl p-3 no-underline transition hover:opacity-90"
+              style={{ border: `1px solid ${t.border}` }}
+            >
+              {p.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.imageUrl} alt={p.title} className="aspect-square w-full rounded-lg object-cover" />
+              ) : null}
+              <div className="mt-2 text-sm font-medium" style={{ color: t.text }}>{p.title}</div>
+              <div className="mt-0.5 text-sm font-semibold" style={{ color: t.accent }}>{formatRupees(p.pricePaise)}</div>
+            </Link>
+          ))}
+        </div>
+      );
+    }
+    case "leadForm": {
+      const form = resolved.forms.get(block.formId);
+      return form ? (
+        <Link
+          href={`/f/${form.slug}`}
+          className="mt-6 flex items-center justify-between rounded-xl p-4 no-underline transition hover:opacity-90"
+          style={{ border: `1px solid ${t.border}` }}
+        >
+          <span className="font-medium" style={{ color: t.text }}>{form.title}</span>
+          <span className="text-sm font-medium" style={{ color: t.accent }}>Open form →</span>
+        </Link>
+      ) : null;
+    }
+    case "paymentButton": {
+      const page = resolved.pages.get(block.pageId);
+      return page ? (
+        <div className="mt-6">
+          <a
+            href={`/pay/${page.slug}`}
+            className="inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white no-underline"
+            style={{ background: t.accent }}
+          >
+            {block.label}
+            <span className="opacity-80">· {formatRupees(page.pricePaise)}</span>
+          </a>
+        </div>
+      ) : null;
+    }
   }
 }
 
@@ -147,7 +303,10 @@ export default async function AiLandingPage({
   // Corrupt/empty content would otherwise render a blank "Untitled" page; keep
   // the old behavior of 404ing instead of publishing an empty page.
   if (content.blocks.length === 0) notFound();
-  const tracking = await getTenantTracking(tenant.id);
+  const [tracking, resolved] = await Promise.all([
+    getTenantTracking(tenant.id),
+    resolveEntities(tenant.id, content.blocks),
+  ]);
   // Multi-page site: if this page belongs to a site, fetch its sibling published pages
   // for a shared top nav (a single page in its site shows no nav).
   const nav = page.siteId ? await getSiteNav(page.siteId) : [];
@@ -175,7 +334,7 @@ export default async function AiLandingPage({
         ) : null}
         <article>
           {content.blocks.map((b, i) => (
-            <BlockView key={i} block={b} t={t} />
+            <BlockView key={i} block={b} t={t} resolved={resolved} />
           ))}
         </article>
 
