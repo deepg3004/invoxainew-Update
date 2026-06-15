@@ -34,6 +34,7 @@ export interface EntityOptions {
 // (product/course/storeGrid/leadForm/paymentButton) are added + picked here.
 type AddType =
   | "heading" | "text" | "image" | "button" | "video" | "divider"
+  | "hero" | "pricingTable" | "featureGrid" | "stats"
   | "faq" | "countdown" | "columns" | "socialProof"
   | "product" | "course" | "storeGrid" | "leadForm" | "paymentButton";
 
@@ -51,6 +52,41 @@ function newBlock(type: AddType, e: EntityOptions): Block {
       return { type: "video", url: "" };
     case "divider":
       return { type: "divider" };
+    case "hero":
+      return {
+        type: "hero",
+        heading: "Your big headline",
+        subheading: "A one-line value proposition that sells the click.",
+        ctaLabel: "Get started",
+        ctaHref: "",
+        imageUrl: "",
+      };
+    case "pricingTable":
+      return {
+        type: "pricingTable",
+        plans: [
+          { name: "Starter", price: "₹0", period: "free", features: ["Feature one", "Feature two"], ctaLabel: "Choose", ctaHref: "", highlighted: false },
+          { name: "Pro", price: "₹999", period: "/month", features: ["Everything in Starter", "Pro feature"], ctaLabel: "Choose", ctaHref: "", highlighted: true },
+        ],
+      };
+    case "featureGrid":
+      return {
+        type: "featureGrid",
+        items: [
+          { icon: "⚡", title: "Fast", text: "Describe this benefit." },
+          { icon: "🔒", title: "Secure", text: "Describe this benefit." },
+          { icon: "💜", title: "Loved", text: "Describe this benefit." },
+        ],
+      };
+    case "stats":
+      return {
+        type: "stats",
+        items: [
+          { value: "10k+", label: "Customers" },
+          { value: "4.9★", label: "Average rating" },
+          { value: "99.9%", label: "Uptime" },
+        ],
+      };
     case "faq":
       return { type: "faq", items: [{ q: "Your question?", a: "Your answer." }] };
     case "countdown":
@@ -193,6 +229,152 @@ function ColumnsEditor({
           className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
         >
           + Add column
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+type PricingPlan = Extract<Block, { type: "pricingTable" }>["plans"][number];
+
+/** Editor for a pricing table's plan columns (add / edit / remove, max 4). */
+function PricingEditor({
+  plans,
+  onChange,
+}: {
+  plans: PricingPlan[];
+  onChange: (plans: PricingPlan[]) => void;
+}) {
+  const set = (idx: number, patch: Partial<PricingPlan>) =>
+    onChange(plans.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
+  return (
+    <div className="space-y-3">
+      {plans.map((p, idx) => (
+        <div key={idx} className="space-y-1.5 rounded-lg border border-zinc-200 p-2">
+          <div className="flex gap-2">
+            <input value={p.name} onChange={(e) => set(idx, { name: e.target.value })} placeholder="Plan name" className={inputCls} />
+            <button
+              type="button"
+              onClick={() => onChange(plans.filter((_, i) => i !== idx))}
+              className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-700"
+              aria-label="Remove plan"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <input value={p.price} onChange={(e) => set(idx, { price: e.target.value })} placeholder="Price (e.g. ₹999)" className={inputCls} />
+            <input value={p.period} onChange={(e) => set(idx, { period: e.target.value })} placeholder="Period (e.g. /month)" className={inputCls} />
+          </div>
+          <textarea
+            value={p.features.join("\n")}
+            onChange={(e) => set(idx, { features: e.target.value.split("\n") })}
+            placeholder="One feature per line"
+            rows={3}
+            className={inputCls}
+          />
+          <div className="flex gap-2">
+            <input value={p.ctaLabel} onChange={(e) => set(idx, { ctaLabel: e.target.value })} placeholder="Button label" className={inputCls} />
+            <input value={p.ctaHref} onChange={(e) => set(idx, { ctaHref: e.target.value })} placeholder="https://… or /pay/your-link" className={inputCls} />
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted">
+            <input type="checkbox" checked={p.highlighted} onChange={(e) => set(idx, { highlighted: e.target.checked })} />
+            Highlight as “Most popular”
+          </label>
+        </div>
+      ))}
+      {plans.length < 4 ? (
+        <button
+          type="button"
+          onClick={() => onChange([...plans, { name: "", price: "", period: "", features: [], ctaLabel: "", ctaHref: "", highlighted: false }])}
+          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+        >
+          + Add plan
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+type FeatureItem = { icon: string; title: string; text: string };
+
+/** Editor for a feature grid's items (icon + title + text, add / edit / remove, max 6). */
+function FeatureGridEditor({
+  items,
+  onChange,
+}: {
+  items: FeatureItem[];
+  onChange: (items: FeatureItem[]) => void;
+}) {
+  const set = (idx: number, patch: Partial<FeatureItem>) =>
+    onChange(items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  return (
+    <div className="space-y-3">
+      {items.map((it, idx) => (
+        <div key={idx} className="space-y-1.5 rounded-lg border border-zinc-200 p-2">
+          <div className="flex gap-2">
+            <input value={it.icon} onChange={(e) => set(idx, { icon: e.target.value })} placeholder="Icon (emoji)" className="w-20 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand" />
+            <input value={it.title} onChange={(e) => set(idx, { title: e.target.value })} placeholder="Title" className={inputCls} />
+            <button
+              type="button"
+              onClick={() => onChange(items.filter((_, i) => i !== idx))}
+              className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-700"
+              aria-label="Remove feature"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <textarea value={it.text} onChange={(e) => set(idx, { text: e.target.value })} placeholder="Short description" rows={2} className={inputCls} />
+        </div>
+      ))}
+      {items.length < 6 ? (
+        <button
+          type="button"
+          onClick={() => onChange([...items, { icon: "", title: "", text: "" }])}
+          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+        >
+          + Add feature
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+type StatItem = { value: string; label: string };
+
+/** Editor for a stats strip's items (big value + label, add / edit / remove, max 4). */
+function StatsEditor({
+  items,
+  onChange,
+}: {
+  items: StatItem[];
+  onChange: (items: StatItem[]) => void;
+}) {
+  const set = (idx: number, patch: Partial<StatItem>) =>
+    onChange(items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  return (
+    <div className="space-y-3">
+      {items.map((it, idx) => (
+        <div key={idx} className="flex gap-2">
+          <input value={it.value} onChange={(e) => set(idx, { value: e.target.value })} placeholder="Value (e.g. 10k+)" className="w-32 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-brand" />
+          <input value={it.label} onChange={(e) => set(idx, { label: e.target.value })} placeholder="Label" className={inputCls} />
+          <button
+            type="button"
+            onClick={() => onChange(items.filter((_, i) => i !== idx))}
+            className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-700"
+            aria-label="Remove stat"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      ))}
+      {items.length < 4 ? (
+        <button
+          type="button"
+          onClick={() => onChange([...items, { value: "", label: "" }])}
+          className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+        >
+          + Add stat
         </button>
       ) : null}
     </div>
@@ -388,6 +570,73 @@ function PreviewBlock({
           </span>
         </div>
       );
+    case "hero": {
+      const img = safeUrl(block.imageUrl);
+      return (
+        <header className="mt-4 grid items-center gap-4 sm:grid-cols-2">
+          <div>
+            <div className="text-2xl font-bold tracking-tight" style={{ color: t.text }}>{block.heading || "Your headline"}</div>
+            {block.subheading ? <p className="mt-2 text-sm leading-relaxed" style={{ color: t.muted }}>{block.subheading}</p> : null}
+            {block.ctaLabel ? (
+              <span className="mt-3 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: t.accent, opacity: block.ctaHref ? 1 : 0.5 }}>
+                {block.ctaLabel}
+              </span>
+            ) : null}
+          </div>
+          {img ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={img} alt={block.heading} className="w-full rounded-xl object-cover" style={{ border: `1px solid ${t.border}` }} />
+          ) : (
+            <div className="grid h-24 place-items-center rounded-xl text-xs" style={{ border: `1px dashed ${t.border}`, color: t.muted }}>hero image — optional</div>
+          )}
+        </header>
+      );
+    }
+    case "pricingTable": {
+      const cols = block.plans.length >= 3 ? "grid-cols-3" : block.plans.length === 2 ? "grid-cols-2" : "grid-cols-1";
+      return (
+        <div className={`mt-4 grid gap-2 ${cols}`}>
+          {block.plans.map((p, i) => (
+            <div key={i} className="rounded-lg p-3" style={p.highlighted ? { border: `2px solid ${t.accent}`, background: `${t.accent}0A` } : { border: `1px solid ${t.border}` }}>
+              <div className="text-sm font-semibold" style={{ color: t.text }}>{p.name || "Plan"}</div>
+              <div className="mt-1 text-lg font-bold" style={{ color: t.text }}>{p.price || "—"}<span className="text-xs font-normal" style={{ color: t.muted }}> {p.period}</span></div>
+              <ul className="mt-2 space-y-1">
+                {p.features.filter(Boolean).slice(0, 4).map((f, j) => (
+                  <li key={j} className="flex gap-1 text-xs" style={{ color: t.muted }}><span style={{ color: t.accent }}>✓</span>{f}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case "featureGrid": {
+      const cols = block.items.length >= 3 ? "grid-cols-3" : block.items.length === 2 ? "grid-cols-2" : "grid-cols-1";
+      return (
+        <div className={`mt-4 grid gap-2 ${cols}`}>
+          {block.items.map((it, i) => (
+            <div key={i} className="rounded-lg p-2" style={{ border: `1px solid ${t.border}` }}>
+              {it.icon ? <div className="grid h-8 w-8 place-items-center rounded-lg text-base" style={{ background: `${t.accent}14`, color: t.accent }}>{it.icon}</div> : null}
+              {it.title ? <div className="mt-1 text-sm font-semibold" style={{ color: t.text }}>{it.title}</div> : null}
+              {it.text ? <p className="mt-0.5 text-xs" style={{ color: t.muted }}>{it.text}</p> : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case "stats": {
+      const cols = block.items.length >= 4 ? "grid-cols-4" : block.items.length === 3 ? "grid-cols-3" : block.items.length === 2 ? "grid-cols-2" : "grid-cols-1";
+      return (
+        <div className={`mt-4 grid gap-2 rounded-lg p-3 ${cols}`} style={{ background: `${t.accent}0A`, border: `1px solid ${t.border}` }}>
+          {block.items.map((s, i) => (
+            <div key={i} className="text-center">
+              <div className="text-lg font-bold tabular-nums" style={{ color: t.accent }}>{s.value || "—"}</div>
+              {s.label ? <div className="text-[11px]" style={{ color: t.muted }}>{s.label}</div> : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
   }
 }
 
@@ -706,6 +955,35 @@ export function PageEditor({
                   <div className="border-t border-dashed border-zinc-200" />
                 ) : null}
 
+                {b.type === "hero" ? (
+                  <div className="space-y-2">
+                    <input value={b.heading} onChange={(e) => update(i, { heading: e.target.value })} placeholder="Headline" className={inputCls} />
+                    <textarea value={b.subheading} onChange={(e) => update(i, { subheading: e.target.value })} placeholder="Sub-headline / value proposition" rows={2} className={inputCls} />
+                    <div className="flex gap-2">
+                      <input value={b.ctaLabel} onChange={(e) => update(i, { ctaLabel: e.target.value })} placeholder="Button label" className={inputCls} />
+                      <input value={b.ctaHref} onChange={(e) => update(i, { ctaHref: e.target.value })} placeholder="https://… or /pay/your-link" className={inputCls} />
+                    </div>
+                    <ImageUpload
+                      defaultValue={b.imageUrl}
+                      action={uploadTenantImageAction}
+                      onChange={(url) => update(i, { imageUrl: url })}
+                      recommend="Optional hero image, shown beside the text."
+                    />
+                  </div>
+                ) : null}
+
+                {b.type === "pricingTable" ? (
+                  <PricingEditor plans={b.plans} onChange={(plans) => update(i, { plans })} />
+                ) : null}
+
+                {b.type === "featureGrid" ? (
+                  <FeatureGridEditor items={b.items} onChange={(items) => update(i, { items })} />
+                ) : null}
+
+                {b.type === "stats" ? (
+                  <StatsEditor items={b.items} onChange={(items) => update(i, { items })} />
+                ) : null}
+
                 {b.type === "faq" ? (
                   <FaqEditor items={b.items} onChange={(items) => update(i, { items })} />
                 ) : null}
@@ -804,7 +1082,7 @@ export function PageEditor({
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {(["heading", "text", "image", "button", "video", "divider", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
+            {(["hero", "heading", "text", "image", "button", "video", "divider", "pricingTable", "featureGrid", "stats", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => add(t)}

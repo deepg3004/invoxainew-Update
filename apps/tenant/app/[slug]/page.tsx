@@ -342,6 +342,133 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
         </div>
       ) : null;
     }
+    case "hero":
+      return (
+        <header className="mt-6 grid items-center gap-8 sm:grid-cols-2">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl" style={{ color: t.text }}>
+              {block.heading}
+            </h1>
+            {block.subheading ? (
+              <p className="mt-4 text-lg leading-relaxed" style={{ color: t.muted }}>
+                {block.subheading}
+              </p>
+            ) : null}
+            {block.ctaLabel && block.ctaHref ? (
+              <div className="mt-7">
+                <a
+                  href={block.ctaHref}
+                  className="inline-block rounded-lg px-7 py-3.5 text-base font-semibold text-white no-underline shadow-sm transition hover:opacity-90"
+                  style={{ background: t.accent }}
+                >
+                  {block.ctaLabel}
+                </a>
+              </div>
+            ) : null}
+          </div>
+          {block.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={block.imageUrl}
+              alt={block.heading}
+              className="w-full rounded-2xl object-cover shadow-md"
+              style={{ border: `1px solid ${t.border}` }}
+            />
+          ) : null}
+        </header>
+      );
+    case "pricingTable": {
+      const cols = block.plans.length >= 3 ? "sm:grid-cols-3" : block.plans.length === 2 ? "sm:grid-cols-2" : "";
+      return (
+        <div className={`mt-8 grid gap-5 ${cols}`}>
+          {block.plans.map((p, i) => (
+            <div
+              key={i}
+              className="flex flex-col rounded-2xl p-6"
+              style={
+                p.highlighted
+                  ? { border: `2px solid ${t.accent}`, background: `${t.accent}0A`, boxShadow: `0 8px 30px ${t.accent}1A` }
+                  : { border: `1px solid ${t.border}` }
+              }
+            >
+              {p.highlighted ? (
+                <span
+                  className="mb-3 self-start rounded-full px-3 py-1 text-xs font-semibold text-white"
+                  style={{ background: t.accent }}
+                >
+                  Most popular
+                </span>
+              ) : null}
+              <div className="text-lg font-semibold" style={{ color: t.text }}>{p.name}</div>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="text-3xl font-bold" style={{ color: t.text }}>{p.price}</span>
+                {p.period ? <span className="text-sm" style={{ color: t.muted }}>{p.period}</span> : null}
+              </div>
+              {p.features.length > 0 ? (
+                <ul className="mt-5 space-y-2.5">
+                  {p.features.map((f, j) => (
+                    <li key={j} className="flex gap-2 text-sm leading-relaxed" style={{ color: t.muted }}>
+                      <span style={{ color: t.accent }}>✓</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {p.ctaLabel && p.ctaHref ? (
+                <a
+                  href={p.ctaHref}
+                  className="mt-6 block rounded-lg px-5 py-2.5 text-center font-medium no-underline transition hover:opacity-90"
+                  style={
+                    p.highlighted
+                      ? { background: t.accent, color: "#fff" }
+                      : { border: `1px solid ${t.accent}`, color: t.accent }
+                  }
+                >
+                  {p.ctaLabel}
+                </a>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case "featureGrid": {
+      const cols = block.items.length >= 3 ? "sm:grid-cols-3" : block.items.length === 2 ? "sm:grid-cols-2" : "";
+      return (
+        <div className={`mt-8 grid gap-5 ${cols}`}>
+          {block.items.map((it, i) => (
+            <div key={i} className="rounded-2xl p-5" style={{ border: `1px solid ${t.border}` }}>
+              {it.icon ? (
+                <div
+                  className="grid h-11 w-11 place-items-center rounded-xl text-xl"
+                  style={{ background: `${t.accent}14`, color: t.accent }}
+                >
+                  {it.icon}
+                </div>
+              ) : null}
+              {it.title ? <div className="mt-3 font-semibold" style={{ color: t.text }}>{it.title}</div> : null}
+              {it.text ? <p className="mt-1.5 text-sm leading-relaxed" style={{ color: t.muted }}>{it.text}</p> : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    case "stats": {
+      const cols = block.items.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : block.items.length === 3 ? "grid-cols-3" : block.items.length === 2 ? "grid-cols-2" : "grid-cols-1";
+      return (
+        <div
+          className={`mt-8 grid gap-4 rounded-2xl p-6 ${cols}`}
+          style={{ background: `${t.accent}0A`, border: `1px solid ${t.border}` }}
+        >
+          {block.items.map((s, i) => (
+            <div key={i} className="text-center">
+              <div className="text-3xl font-bold tabular-nums" style={{ color: t.accent }}>{s.value}</div>
+              {s.label ? <div className="mt-1 text-sm" style={{ color: t.muted }}>{s.label}</div> : null}
+            </div>
+          ))}
+        </div>
+      );
+    }
   }
 }
 

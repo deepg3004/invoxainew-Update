@@ -134,6 +134,77 @@ describe("normalizeToBlocks — Part 3 entity widgets", () => {
   });
 });
 
+// Builder Part 4 — premium layout blocks (hero / pricingTable / featureGrid /
+// stats). All fields are capped plain text; URLs run through safeUrl. These tests
+// pin the validation + sanitization boundary so generated/edited pages stay safe.
+describe("normalizeToBlocks — Part 4 premium blocks", () => {
+  const norm = (block: unknown) => normalizeToBlocks({ blocks: [block] }).blocks;
+  const UUID = "11111111-2222-4333-8444-555555555555";
+
+  it("accepts a hero, requires a heading, and sanitizes its URLs", () => {
+    expect(
+      norm({ type: "hero", heading: "Big", subheading: "Sub", ctaLabel: "Go", ctaHref: "/pay/x", imageUrl: "https://x.com/h.png" }),
+    ).toEqual([{ type: "hero", heading: "Big", subheading: "Sub", ctaLabel: "Go", ctaHref: "/pay/x", imageUrl: "https://x.com/h.png" }]);
+    // No heading → dropped.
+    expect(norm({ type: "hero", subheading: "no heading" })).toEqual([]);
+    // Hostile URLs are stripped to "" but the hero still renders (text-only).
+    expect(norm({ type: "hero", heading: "H", ctaHref: "javascript:alert(1)", imageUrl: "//evil.com" })).toEqual([
+      { type: "hero", heading: "H", subheading: "", ctaLabel: "", ctaHref: "", imageUrl: "" },
+    ]);
+  });
+
+  it("accepts a pricingTable, requires name+price per plan, caps plans at 4 and features at 12", () => {
+    const out = norm({
+      type: "pricingTable",
+      plans: [
+        { name: "Pro", price: "₹999", period: "/mo", features: ["a", "", "b"], ctaLabel: "Buy", ctaHref: "/pay/pro", highlighted: true },
+        { name: "noprice" },
+        { price: "₹0" },
+      ],
+    });
+    expect(out).toEqual([
+      {
+        type: "pricingTable",
+        plans: [
+          { name: "Pro", price: "₹999", period: "/mo", features: ["a", "b"], ctaLabel: "Buy", ctaHref: "/pay/pro", highlighted: true },
+        ],
+      },
+    ]);
+    const big = norm({
+      type: "pricingTable",
+      plans: Array.from({ length: 6 }, (_, i) => ({ name: `P${i}`, price: "₹1", features: Array.from({ length: 20 }, (_, j) => `f${j}`) })),
+    });
+    const plans = (big[0] as { plans: { features: string[] }[] }).plans;
+    expect(plans).toHaveLength(4);
+    expect(plans[0]!.features).toHaveLength(12);
+    expect(norm({ type: "pricingTable", plans: [] })).toEqual([]);
+    // highlighted coerces to a real boolean (truthy non-true → false).
+    expect((norm({ type: "pricingTable", plans: [{ name: "x", price: "y", highlighted: "yes" }] })[0] as { plans: { highlighted: boolean }[] }).plans[0]!.highlighted).toBe(false);
+  });
+
+  it("accepts a featureGrid, drops empty items, caps at 6", () => {
+    expect(norm({ type: "featureGrid", items: [{ icon: "⚡", title: "Fast", text: "x" }, { icon: "", title: "", text: "" }] })).toEqual([
+      { type: "featureGrid", items: [{ icon: "⚡", title: "Fast", text: "x" }] },
+    ]);
+    const big = norm({ type: "featureGrid", items: Array.from({ length: 9 }, (_, i) => ({ title: `t${i}` })) });
+    expect((big[0] as { items: unknown[] }).items).toHaveLength(6);
+    expect(norm({ type: "featureGrid", items: [] })).toEqual([]);
+  });
+
+  it("accepts a stats strip, requires a value, caps at 4", () => {
+    expect(norm({ type: "stats", items: [{ value: "10k+", label: "Users" }, { label: "no value" }] })).toEqual([
+      { type: "stats", items: [{ value: "10k+", label: "Users" }] },
+    ]);
+    const big = norm({ type: "stats", items: Array.from({ length: 6 }, (_, i) => ({ value: `${i}`, label: "x" })) });
+    expect((big[0] as { items: unknown[] }).items).toHaveLength(4);
+    expect(norm({ type: "stats", items: [] })).toEqual([]);
+  });
+
+  it("UUID-only blocks are unaffected (sanity)", () => {
+    expect(norm({ type: "product", productId: UUID })).toEqual([{ type: "product", productId: UUID }]);
+  });
+});
+
 // safeUrl feeds hrefs/srcs rendered on PUBLIC tenant pages (AI pages, bio links)
 // — these tests pin the trust boundary.
 describe("safeUrl", () => {

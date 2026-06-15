@@ -37,7 +37,33 @@ export type Block =
   | { type: "course"; courseId: string } // single course card → /c/<slug>
   | { type: "storeGrid"; collectionId: string | null } // products grid → /store, optionally one collection
   | { type: "leadForm"; formId: string } // lead-form card → /f/<slug>
-  | { type: "paymentButton"; pageId: string; label: string }; // payment link → /pay/<slug>
+  | { type: "paymentButton"; pageId: string; label: string } // payment link → /pay/<slug>
+  // Builder Part 4 — premium layout blocks. Pure presentation; no raw HTML, no
+  // data fetch. Every field is capped plain text; URLs run through safeUrl. These
+  // are what make a landing/sales page look "ultra-premium": a full hero, a
+  // pricing table, an icon feature grid, and a stats strip.
+  | {
+      type: "hero";
+      heading: string;
+      subheading: string;
+      ctaLabel: string;
+      ctaHref: string; // sanitized http(s)/site-relative, or ""
+      imageUrl: string; // sanitized, or "" (renders as a text-only hero)
+    }
+  | {
+      type: "pricingTable";
+      plans: {
+        name: string;
+        price: string; // free-form text, e.g. "₹999" or "Free"
+        period: string; // e.g. "/month", "one-time"
+        features: string[];
+        ctaLabel: string;
+        ctaHref: string; // sanitized, or ""
+        highlighted: boolean; // visually featured "most popular" column
+      }[];
+    }
+  | { type: "featureGrid"; items: { icon: string; title: string; text: string }[] } // icon = short text/emoji
+  | { type: "stats"; items: { value: string; label: string }[] }; // big-number counters
 
 // ── Theme (AI builder slice 2) ───────────────────────────────────────────────
 
@@ -99,6 +125,19 @@ export function safeUrl(v: unknown): string {
 
 function asLevel(v: unknown): 1 | 2 | 3 {
   return v === 1 || v === 2 || v === 3 ? v : 2;
+}
+
+function bool(v: unknown): boolean {
+  return v === true;
+}
+
+/** Validate an untrusted array of strings into a capped, trimmed, non-empty list. */
+function strList(v: unknown, max: number, itemMax = 200): string[] {
+  const raw = Array.isArray(v) ? v : [];
+  return raw
+    .map((it) => str(it, itemMax).trim())
+    .filter((it) => it.length > 0)
+    .slice(0, max);
 }
 
 /** Validate a datetime string into a canonical ISO string, or "" if unparseable.
@@ -236,6 +275,70 @@ function toBlock(raw: unknown): Block | null {
       const pageId = entityId(b.pageId);
       const label = str(b.label, 120).trim() || "Buy now";
       return pageId ? { type: "paymentButton", pageId, label } : null;
+    }
+    case "hero": {
+      const heading = str(b.heading, 200).trim();
+      if (!heading) return null; // a hero with no headline is meaningless
+      return {
+        type: "hero",
+        heading,
+        subheading: str(b.subheading, 500).trim(),
+        ctaLabel: str(b.ctaLabel, 120).trim(),
+        ctaHref: safeUrl(b.ctaHref),
+        imageUrl: safeUrl(b.imageUrl),
+      };
+    }
+    case "pricingTable": {
+      const raw = Array.isArray(b.plans) ? b.plans : [];
+      const plans = raw
+        .map((it) => {
+          const o = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+          const name = str(o.name, 80).trim();
+          const price = str(o.price, 40).trim();
+          if (!name || !price) return null; // a column needs a name + a price
+          return {
+            name,
+            price,
+            period: str(o.period, 40).trim(),
+            features: strList(o.features, 12),
+            ctaLabel: str(o.ctaLabel, 80).trim(),
+            ctaHref: safeUrl(o.ctaHref),
+            highlighted: bool(o.highlighted),
+          };
+        })
+        .filter(
+          (x): x is NonNullable<typeof x> => x !== null,
+        )
+        .slice(0, 4);
+      return plans.length > 0 ? { type: "pricingTable", plans } : null;
+    }
+    case "featureGrid": {
+      const raw = Array.isArray(b.items) ? b.items : [];
+      const items = raw
+        .map((it) => {
+          const o = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+          const title = str(o.title, 120).trim();
+          const text = str(o.text, 500).trim();
+          // icon is short plain text (emoji or 1–2 words), rendered as text only.
+          const icon = str(o.icon, 24).trim();
+          return title || text ? { icon, title, text } : null;
+        })
+        .filter((x): x is { icon: string; title: string; text: string } => x !== null)
+        .slice(0, 6);
+      return items.length > 0 ? { type: "featureGrid", items } : null;
+    }
+    case "stats": {
+      const raw = Array.isArray(b.items) ? b.items : [];
+      const items = raw
+        .map((it) => {
+          const o = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+          const value = str(o.value, 40).trim();
+          const label = str(o.label, 120).trim();
+          return value ? { value, label } : null;
+        })
+        .filter((x): x is { value: string; label: string } => x !== null)
+        .slice(0, 4);
+      return items.length > 0 ? { type: "stats", items } : null;
     }
     default:
       return null;

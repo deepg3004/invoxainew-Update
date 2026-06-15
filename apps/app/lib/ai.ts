@@ -29,7 +29,7 @@ const SCHEMA = {
         properties: {
           type: {
             type: "string",
-            enum: ["heading", "text", "divider", "list", "testimonial", "callout"],
+            enum: ["hero", "heading", "text", "divider", "list", "testimonial", "callout"],
           },
           // Present for heading/text; also the callout body. Omitted for divider/list.
           text: { type: "string" },
@@ -40,6 +40,11 @@ const SCHEMA = {
           // For `testimonial`: the quote + who said it.
           quote: { type: "string" },
           author: { type: "string" },
+          // For `hero`: the headline, supporting line, and CTA label. The image and
+          // CTA link are added by the seller in the editor (the AI never invents URLs).
+          heading: { type: "string" },
+          subheading: { type: "string" },
+          ctaLabel: { type: "string" },
         },
         required: ["type"],
         additionalProperties: false,
@@ -77,7 +82,7 @@ export async function generateLandingPage(input: {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
   const system =
-    "You are a senior landing-page copywriter and designer. Given a business name and a short brief, return a `title` and an ordered list of `blocks` that compose a compelling landing page. Use these block types: a single `heading` with level 1 (the hero headline); `text` blocks for taglines and body copy; `heading` blocks with level 2 for section titles and level 3 for sub-points; `divider` blocks to separate major sections; a `list` block (with an `items` array of 3–6 short strings) for benefits or features; a `testimonial` block (a `quote` plus an `author`) for social proof; and a `callout` block (its `text` field) to highlight a key promise or offer. Aim for ~8–16 blocks: hero heading, a one-line tagline, then 3–5 sections — include at least one `list` of benefits and, where it fits, one `testimonial` and one `callout` — ending with a closing call-to-action text block. Make the copy specific and benefit-led for this exact business. Plain text only — no HTML, no markdown, no placeholder text; testimonials must be plausible but clearly illustrative.";
+    "You are a senior landing-page copywriter and designer. Given a business name and a short brief, return a `title` and an ordered list of `blocks` that compose a compelling, premium landing page. Use these block types: ONE `hero` block FIRST (its `heading` is the big headline, `subheading` is a one-line value proposition, and `ctaLabel` is a short call-to-action like \"Get started\" — do NOT include any URL or image; the seller adds those); `text` blocks for body copy; `heading` blocks with level 2 for section titles and level 3 for sub-points; `divider` blocks to separate major sections; a `list` block (with an `items` array of 3–6 short strings) for benefits or features; a `testimonial` block (a `quote` plus an `author`) for social proof; and a `callout` block (its `text` field) to highlight a key promise or offer. Aim for ~8–16 blocks: start with the `hero`, then 3–5 sections — include at least one `list` of benefits and, where it fits, one `testimonial` and one `callout` — ending with a closing call-to-action text block. Make the copy specific and benefit-led for this exact business. Plain text only — no HTML, no markdown, no placeholder text; testimonials must be plausible but clearly illustrative.";
 
   try {
     const message = await client.messages.create({
