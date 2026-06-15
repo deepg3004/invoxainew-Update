@@ -19,6 +19,8 @@ import { normalizeToBlocks, resolveTheme, type Block, type ThemeTokens } from "@
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../ThemeRuntime";
+import { Reveal } from "../Reveal";
 import { Countdown } from "./Countdown";
 
 export const dynamic = "force-dynamic";
@@ -179,7 +181,7 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
     case "button":
       return (
         <div className="mt-6">
-          <a href={block.href} className="inline-block rounded-lg px-6 py-3 font-medium text-white" style={{ background: t.accent }}>
+          <a href={block.href} className="iv-cta inline-block px-6 py-3 font-medium text-white no-underline">
             {block.label}
           </a>
         </div>
@@ -333,8 +335,7 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
         <div className="mt-6">
           <a
             href={`/pay/${page.slug}`}
-            className="inline-flex items-center gap-2 rounded-lg px-6 py-3 font-medium text-white no-underline"
-            style={{ background: t.accent }}
+            className="iv-cta inline-flex items-center gap-2 px-6 py-3 font-medium text-white no-underline"
           >
             {block.label}
             <span className="opacity-80">· {formatRupees(page.pricePaise)}</span>
@@ -358,8 +359,7 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
               <div className="mt-7">
                 <a
                   href={block.ctaHref}
-                  className="inline-block rounded-lg px-7 py-3.5 text-base font-semibold text-white no-underline shadow-sm transition hover:opacity-90"
-                  style={{ background: t.accent }}
+                  className="iv-cta inline-block px-7 py-3.5 text-base font-semibold text-white no-underline shadow-sm"
                 >
                   {block.ctaLabel}
                 </a>
@@ -417,12 +417,10 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
               {p.ctaLabel && p.ctaHref ? (
                 <a
                   href={p.ctaHref}
-                  className="mt-6 block rounded-lg px-5 py-2.5 text-center font-medium no-underline transition hover:opacity-90"
-                  style={
-                    p.highlighted
-                      ? { background: t.accent, color: "#fff" }
-                      : { border: `1px solid ${t.accent}`, color: t.accent }
-                  }
+                  className={`mt-6 block px-5 py-2.5 text-center font-medium no-underline transition ${
+                    p.highlighted ? "iv-cta text-white" : "rounded-lg hover:opacity-90"
+                  }`}
+                  style={p.highlighted ? undefined : { border: `1px solid ${t.accent}`, color: t.accent }}
                 >
                   {p.ctaLabel}
                 </a>
@@ -511,7 +509,7 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
           {block.text ? <p className="mt-3 whitespace-pre-line leading-relaxed" style={{ color: t.muted }}>{block.text}</p> : null}
           {block.ctaLabel && block.ctaHref ? (
             <div className="mt-6">
-              <a href={block.ctaHref} className="inline-block rounded-lg px-6 py-3 font-medium text-white no-underline transition hover:opacity-90" style={{ background: t.accent }}>
+              <a href={block.ctaHref} className="iv-cta inline-block px-6 py-3 font-medium text-white no-underline">
                 {block.ctaLabel}
               </a>
             </div>
@@ -554,8 +552,10 @@ export default async function AiLandingPage({
   const t: Tokens = resolveTheme(content.theme);
 
   return (
-    <div style={{ background: t.bg, minHeight: "100vh" }}>
-      <main className="mx-auto max-w-3xl px-6 py-20">
+    <div className="iv-page" style={{ background: t.bg, minHeight: "100vh", position: "relative" }}>
+      <ThemeStyle t={t} />
+      <AnimatedBg type={t.background} />
+      <main className="relative z-10 mx-auto max-w-3xl px-6 py-20">
         <TrackingScripts ids={tracking ?? {}} />
         {nav.length > 1 ? (
           <nav
@@ -575,7 +575,9 @@ export default async function AiLandingPage({
         ) : null}
         <article>
           {content.blocks.map((b, i) => (
-            <BlockView key={i} block={b} t={t} resolved={resolved} />
+            <div key={i} className="iv-reveal">
+              <BlockView block={b} t={t} resolved={resolved} />
+            </div>
           ))}
         </article>
 
@@ -586,6 +588,8 @@ export default async function AiLandingPage({
           </Link>
         </footer>
       </main>
+      <BuiltWithBadge />
+      <Reveal />
     </div>
   );
 }
