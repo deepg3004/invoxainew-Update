@@ -132,6 +132,8 @@ model Tenant {
   // Phase: live workshops + their registrations.
   workshops             Workshop[]
   workshopRegistrations WorkshopRegistration[]
+  // Phase: media library (cloud storage) assets.
+  fileAssets            FileAsset[]
   // Phase 12: communities (members spaces) + their memberships.
   communities          Community[]
   communityMemberships CommunityMembership[]
@@ -1436,6 +1438,25 @@ enum VerificationStatus {
   PENDING
   VERIFIED
   REJECTED
+}
+
+/// A file in the seller's media library (cloud storage). The object lives in the
+/// PRIVATE downloads bucket under the tenant's `tenant/<id>/` key prefix; this row
+/// is the catalog entry (name/size/type) + the source of truth for storage usage.
+/// `key` is the opaque storage key (never a public URL — downloads go via a signed
+/// URL minted server-side). RLS: deny-anon.
+model FileAsset {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  key         String   @unique
+  name        String
+  sizeBytes   Int      @map("size_bytes")
+  contentType String   @map("content_type")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("file_assets")
 }
 
 enum WorkshopStatus {

@@ -42,6 +42,7 @@ import {
   Mailbox,
   Send,
   Video,
+  FolderOpen,
   FlaskConical,
   LifeBuoy,
   type LucideIcon,
@@ -61,6 +62,7 @@ export const SELLER_NAV: NavGroup[] = [
       { href: "/sites", label: "Sites", icon: LayoutGrid },
       { href: "/bio", label: "Bio link", icon: Link2 },
       { href: "/storefront", label: "Storefront", icon: Store },
+      { href: "/media", label: "Media library", icon: FolderOpen },
     ],
   },
   {

@@ -539,6 +539,13 @@ export {
   countCourseCertificates,
   type IssueResult,
 } from "./certificates";
+export {
+  createFileAsset,
+  listFileAssets,
+  getFileAsset,
+  deleteFileAsset,
+  tenantStorageBytes,
+} from "./media";
 export type { WorkshopStatus } from "@prisma/client";
 export {
   BROADCAST_SEGMENTS,
