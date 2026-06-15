@@ -6,7 +6,7 @@ import { getSessionUser } from "./auth";
 
 export interface AuthedTenant {
   user: User;
-  tenant: { id: string; username: string; name: string | null; stateCode: string | null };
+  tenant: { id: string; username: string; name: string | null; stateCode: string | null; storeTheme: string | null };
 }
 
 /**
@@ -28,6 +28,7 @@ export async function requireTenant(): Promise<AuthedTenant> {
       username: tenant.username,
       name: tenant.name,
       stateCode: tenant.stateCode,
+      storeTheme: tenant.storeTheme,
     },
   };
 }

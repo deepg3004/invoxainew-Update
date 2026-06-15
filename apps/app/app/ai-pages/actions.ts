@@ -18,13 +18,20 @@ import {
   logActivity,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
-import { normalizeToBlocks, type Block, type Theme, type BuilderSeo } from "@invoxai/utils/blocks";
+import { normalizeToBlocks, THEME_PRESETS, type Block, type Theme, type BuilderSeo } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../lib/tenant";
 import { aiConfigured, generateLandingPage } from "../../lib/ai";
 import { getTemplate } from "../../lib/templates";
 
 export type AiPageFormState = { error?: string };
 export type SaveResult = { ok: true } | { ok: false; error: string };
+
+/** The theme the seller picked in the create wizard, or null if absent/unknown.
+ *  Validated against the known presets so a forged value can't reach storage. */
+function chosenThemeFromForm(form: FormData): Theme | null {
+  const preset = String(form.get("themePreset") ?? "").trim();
+  return preset && THEME_PRESETS[preset] ? { preset, accent: "" } : null;
+}
 
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
 const RESERVED = new Set(["pay", "account", "api", "health", "store", "p", "cart", "c", "courses", "learn", "report-abuse", "m", "communities", "_next", "favicon"]);
@@ -73,15 +80,19 @@ export async function generateAiPageAction(
   const result = await generateLandingPage({ businessName, brief });
   if (!result.ok) return { error: result.error };
 
+  // Apply the theme the seller chose in the create wizard (over the AI's default).
+  const chosen = chosenThemeFromForm(form);
+  const content = chosen ? { ...result.content, theme: chosen } : result.content;
+
   // Create the page first (reserves the slug, no charge), then bill it. If
   // billing fails we roll back the page, so we never charge for a page that
   // doesn't exist and never create one we couldn't bill.
   const created = await createAiPage({
     tenantId: tenant.id,
     slug,
-    title: result.content.title,
+    title: content.title,
     brief,
-    content: JSON.parse(JSON.stringify(result.content)),
+    content: JSON.parse(JSON.stringify(content)),
     chargeRef: null,
   });
   if (!created.ok) {
@@ -187,10 +198,13 @@ export async function createFromTemplateAction(
     return { error: "Address must be 1–50 chars (letters, digits, hyphens) and not reserved." };
   }
 
+  // The theme the seller picked in the create wizard overrides the template's own.
+  const chosen = chosenThemeFromForm(form);
+
   // 1) Static built-in template (free) — original behaviour, unchanged.
   const builtIn = getTemplate(templateId);
   if (builtIn) {
-    const safe = normalizeToBlocks(builtIn.content);
+    const safe = normalizeToBlocks(chosen ? { ...builtIn.content, theme: chosen } : builtIn.content);
     const created = await createAiPage({
       tenantId: tenant.id,
       slug,
@@ -207,7 +221,11 @@ export async function createFromTemplateAction(
   // 2) Admin marketplace template (free or premium). Only PUBLISHED ones resolve.
   const tpl = await getPublishedTemplate(templateId);
   if (!tpl) return { error: "That template is no longer available." };
-  const safe = normalizeToBlocks(tpl.content);
+  const safe = normalizeToBlocks(
+    chosen && tpl.content && typeof tpl.content === "object"
+      ? { ...(tpl.content as Record<string, unknown>), theme: chosen }
+      : tpl.content,
+  );
 
   // Premium pre-check: don't reserve a slug we can't bill (mirrors the AI-page
   // flow). Free admin templates skip billing entirely.
