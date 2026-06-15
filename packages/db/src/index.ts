@@ -86,6 +86,8 @@ export {
   listPendingUpiOrders,
   listAbandonedCheckouts,
   countAbandonedCheckouts,
+  listCheckoutsForRecovery,
+  claimRecoveryEmail,
   listSoldOutProductsForOrder,
   getTenantSalesSummary,
   updateOrderFulfillment,
@@ -127,6 +129,48 @@ export {
   getTenantTracking,
   upsertTenantTracking,
 } from "./tracking";
+export {
+  socialProofName,
+  listRecentSocialProof,
+  type SocialProofEvent,
+} from "./social-proof";
+export {
+  createExperiment,
+  listExperiments,
+  getExperimentById,
+  getRunningExperimentForPage,
+  stopExperiment,
+  deleteExperiment,
+  incrementExperiment,
+  listPagesForExperiment,
+  type ExperimentVariant,
+  type CreateExperimentResult,
+} from "./experiments";
+export type { ExperimentStatus } from "@prisma/client";
+export {
+  canBuyerAccess,
+  createSupportTicket,
+  listBuyerTickets,
+  getBuyerTicket,
+  addBuyerReply,
+  listSellerTickets,
+  countOpenTickets,
+  getSellerTicket,
+  addSellerReply,
+  setTicketStatus,
+  type BuyerIdentity,
+} from "./support";
+export type { SupportTicketStatus, SupportSender } from "@prisma/client";
+export {
+  createSite,
+  listSites,
+  getSiteWithPages,
+  renameSite,
+  deleteSite,
+  assignPageToSite,
+  getSiteNav,
+  type SiteNavItem,
+} from "./sites";
 export {
   notifyTenant,
   listNotifications,
@@ -353,7 +397,13 @@ export {
   type LeadFormInput,
 } from "./leadforms";
 
-export { listContacts, type CrmContact } from "./crm";
+export {
+  listContacts,
+  contactStage,
+  CRM_STAGES,
+  type CrmContact,
+  type CrmStage,
+} from "./crm";
 
 export {
   getBioLink,
@@ -403,3 +453,41 @@ export {
   type CreateAffiliateResult,
 } from "./affiliates";
 export type { AffiliateStatus } from "@prisma/client";
+export {
+  createUpsell,
+  listUpsells,
+  countUpsells,
+  getUpsellById,
+  updateUpsell,
+  setUpsellActive,
+  deleteUpsell,
+  listProductOptionsForUpsell,
+  otoOfferPricePaise,
+  getActiveOtoForOrder,
+  findOtoOrder,
+  resolveOtoContext,
+  type UpsellInput,
+  type SaveUpsellResult,
+  type OtoOffer,
+  type OtoContext,
+} from "./upsells";
+export {
+  createSequence,
+  listSequences,
+  getSequenceWithSteps,
+  updateSequence,
+  setSequenceActive,
+  deleteSequence,
+  addStep,
+  updateStep,
+  deleteStep,
+  listProductOptionsForSequence,
+  enrollInSequences,
+  enrollPurchaseFromOrder,
+  listDueEnrollments,
+  claimEnrollmentAdvance,
+  type SequenceInput,
+  type StepInput,
+  type SaveSequenceResult,
+} from "./sequences";
+export type { SequenceTrigger, SequenceChannel, EnrollmentStatus } from "@prisma/client";

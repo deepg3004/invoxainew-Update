@@ -74,6 +74,12 @@ const serverSchema = z.object({
   // invoxai.io address). SERVER ONLY.
   RESEND_API_KEY: z.string().optional().default(""),
   EMAIL_FROM: z.string().optional().default("InvoxAI <noreply@invoxai.io>"),
+
+  // Growth G1.2 — shared secret for scheduled cron endpoints (abandoned-checkout
+  // recovery sweep). An external scheduler must send it as `Authorization: Bearer
+  // <CRON_SECRET>`. Empty = cron endpoints are disabled (return 503), so nothing
+  // runs until it's configured. SERVER ONLY.
+  CRON_SECRET: z.string().optional().default(""),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

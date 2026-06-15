@@ -92,6 +92,16 @@ model Tenant {
   // Store slice 3 (coupons): the seller's discount codes.
   coupons      Coupon[]
   affiliates   Affiliate[]
+  // Growth G1.1: post-purchase one-time offers (OTO).
+  upsells      Upsell[]
+  // Growth G1.3: email/DM drip sequences.
+  emailSequences EmailSequence[]
+  // Growth G1.6: A/B tests on payment pages.
+  pageExperiments PageExperiment[]
+  // Ops: buyer support tickets.
+  supportTickets  SupportTicket[]
+  // Builder: multi-page sites grouping AI pages.
+  builderSites    BuilderSite[]
   // Courses / LMS (Final Plan §10): the seller's courses + buyer enrolments.
   courses      Course[]
   enrolments   Enrolment[]
@@ -217,6 +227,10 @@ model TenantTracking {
   ga4MeasurementId String?  @map("ga4_measurement_id")
   googleAdsId      String?  @map("google_ads_id")
   gtmId            String?  @map("gtm_id")
+  // Growth G1.5: show live "someone just bought …" social-proof popups on the
+  // seller's public pages (derived from recent PAID orders, masked — no PII). On by
+  // default; the seller can switch it off here.
+  socialProofEnabled Boolean @default(true) @map("social_proof_enabled")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -276,6 +290,11 @@ model Product {
   reviews       ProductReview[]
   // Purchasable variations (size/color). Empty = the product has no variants.
   variants      ProductVariant[]
+  // Growth G1.1: OTOs that PITCH this product, and OTOs gated on BUYING this product.
+  offerUpsells   Upsell[] @relation("UpsellOffer")
+  triggerUpsells Upsell[] @relation("UpsellTrigger")
+  // Growth G1.3: PURCHASE sequences gated on buying this product.
+  sequenceTriggers EmailSequence[]
 }
 
 /// A purchasable variation of a product (Shopify-style size/color), with its own
@@ -930,6 +949,8 @@ model PaymentPage {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
   payments    BuyerPayment[]
+  // Growth G1.6: the A/B test running on this page (at most one).
+  experiment  PageExperiment?
 
   @@unique([tenantId, slug])
   @@index([tenantId])
@@ -1018,6 +1039,11 @@ model BuyerPayment {
   refundedPaise     Int                @default(0) @map("refunded_paise")
   // Phase 1.2: set when the bank reversed this payment (chargeback). Admin-marked.
   chargebackAt      DateTime?          @map("chargeback_at")
+  // Growth G1.2: when the abandoned-checkout recovery email was sent for this
+  // started-but-unpaid order (null = not yet nudged). The sweep claims it atomically
+  // (set where null) so two concurrent runs can't double-send. Stays null forever for
+  // orders that pay promptly or were never eligible.
+  recoveryEmailAt   DateTime?          @map("recovery_email_at")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
   commission        CommissionCharge?
@@ -1030,10 +1056,23 @@ model BuyerPayment {
   enrolment         Enrolment?
   // Phase 12: the community membership this purchase granted (community orders).
   communityMembership CommunityMembership?
+  // Growth G1.1 (OTO): when this order is a post-purchase one-time offer, it links
+  // back to the parent order that triggered it + the Upsell it accepted. A partial
+  // unique on (parentPaymentId, upsellId) makes acceptance idempotent — a buyer can
+  // create at most ONE OTO order per (parent order, upsell), so a refreshed success
+  // page can't spin up duplicate charges. Both null for every normal order (Postgres
+  // allows many NULL/NULL rows under the unique index).
+  parentPaymentId   String?            @map("parent_payment_id") @db.Uuid
+  parentPayment     BuyerPayment?      @relation("OtoParent", fields: [parentPaymentId], references: [id], onDelete: SetNull)
+  otoChildren       BuyerPayment[]     @relation("OtoParent")
+  upsellId          String?            @map("upsell_id") @db.Uuid
+  upsell            Upsell?            @relation(fields: [upsellId], references: [id], onDelete: SetNull)
 
+  @@unique([parentPaymentId, upsellId])
   @@index([tenantId, createdAt])
   @@index([tenantId, buyerProfileId])
   @@index([affiliateId])
+  @@index([upsellId])
   @@map("buyer_payments")
 }
 
@@ -1063,6 +1102,47 @@ model Affiliate {
   @@unique([tenantId, code])
   @@index([tenantId])
   @@map("affiliates")
+}
+
+/// Post-purchase one-time offer (OTO) — Growth slice G1.1. After a buyer completes
+/// a purchase, the seller can pitch ONE more product at a one-click discount, charged
+/// on the SELLER's OWN gateway (same money rail as any sale; InvoxAI commission from
+/// the wallet — buyer money never touches InvoxAI). Order-BUMP (pre-purchase, shown at
+/// checkout) is a SEPARATE mechanism — see Product.bumpEnabled — so this models only
+/// the post-purchase OTO.
+///
+/// `offerProduct` is the product pitched. `triggerProductId` null = show after ANY
+/// purchase; set = only after that specific product was bought. `discountBps` is an
+/// OTO-only markdown off the offer product's price (0 = full price, 10000 = free —
+/// clamped server-side at offer time). Part 2 wires the buyer success-page offer + the
+/// idempotent one-click charge (a new BuyerPayment via the markBuyerPaymentPaid claim,
+/// guarded by a unique consume token so a refresh can't double-charge). RLS: deny-anon.
+model Upsell {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  // The product pitched as the OTO. Deleting it removes the offer (Cascade).
+  offerProductId   String   @map("offer_product_id") @db.Uuid
+  offerProduct     Product  @relation("UpsellOffer", fields: [offerProductId], references: [id], onDelete: Cascade)
+  // Optional gate: only show this OTO after the buyer bought this product. Null = any
+  // purchase. Deleting the trigger product removes the gated OTO (Cascade).
+  triggerProductId String?  @map("trigger_product_id") @db.Uuid
+  triggerProduct   Product? @relation("UpsellTrigger", fields: [triggerProductId], references: [id], onDelete: Cascade)
+  headline         String
+  blurb            String?
+  discountBps      Int      @default(0) @map("discount_bps")
+  active           Boolean  @default(true)
+  sortOrder        Int      @default(0) @map("sort_order")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // OTO orders accepted against this upsell (Part 2 money path).
+  buyerPayments    BuyerPayment[]
+
+  @@index([tenantId, active])
+  @@index([offerProductId])
+  @@index([triggerProductId])
+  @@map("upsells")
 }
 
 /// One line of a multi-item (cart) order — Store slice 3. A cart checkout
@@ -1125,6 +1205,13 @@ model AiPage {
   // Null when generated within the plan's free allowance (no charge); the
   // feature-charge reference when it was paid (Feature Billing engine).
   chargeRef   String?  @unique @map("charge_ref")
+  // Builder (multi-page): when set, this page belongs to a BuilderSite and appears in
+  // its shared nav (navLabel/navOrder). Null = a standalone page (unchanged). Deleting
+  // the site detaches the pages (SetNull), it never deletes them.
+  siteId      String?      @map("site_id") @db.Uuid
+  site        BuilderSite? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  navLabel    String?      @map("nav_label")
+  navOrder    Int          @default(0) @map("nav_order")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -1132,6 +1219,7 @@ model AiPage {
 
   @@unique([tenantId, slug])
   @@index([tenantId])
+  @@index([siteId])
   @@map("ai_pages")
 }
 
@@ -1593,4 +1681,197 @@ model PaymentEvent {
 
   @@index([processedAt])
   @@map("payment_events")
+}
+
+/// Growth G1.3 — what enrols a contact into an EmailSequence. PURCHASE = a buyer
+/// completing a paid order (optionally gated to one product); LEAD = a lead-form
+/// submission; MANUAL = the seller adds a contact by hand. (SIGNUP can be added as a
+/// value later.) The enrol hooks live in the existing PAID / lead-submit paths (Part 2).
+enum SequenceTrigger {
+  PURCHASE
+  LEAD
+  MANUAL
+}
+
+/// Channel a sequence step sends on. EMAIL now (reuses the notification email stack +
+/// RESEND env-gate); WHATSAPP later via a channel adapter.
+enum SequenceChannel {
+  EMAIL
+}
+
+/// Lifecycle of one contact's run through a sequence. ACTIVE = steps remaining;
+/// DONE = all steps sent; CANCELLED = stopped (seller paused / contact opted out).
+enum EnrollmentStatus {
+  ACTIVE
+  DONE
+  CANCELLED
+}
+
+/// A seller's automated drip sequence (Growth G1.3). A trigger event enrols a
+/// contact (by email — the CRM has no contacts table, contacts are derived), and a
+/// scheduled worker advances each enrolment through the ordered steps by their delay,
+/// sending on the step's channel. Carries NO money. Reuses the notification email
+/// stack (admin templates not involved — copy lives on the step). RLS: deny-anon.
+model EmailSequence {
+  id               String          @id @default(uuid()) @db.Uuid
+  tenantId         String          @map("tenant_id") @db.Uuid
+  tenant           Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name             String
+  trigger          SequenceTrigger
+  // PURCHASE only: optionally limit enrolment to buyers of this product. Null = any.
+  triggerProductId String?         @map("trigger_product_id") @db.Uuid
+  triggerProduct   Product?        @relation(fields: [triggerProductId], references: [id], onDelete: SetNull)
+  active           Boolean         @default(true)
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  steps       SequenceStep[]
+  enrollments SequenceEnrollment[]
+
+  @@index([tenantId, active])
+  @@index([trigger, active])
+  @@index([triggerProductId])
+  @@map("email_sequences")
+}
+
+/// One step in a sequence. `delayHours` is the wait BEFORE this step fires, measured
+/// from the previous step's send (or from enrolment for the first step). `sortOrder`
+/// is the 0-based position. `body` is the message; `subject` is used for EMAIL.
+model SequenceStep {
+  id         String          @id @default(uuid()) @db.Uuid
+  sequenceId String          @map("sequence_id") @db.Uuid
+  sequence   EmailSequence   @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  sortOrder  Int             @map("sort_order")
+  delayHours Int             @map("delay_hours")
+  channel    SequenceChannel @default(EMAIL)
+  subject    String?
+  body       String
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  @@index([sequenceId, sortOrder])
+  @@map("sequence_steps")
+}
+
+/// One contact's run through a sequence (Part 2 worker writes/advances these). Enrol
+/// is idempotent per (sequence, email) so a repeated trigger can't double-enrol.
+/// `currentStep` is the next step index to send; `nextRunAt` is when it's due. The
+/// worker's hot query is (status=ACTIVE, nextRunAt<=now). tenantId denormalised for
+/// scoped seller stats. RLS: deny-anon.
+model SequenceEnrollment {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  sequenceId  String           @map("sequence_id") @db.Uuid
+  sequence    EmailSequence    @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  email       String // lowercased enrolled contact
+  currentStep Int              @default(0) @map("current_step")
+  nextRunAt   DateTime         @map("next_run_at")
+  status      EnrollmentStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@unique([sequenceId, email])
+  @@index([status, nextRunAt])
+  @@index([tenantId])
+  @@map("sequence_enrollments")
+}
+
+enum ExperimentStatus {
+  RUNNING
+  STOPPED
+}
+
+/// Growth G1.6 — an A/B test on a payment page. Variant A is the page's own title +
+/// description; variant B overrides them. A visitor is 50/50 bucketed by a cookie and
+/// shown one variant; views + conversions are tallied per variant (counters bumped by
+/// the public /api/exp beacon, advisory like page-views — not a money surface). The
+/// seller compares conversion rates and can stop the test / apply the winner's copy.
+/// One experiment per page (paymentPageId unique). RLS: deny-anon.
+model PageExperiment {
+  id                  String           @id @default(uuid()) @db.Uuid
+  tenantId            String           @map("tenant_id") @db.Uuid
+  tenant              Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  paymentPageId       String           @unique @map("payment_page_id") @db.Uuid
+  paymentPage         PaymentPage      @relation(fields: [paymentPageId], references: [id], onDelete: Cascade)
+  variantBTitle       String           @map("variant_b_title")
+  variantBDescription String?          @map("variant_b_description")
+  status              ExperimentStatus @default(RUNNING)
+  aViews              Int              @default(0) @map("a_views")
+  bViews              Int              @default(0) @map("b_views")
+  aConversions        Int              @default(0) @map("a_conversions")
+  bConversions        Int              @default(0) @map("b_conversions")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("page_experiments")
+}
+
+/// Lifecycle of a buyer support ticket. OPEN = awaiting the seller; ANSWERED = the
+/// seller replied, awaiting the buyer; CLOSED = resolved (either side / seller).
+enum SupportTicketStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+enum SupportSender {
+  BUYER
+  SELLER
+}
+
+/// Ops — a buyer↔seller support thread, scoped to one tenant. Opened by a buyer from
+/// the Buyer Corner; the seller answers from their dashboard inbox. The buyer is
+/// attributed by `buyerProfileId` when logged in, plus `buyerEmail` (always set) so
+/// access can be checked by either. No money path. RLS: deny-anon (reads/writes are
+/// server-side after the buyer-session / seller-tenant gate).
+model SupportTicket {
+  id             String              @id @default(uuid()) @db.Uuid
+  tenantId       String              @map("tenant_id") @db.Uuid
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  buyerProfileId String?             @map("buyer_profile_id") @db.Uuid
+  buyerEmail     String              @map("buyer_email")
+  subject        String
+  status         SupportTicketStatus @default(OPEN)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  messages SupportMessage[]
+
+  @@index([tenantId, status, updatedAt])
+  @@index([buyerProfileId])
+  @@map("support_tickets")
+}
+
+/// One message in a support thread (buyer or seller). `sender` records who wrote it;
+/// the thread is ordered by createdAt. Append-only.
+model SupportMessage {
+  id        String        @id @default(uuid()) @db.Uuid
+  ticketId  String        @map("ticket_id") @db.Uuid
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender    SupportSender
+  body      String
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
+}
+
+/// Builder — a multi-page site grouping several AiPages under a shared top nav. Each
+/// page keeps its own slug + public URL (username.invoxai.io/<slug>); the site just
+/// links siblings together (navLabel/navOrder) so a visitor can move between them. A
+/// page with siteId null is standalone (unchanged). Deleting a site detaches its pages
+/// (AiPage.siteId → null), never deletes them. RLS: deny-anon.
+model BuilderSite {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  pages AiPage[]
+
+  @@index([tenantId])
+  @@map("builder_sites")
 }
