@@ -12,6 +12,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   LayoutDashboard,
+  LayoutGrid,
   Sparkles,
   Link2,
   Package,
@@ -37,6 +38,10 @@ import {
   Gauge,
   History,
   Share2,
+  TrendingUp,
+  Mailbox,
+  FlaskConical,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "./cn";
@@ -51,6 +56,7 @@ export const SELLER_NAV: NavGroup[] = [
     heading: "Build",
     items: [
       { href: "/ai-pages", label: "AI pages", icon: Sparkles },
+      { href: "/sites", label: "Sites", icon: LayoutGrid },
       { href: "/bio", label: "Bio link", icon: Link2 },
       { href: "/storefront", label: "Storefront", icon: Store },
     ],
@@ -83,8 +89,12 @@ export const SELLER_NAV: NavGroup[] = [
     heading: "Grow",
     items: [
       { href: "/forms", label: "Forms", icon: ClipboardList },
+      { href: "/upsells", label: "Upsells", icon: TrendingUp },
+      { href: "/sequences", label: "Sequences", icon: Mailbox },
+      { href: "/experiments", label: "A/B tests", icon: FlaskConical },
       { href: "/affiliates", label: "Affiliates", icon: Share2 },
       { href: "/contacts", label: "Contacts", icon: Users },
+      { href: "/support", label: "Support", icon: LifeBuoy },
       { href: "/domains", label: "Domains", icon: Globe },
       { href: "/analytics", label: "Analytics", icon: LineChart },
       { href: "/tracking", label: "Tracking", icon: Target },

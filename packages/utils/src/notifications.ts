@@ -57,6 +57,21 @@ export const NOTIFICATION_EVENTS: NotifEvent[] = [
     defaultSubject: "New sale: {{amount}}",
     defaultBody: "A buyer just paid on {{storeName}}.",
   },
+  {
+    key: "buyer.abandoned",
+    label: "Abandoned checkout reminder",
+    description:
+      "Emailed to a buyer who started checking out but didn't finish, with a link to complete it.",
+    audience: "buyer",
+    channel: "email",
+    variables: ["storeName", "item", "amount"],
+    heading: "You left something behind 👀",
+    buttonLabel: "Finish checkout",
+    footer: "You're receiving this because you started a purchase on this store.",
+    defaultSubject: "Complete your order at {{storeName}}",
+    defaultBody:
+      "You were so close! Your order for {{item}} ({{amount}}) is waiting — finish checking out below.",
+  },
 ];
 
 export function getNotifEvent(key: string): NotifEvent | undefined {

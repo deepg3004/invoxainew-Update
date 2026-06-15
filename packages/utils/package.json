@@ -14,7 +14,8 @@
     "./notifications": "./src/notifications.ts",
     "./redis": "./src/redis.ts",
     "./blocks": "./src/blocks.ts",
-    "./states": "./src/states.ts"
+    "./states": "./src/states.ts",
+    "./experiment": "./src/experiment.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
