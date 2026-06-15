@@ -35,6 +35,11 @@ export function getTenantByOwnerId(ownerId: string) {
   return prisma.tenant.findUnique({ where: { ownerId } });
 }
 
+/** Set the seller's display name (profile). Owner-scoped upstream; value sanitized in the action. */
+export function setTenantName(tenantId: string, name: string) {
+  return prisma.tenant.update({ where: { id: tenantId }, data: { name } });
+}
+
 /** Set the seller's GST state code (for invoice place-of-supply). Tenant-scoped. */
 export function setTenantStateCode(tenantId: string, stateCode: string | null) {
   return prisma.tenant.update({
