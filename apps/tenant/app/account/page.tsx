@@ -114,11 +114,19 @@ export default async function BuyerCorner() {
           <h1 className="mt-1 text-3xl font-bold">Your orders</h1>
           <p className="mt-1 text-sm text-muted">Signed in as {user.email}</p>
         </div>
-        <form action="/account/auth/signout" method="post">
-          <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-50">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/account/support"
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-50"
+          >
+            Support
+          </Link>
+          <form action="/account/auth/signout" method="post">
+            <button className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm hover:bg-zinc-50">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
 
       {downloads.length > 0 ? (
