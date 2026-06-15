@@ -34,7 +34,14 @@ export default async function TemplatesPage() {
       <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted">Quick starts</h2>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         {TEMPLATES.map((t) => {
-          const hero = t.content.blocks.find((b) => b.type === "heading" && b.level === 1);
+          const h1 = t.content.blocks.find((b) => b.type === "heading" && b.level === 1);
+          const heroBlock = t.content.blocks.find((b) => b.type === "hero");
+          const heroText =
+            h1 && h1.type === "heading"
+              ? h1.text
+              : heroBlock && heroBlock.type === "hero"
+                ? heroBlock.heading
+                : t.name;
           return (
             <TemplateCard
               key={t.id}
@@ -42,7 +49,7 @@ export default async function TemplatesPage() {
               name={t.name}
               description={t.description}
               preset={t.content.theme.preset}
-              heroText={hero && hero.type === "heading" ? hero.text : t.name}
+              heroText={heroText}
             />
           );
         })}
