@@ -1883,3 +1883,28 @@ model BuilderSite {
   @@index([tenantId])
   @@map("builder_sites")
 }
+
+/// Admin-authored starter templates for the AI builder (Builder Part 3 —
+/// templates marketplace). A GLOBAL catalog (NOT tenant-scoped): platform admins
+/// author them; every seller can pick one. Applying a FREE template just copies
+/// `content` block JSON into a new AiPage at no cost (like the static built-ins).
+/// A PREMIUM template runs the Feature Billing engine (featureKey
+/// "builder_template") before the page is created — the same charge path as a
+/// paid AI generation. `content` is opaque block JSON re-validated through
+/// normalizeToBlocks at apply time, so the render trust boundary still holds.
+model BuilderTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  category    String // "landing" | "store" | "coaching" | "event" | ...
+  description String
+  themePreset String   @map("theme_preset") // drives the gallery mini-preview
+  isPremium   Boolean  @default(false) @map("is_premium")
+  isPublished Boolean  @default(true) @map("is_published")
+  sortOrder   Int      @default(0) @map("sort_order")
+  content     Json // BuilderContent block JSON (validated on apply)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, category, sortOrder])
+  @@map("builder_templates")
+}

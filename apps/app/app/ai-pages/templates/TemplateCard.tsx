@@ -10,12 +10,16 @@ export function TemplateCard({
   description,
   preset,
   heroText,
+  isPremium = false,
+  category,
 }: {
   id: string;
   name: string;
   description: string;
   preset: ThemePreset;
   heroText: string;
+  isPremium?: boolean;
+  category?: string;
 }) {
   const action = createFromTemplateAction.bind(null, id);
   const [state, formAction, pending] = useActionState<AiPageFormState, FormData>(action, {});
@@ -24,7 +28,12 @@ export function TemplateCard({
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-surface">
       {/* Mini preview using the template's theme tokens */}
-      <div className="px-4 py-6" style={{ background: t.bg }}>
+      <div className="relative px-4 py-6" style={{ background: t.bg }}>
+        {isPremium ? (
+          <span className="absolute right-3 top-3 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-semibold text-amber-950">
+            Premium
+          </span>
+        ) : null}
         <div className="text-base font-bold" style={{ color: t.text }}>
           {heroText}
         </div>
@@ -34,7 +43,14 @@ export function TemplateCard({
       </div>
 
       <div className="p-4">
-        <div className="font-medium text-zinc-900">{name}</div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="font-medium text-zinc-900">{name}</div>
+          {category ? (
+            <span className="shrink-0 rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+              {category}
+            </span>
+          ) : null}
+        </div>
         <p className="mt-0.5 text-sm text-muted">{description}</p>
 
         <form action={formAction} className="mt-3 space-y-2">

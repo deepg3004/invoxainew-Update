@@ -13,6 +13,7 @@ import {
   getAiPageVersion,
   setAiPagePublished,
   deleteAiPage,
+  getPublishedTemplate,
   logActivity,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
@@ -27,6 +28,9 @@ export type SaveResult = { ok: true } | { ok: false; error: string };
 const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
 const RESERVED = new Set(["pay", "account", "api", "health", "store", "p", "cart", "c", "courses", "learn", "report-abuse", "m", "communities", "_next", "favicon"]);
 const FEATURE = "ai_page";
+// Feature Billing key for PREMIUM marketplace templates. Free templates (the
+// static built-ins and any admin template with isPremium=false) never touch it.
+const TEMPLATE_FEATURE = "builder_template";
 
 export async function generateAiPageAction(
   _prev: AiPageFormState,
@@ -159,9 +163,15 @@ export async function restoreAiPageVersionAction(
 }
 
 /**
- * Create a page from a starter template — no AI call, so no AI-page fee (it's a
- * free quick-start the seller then edits). The template content is still
- * re-validated + sanitized through normalizeToBlocks before storage.
+ * Create a page from a starter template. No AI call ever runs here, so there's
+ * no AI-page fee. Three kinds of template resolve through one action:
+ *   • a static built-in (free) — matched by its string id;
+ *   • an admin marketplace template with isPremium=false (free);
+ *   • a premium marketplace template — billed through the Feature Billing engine
+ *     (featureKey "builder_template"), the same charge path as a paid AI page.
+ * In every case the content is re-validated + sanitized through normalizeToBlocks
+ * before storage (the render trust boundary), and slug ownership is enforced by
+ * the db layer's unique [tenantId, slug].
  */
 export async function createFromTemplateAction(
   templateId: string,
@@ -170,25 +180,86 @@ export async function createFromTemplateAction(
 ): Promise<AiPageFormState> {
   const { tenant } = await requireTenant();
 
-  const template = getTemplate(templateId);
-  if (!template) return { error: "That template is no longer available." };
-
   const slug = String(form.get("slug") ?? "").trim().toLowerCase();
   if (!SLUG_RE.test(slug) || RESERVED.has(slug)) {
     return { error: "Address must be 1–50 chars (letters, digits, hyphens) and not reserved." };
   }
 
-  const safe = normalizeToBlocks(template.content);
+  // 1) Static built-in template (free) — original behaviour, unchanged.
+  const builtIn = getTemplate(templateId);
+  if (builtIn) {
+    const safe = normalizeToBlocks(builtIn.content);
+    const created = await createAiPage({
+      tenantId: tenant.id,
+      slug,
+      title: safe.title,
+      brief: `Started from the "${builtIn.name}" template`,
+      content: JSON.parse(JSON.stringify(safe)),
+      chargeRef: null,
+    });
+    if (!created.ok) return { error: `The address "/${slug}" is already in use.` };
+    revalidatePath("/ai-pages");
+    redirect(`/ai-pages/${created.id}/edit`);
+  }
+
+  // 2) Admin marketplace template (free or premium). Only PUBLISHED ones resolve.
+  const tpl = await getPublishedTemplate(templateId);
+  if (!tpl) return { error: "That template is no longer available." };
+  const safe = normalizeToBlocks(tpl.content);
+
+  // Premium pre-check: don't reserve a slug we can't bill (mirrors the AI-page
+  // flow). Free admin templates skip billing entirely.
+  if (tpl.isPremium) {
+    const quota = await getFeatureQuota(tenant.id, TEMPLATE_FEATURE);
+    if (!quota || !quota.active) {
+      return { error: "Premium templates aren’t available right now." };
+    }
+    const willBeFree = quota.remainingFree !== 0; // -1 (unlimited) or > 0
+    if (!willBeFree) {
+      const wallet = await getWalletByTenant(tenant.id);
+      const affordable =
+        quota.walletEnabled && (wallet?.balancePaise ?? 0) >= quota.totalPaise;
+      if (!affordable) {
+        return {
+          error: `This is a premium template (${formatRupees(quota.totalPaise)}). Top up your wallet first, or buy a credit from Feature charges.`,
+        };
+      }
+    }
+  }
+
+  // Create first (reserves the slug, no charge), then bill. If billing fails we
+  // roll the page back — never charge for a page that wasn't created.
   const created = await createAiPage({
     tenantId: tenant.id,
     slug,
     title: safe.title,
-    brief: `Started from the "${template.name}" template`,
+    brief: `Started from the "${tpl.name}" template`,
     content: JSON.parse(JSON.stringify(safe)),
     chargeRef: null,
   });
   if (!created.ok) return { error: `The address "/${slug}" is already in use.` };
 
+  if (tpl.isPremium) {
+    const charge = await consumeFeature({ tenantId: tenant.id, featureKey: TEMPLATE_FEATURE });
+    if (!charge.ok) {
+      await deleteAiPage(tenant.id, created.id);
+      const price = formatRupees(charge.pricePaise ?? 0);
+      if (charge.reason === "insufficient_funds") {
+        return charge.directAvailable
+          ? { error: `Premium template — wallet too low. Top up, or buy a ${price} credit from Feature charges, then try again.` }
+          : { error: `Premium template — wallet too low (need ${price}). Top up and try again.` };
+      }
+      if (charge.reason === "payment_required") {
+        return { error: `This template costs ${price}. Buy a credit from Feature charges, then try again.` };
+      }
+      return { error: "Couldn’t bill the premium template. Please try again." };
+    }
+    if ((charge.charged === "wallet" || charge.charged === "direct") && charge.referenceId) {
+      await setAiPageChargeRef(tenant.id, created.id, charge.referenceId);
+    }
+  }
+
+  await logActivity(tenant.id, "page.from_template", `/${slug}`).catch(() => {});
   revalidatePath("/ai-pages");
   redirect(`/ai-pages/${created.id}/edit`);
 }

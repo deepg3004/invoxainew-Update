@@ -172,6 +172,16 @@ export {
   type SiteNavItem,
 } from "./sites";
 export {
+  createBuilderTemplate,
+  listBuilderTemplates,
+  getBuilderTemplate,
+  updateBuilderTemplate,
+  deleteBuilderTemplate,
+  listPublishedTemplates,
+  getPublishedTemplate,
+  type BuilderTemplateInput,
+} from "./templates";
+export {
   notifyTenant,
   listNotifications,
   countNotifications,
