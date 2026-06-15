@@ -35,6 +35,8 @@ import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
 import { CartLink } from "../../CartLink";
 import { StickyBuyBar } from "../../StickyBuyBar";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../../ThemeRuntime";
+import { resolveTheme, normalizeTheme } from "@invoxai/utils/blocks";
 import { getSessionUser } from "../../../lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -105,9 +107,13 @@ export default async function CoursePage({
     : null;
   // Enrolled learners can review the course (prefilled with their existing review).
   const myReview = enrolment && user ? await getBuyerReviewForCourse(course.id, user.id) : null;
+  const theme = resolveTheme(normalizeTheme({ theme: { preset: tenant.storeTheme || "pure-snow" } }));
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <div className="iv-page" style={{ background: theme.bg, minHeight: "100vh", position: "relative" }}>
+    <ThemeStyle t={theme} />
+    <AnimatedBg type={theme.background} />
+    <main className="relative z-10 mx-auto max-w-5xl px-6 py-10">
       <TrackingScripts ids={tracking ?? {}} />
       <TrackView name={course.title} valuePaise={course.pricePaise} />
       <div className="flex items-center justify-between">
@@ -366,5 +372,7 @@ export default async function CoursePage({
         <StickyBuyBar label="Enroll now" offerPaise={course.pricePaise} compareAtPaise={course.compareAtPaise} />
       ) : null}
     </main>
+    <BuiltWithBadge />
+    </div>
   );
 }

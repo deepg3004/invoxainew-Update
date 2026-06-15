@@ -24,6 +24,8 @@ import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
 import { CartLink } from "../../CartLink";
 import { StickyBuyBar } from "../../StickyBuyBar";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../../ThemeRuntime";
+import { resolveTheme, normalizeTheme } from "@invoxai/utils/blocks";
 
 export const dynamic = "force-dynamic";
 
@@ -99,9 +101,13 @@ export default async function ProductPage({
 
   const onSale =
     product.compareAtPaise != null && product.compareAtPaise > product.pricePaise;
+  const theme = resolveTheme(normalizeTheme({ theme: { preset: tenant.storeTheme || "pure-snow" } }));
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <div className="iv-page" style={{ background: theme.bg, minHeight: "100vh", position: "relative" }}>
+    <ThemeStyle t={theme} />
+    <AnimatedBg type={theme.background} />
+    <main className="relative z-10 mx-auto max-w-5xl px-6 py-10">
       <TrackingScripts ids={tracking ?? {}} />
       <TrackView name={product.title} valuePaise={product.pricePaise} />
       <div className="flex items-center justify-between">
@@ -189,7 +195,7 @@ export default async function ProductPage({
           ) : null}
 
           {product.description ? (
-            <p className="mt-4 whitespace-pre-line leading-relaxed text-zinc-700">
+            <p className="mt-4 whitespace-pre-line leading-relaxed" style={{ color: theme.muted }}>
               {product.description}
             </p>
           ) : null}
@@ -291,5 +297,7 @@ export default async function ProductPage({
         <StickyBuyBar label="Buy now" offerPaise={product.pricePaise} compareAtPaise={product.compareAtPaise} />
       ) : null}
     </main>
+    <BuiltWithBadge />
+    </div>
   );
 }

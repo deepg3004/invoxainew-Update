@@ -17,6 +17,8 @@ import { resolveTenantByHost } from "../../../lib/resolve";
 import { getSessionUser } from "../../../lib/auth";
 import { WorkshopJoinBox } from "./WorkshopJoinBox";
 import { StickyBuyBar } from "../../StickyBuyBar";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../../ThemeRuntime";
+import { resolveTheme, normalizeTheme } from "@invoxai/utils/blocks";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -79,9 +81,13 @@ export default async function WorkshopPage({
         email: user.email ?? null,
       })
     : null;
+  const theme = resolveTheme(normalizeTheme({ theme: { preset: tenant.storeTheme || "pure-snow" } }));
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
+    <div className="iv-page" style={{ background: theme.bg, minHeight: "100vh", position: "relative" }}>
+    <ThemeStyle t={theme} />
+    <AnimatedBg type={theme.background} />
+    <main className="relative z-10 mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <TrackView name={workshop.title} valuePaise={workshop.pricePaise} />
       <div className="flex items-center justify-between">
@@ -178,5 +184,7 @@ export default async function WorkshopPage({
         <StickyBuyBar label="Register" offerPaise={workshop.pricePaise} compareAtPaise={workshop.compareAtPaise} />
       ) : null}
     </main>
+    <BuiltWithBadge />
+    </div>
   );
 }

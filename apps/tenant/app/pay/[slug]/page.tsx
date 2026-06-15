@@ -12,6 +12,8 @@ import { cachedPaymentPage } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { PayBox } from "./PayBox";
 import { StickyBuyBar } from "../../StickyBuyBar";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../../ThemeRuntime";
+import { resolveTheme, normalizeTheme } from "@invoxai/utils/blocks";
 import { ExperimentTitle } from "./ExperimentTitle";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
@@ -59,9 +61,13 @@ export default async function PayPage({
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
+  const theme = resolveTheme(normalizeTheme({ theme: { preset: tenant.storeTheme || "pure-snow" } }));
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
+    <div className="iv-page" style={{ background: theme.bg, minHeight: "100vh", position: "relative" }}>
+    <ThemeStyle t={theme} />
+    <AnimatedBg type={theme.background} />
+    <main className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <div className="flex items-center gap-2.5">
         {tenant.logoUrl ? (
@@ -146,5 +152,7 @@ export default async function PayPage({
         <StickyBuyBar label="Pay now" offerPaise={page.amountPaise} compareAtPaise={page.compareAtPaise} />
       ) : null}
     </main>
+    <BuiltWithBadge />
+    </div>
   );
 }

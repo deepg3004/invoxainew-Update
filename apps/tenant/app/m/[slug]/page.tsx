@@ -10,9 +10,11 @@ import {
   getMembership,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
+import { resolveTheme, normalizeTheme } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { getSessionUser } from "../../../lib/auth";
 import { CommunityJoinBox } from "./CommunityJoinBox";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../../ThemeRuntime";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -72,9 +74,13 @@ export default async function CommunityPage({
         email: user.email ?? null,
       })
     : null;
+  const theme = resolveTheme(normalizeTheme({ theme: { preset: tenant.storeTheme || "pure-snow" } }));
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
+    <div className="iv-page" style={{ background: theme.bg, minHeight: "100vh", position: "relative" }}>
+    <ThemeStyle t={theme} />
+    <AnimatedBg type={theme.background} />
+    <main className="relative z-10 mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <TrackView name={community.title} valuePaise={community.pricePaise} />
       <div className="flex items-center justify-between">
@@ -163,5 +169,7 @@ export default async function CommunityPage({
         )}
       </div>
     </main>
+    <BuiltWithBadge />
+    </div>
   );
 }

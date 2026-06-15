@@ -12,6 +12,8 @@ import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { BookingBox } from "./BookingBox";
 import { StickyBuyBar } from "../../StickyBuyBar";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../../ThemeRuntime";
+import { resolveTheme, normalizeTheme } from "@invoxai/utils/blocks";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -56,9 +58,13 @@ export default async function BookingPage({
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
+  const theme = resolveTheme(normalizeTheme({ theme: { preset: tenant.storeTheme || "pure-snow" } }));
 
   return (
-    <main className="mx-auto max-w-md px-6 py-12">
+    <div className="iv-page" style={{ background: theme.bg, minHeight: "100vh", position: "relative" }}>
+    <ThemeStyle t={theme} />
+    <AnimatedBg type={theme.background} />
+    <main className="relative z-10 mx-auto max-w-md px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
       <TrackView name={type.title} valuePaise={type.pricePaise} />
       <div className="flex items-center justify-between">
@@ -119,5 +125,7 @@ export default async function BookingPage({
         <StickyBuyBar label="Book now" offerPaise={type.pricePaise} compareAtPaise={type.compareAtPaise} />
       ) : null}
     </main>
+    <BuiltWithBadge />
+    </div>
   );
 }
