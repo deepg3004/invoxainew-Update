@@ -34,3 +34,17 @@ pnpm-debug.log*
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# ruflo / claude-flow (.env and .env.* already covered above)
+.claude-flow/
+.ruflo-cache/
+agentdb.rvf
+agentdb.rvf.lock
+*.local
+
+# ruflo / swarm runtime artifacts (not source)
+.swarm/
+.claude/
+.mcp.json
+ruvector.db
+*.ruflo-backup
