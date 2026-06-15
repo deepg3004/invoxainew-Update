@@ -193,7 +193,7 @@ export default async function ProductPage({
             </p>
           ) : null}
 
-          <div className="mt-6 rounded-xl border border-zinc-200 bg-surface p-5">
+          <div className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-5 shadow-card">
             {sellerReady ? (
               <ProductBuyBox
                 product={{
@@ -268,11 +268,13 @@ export default async function ProductPage({
               <Link
                 key={p.id}
                 href={`/p/${p.slug}`}
-                className="flex flex-col rounded-xl border border-zinc-200 p-3 no-underline transition hover:border-brand/40"
+                className="group flex flex-col rounded-2xl border border-zinc-200 p-3 no-underline transition duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-card"
               >
                 {p.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.imageUrl} alt={p.title} className="aspect-square w-full rounded-lg object-cover" />
+                  <div className="overflow-hidden rounded-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.imageUrl} alt={p.title} className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  </div>
                 ) : null}
                 <div className="mt-2 text-sm font-medium text-zinc-900">{p.title}</div>
                 <div className="mt-0.5 text-sm font-semibold text-brand-strong">{formatRupees(p.pricePaise)}</div>
