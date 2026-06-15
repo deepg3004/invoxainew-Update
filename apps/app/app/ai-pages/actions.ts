@@ -13,6 +13,7 @@ import {
   getAiPageVersion,
   setAiPagePublished,
   deleteAiPage,
+  renameAiPage,
   getPublishedTemplate,
   logActivity,
 } from "@invoxai/db";
@@ -274,5 +275,14 @@ export async function setAiPagePublishedAction(id: string, isPublished: boolean)
 export async function deleteAiPageAction(id: string) {
   const { tenant } = await requireTenant();
   await deleteAiPage(tenant.id, id);
+  revalidatePath("/ai-pages");
+}
+
+/** Quick rename from the AI-pages list (title only — keeps content.title in sync). */
+export async function renameAiPageAction(id: string, form: FormData): Promise<void> {
+  const { tenant } = await requireTenant();
+  const title = String(form.get("title") ?? "").trim().slice(0, 200);
+  if (!title) return;
+  await renameAiPage(tenant.id, id, title);
   revalidatePath("/ai-pages");
 }

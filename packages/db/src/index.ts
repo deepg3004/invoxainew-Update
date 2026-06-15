@@ -349,6 +349,7 @@ export {
   getPublishedAiPage,
   getAiPageForOwner,
   updateAiPageContent,
+  renameAiPage,
   recordAiPageVersion,
   listAiPageVersions,
   getAiPageVersion,

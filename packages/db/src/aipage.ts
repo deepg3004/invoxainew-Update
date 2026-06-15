@@ -165,6 +165,23 @@ export function updateAiPageContent(
   });
 }
 
+/** Rename a tenant's own AI page (scoped). Updates the `title` column AND the
+ *  content JSON's title (the public renderer reads content.title), so a quick
+ *  rename from the list keeps both in sync without opening the editor. */
+export async function renameAiPage(tenantId: string, id: string, title: string) {
+  const page = await prisma.aiPage.findFirst({
+    where: { id, tenantId },
+    select: { content: true },
+  });
+  if (!page) return { count: 0 };
+  const base =
+    page.content && typeof page.content === "object" && !Array.isArray(page.content)
+      ? (page.content as Record<string, unknown>)
+      : {};
+  const content = { ...base, title } as Prisma.InputJsonValue;
+  return prisma.aiPage.updateMany({ where: { id, tenantId }, data: { title, content } });
+}
+
 /** Publish / unpublish a tenant's own AI page (scoped). Unpublishing takes it
  *  offline immediately — getPublishedAiPage filters on isPublished — without
  *  deleting it, so it can be brought back. */
