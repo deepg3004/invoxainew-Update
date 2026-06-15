@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { GlassCard, PageHeader } from "@invoxai/ui";
-import { getCouponById } from "@invoxai/db";
+import { getCouponById, listProducts } from "@invoxai/db";
 import { requireTenant } from "../../../lib/tenant";
 import { CouponForm } from "../CouponForm";
 import { updateCouponAction } from "../actions";
@@ -35,6 +35,7 @@ export default async function EditCouponPage({
   const { id } = await params;
   const coupon = await getCouponById(tenant.id, id);
   if (!coupon) notFound();
+  const products = (await listProducts(tenant.id)).map((p) => ({ id: p.id, title: p.title }));
 
   const action = updateCouponAction.bind(null, coupon.id);
 
@@ -49,12 +50,16 @@ export default async function EditCouponPage({
         <CouponForm
           action={action}
           submitLabel="Save changes"
+          products={products}
           initial={{
             code: coupon.code,
             type: coupon.type,
             value: coupon.value,
             minSubtotalPaise: coupon.minSubtotalPaise,
             maxRedemptions: coupon.maxRedemptions,
+            perCustomerLimit: coupon.perCustomerLimit,
+            firstOrderOnly: coupon.firstOrderOnly,
+            productId: coupon.productId,
             startsAt: toLocalInput(coupon.startsAt),
             expiresAt: toLocalInput(coupon.expiresAt),
           }}

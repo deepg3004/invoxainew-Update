@@ -15,6 +15,9 @@ export interface CouponValues {
   value: number; // PERCENT → bps; FLAT → paise
   minSubtotalPaise: number | null;
   maxRedemptions: number | null;
+  perCustomerLimit: number | null;
+  firstOrderOnly: boolean;
+  productId: string | null;
   startsAt: string | null; // datetime-local value
   expiresAt: string | null;
 }
@@ -28,10 +31,12 @@ export function CouponForm({
   action,
   initial,
   submitLabel,
+  products,
 }: {
   action: Action;
   initial?: CouponValues;
   submitLabel: string;
+  products: { id: string; title: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const isEdit = Boolean(initial);
@@ -131,6 +136,43 @@ export function CouponForm({
         />
         <span className="mt-1 block text-xs text-muted">
           Total number of times this code can be redeemed.
+        </span>
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-700">Per-customer limit</span>
+        <input
+          name="perCustomerLimit"
+          inputMode="numeric"
+          defaultValue={initial?.perCustomerLimit ?? ""}
+          placeholder="Leave blank for unlimited"
+          className={inputCls}
+        />
+        <span className="mt-1 block text-xs text-muted">
+          Max times one buyer (by email) can use this code — stops abuse of a big discount.
+        </span>
+      </label>
+
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          name="firstOrderOnly"
+          defaultChecked={initial?.firstOrderOnly ?? false}
+          className="h-4 w-4"
+        />
+        <span className="text-sm text-zinc-700">First-order only (new buyers, by email)</span>
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-700">Limit to a product</span>
+        <select name="productId" defaultValue={initial?.productId ?? ""} className={inputCls}>
+          <option value="">— Whole store —</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>{p.title}</option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-muted">
+          The code then applies only to orders containing this product.
         </span>
       </label>
 

@@ -23,9 +23,14 @@ interface ParsedCoupon {
   value: number;
   minSubtotalPaise: number | null;
   maxRedemptions: number | null;
+  perCustomerLimit: number | null;
+  firstOrderOnly: boolean;
+  productId: string | null;
   startsAt: Date | null;
   expiresAt: Date | null;
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Parse a datetime-local string ("2026-06-20T17:30") into a Date, or null. */
 function parseDate(raw: string): { ok: true; value: Date | null } | { ok: false } {
@@ -78,6 +83,20 @@ function parseCouponFields(
     maxRedemptions = n;
   }
 
+  let perCustomerLimit: number | null = null;
+  const perRaw = String(form.get("perCustomerLimit") ?? "").trim();
+  if (perRaw) {
+    const n = Number(perRaw);
+    if (!Number.isInteger(n) || n < 1) {
+      return { ok: false, message: "Per-customer limit must be a whole number (or blank for unlimited)." };
+    }
+    perCustomerLimit = n;
+  }
+
+  const firstOrderOnly = form.get("firstOrderOnly") === "on";
+  const productRaw = String(form.get("productId") ?? "").trim();
+  const productId = UUID_RE.test(productRaw) ? productRaw : null;
+
   const starts = parseDate(String(form.get("startsAt") ?? ""));
   if (!starts.ok) return { ok: false, message: "Start date is invalid." };
   const expires = parseDate(String(form.get("expiresAt") ?? ""));
@@ -93,6 +112,9 @@ function parseCouponFields(
       value,
       minSubtotalPaise,
       maxRedemptions,
+      perCustomerLimit,
+      firstOrderOnly,
+      productId,
       startsAt: starts.value,
       expiresAt: expires.value,
     },

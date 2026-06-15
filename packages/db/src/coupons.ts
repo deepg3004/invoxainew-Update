@@ -29,6 +29,9 @@ export interface CouponInput {
   value: number; // PERCENT → bps (1000 = 10%); FLAT → paise
   minSubtotalPaise?: number | null;
   maxRedemptions?: number | null;
+  perCustomerLimit?: number | null;
+  firstOrderOnly?: boolean;
+  productId?: string | null;
   startsAt?: Date | null;
   expiresAt?: Date | null;
   isActive?: boolean;
@@ -55,6 +58,9 @@ export async function createCoupon(
         value: input.value,
         minSubtotalPaise: input.minSubtotalPaise ?? null,
         maxRedemptions: input.maxRedemptions ?? null,
+        perCustomerLimit: input.perCustomerLimit ?? null,
+        firstOrderOnly: input.firstOrderOnly ?? false,
+        productId: input.productId ?? null,
         startsAt: input.startsAt ?? null,
         expiresAt: input.expiresAt ?? null,
         isActive: input.isActive ?? true,
@@ -100,6 +106,9 @@ export function updateCoupon(
     value: number;
     minSubtotalPaise?: number | null;
     maxRedemptions?: number | null;
+    perCustomerLimit?: number | null;
+    firstOrderOnly?: boolean;
+    productId?: string | null;
     startsAt?: Date | null;
     expiresAt?: Date | null;
   },
@@ -111,6 +120,9 @@ export function updateCoupon(
       value: data.value,
       minSubtotalPaise: data.minSubtotalPaise ?? null,
       maxRedemptions: data.maxRedemptions ?? null,
+      perCustomerLimit: data.perCustomerLimit ?? null,
+      firstOrderOnly: data.firstOrderOnly ?? false,
+      productId: data.productId ?? null,
       startsAt: data.startsAt ?? null,
       expiresAt: data.expiresAt ?? null,
     },
@@ -170,9 +182,21 @@ export type ApplyCouponResult =
         | "not_started"
         | "expired"
         | "fully_redeemed"
-        | "min_subtotal";
+        | "min_subtotal"
+        | "wrong_product"
+        | "first_order_only"
+        | "per_customer_limit";
       minSubtotalPaise?: number;
     };
+
+/** Optional buyer/cart context for the restriction checks. Passed by the
+ *  authoritative checkout actions; preview calls may omit it (then the buyer-
+ *  specific checks are skipped and only re-run authoritatively at checkout). */
+export interface ApplyCouponContext {
+  buyerEmail?: string | null;
+  /** Product ids in the order, for a product-scoped coupon. */
+  productIds?: string[];
+}
 
 /**
  * Validate a code against a server-trusted `subtotalPaise` and compute the
@@ -187,6 +211,7 @@ export async function applyCoupon(
   tenantId: string,
   code: string,
   subtotalPaise: number,
+  ctx: ApplyCouponContext = {},
 ): Promise<ApplyCouponResult> {
   const coupon = await prisma.coupon.findUnique({
     where: { tenantId_code: { tenantId, code: normalizeCode(code) } },
@@ -216,6 +241,41 @@ export async function applyCoupon(
       reason: "min_subtotal",
       minSubtotalPaise: coupon.minSubtotalPaise,
     };
+  }
+
+  // Product-scoped coupon: the order must contain the target product. When the
+  // caller knows the cart's product ids (every checkout call does), enforce it;
+  // a product-scoped coupon with no productIds context is rejected to be safe.
+  if (coupon.productId) {
+    const ids = ctx.productIds ?? [];
+    if (!ids.includes(coupon.productId)) {
+      return { ok: false, reason: "wrong_product" };
+    }
+  }
+
+  // Buyer-specific limits — only checkable once we know the buyer's email (the
+  // authoritative checkout call provides it; the optimistic preview skips these
+  // and they're re-validated at checkout). Counted off PAID orders.
+  const buyerEmail = ctx.buyerEmail?.trim() || null;
+  if (buyerEmail) {
+    // Match the buyer's email case-INSENSITIVELY: stored buyerEmails aren't
+    // normalised, so a lowercase-only compare would miss "User@x.com" and let the
+    // limit be bypassed by varying capitalisation.
+    const emailWhere = { equals: buyerEmail, mode: "insensitive" as const };
+    if (coupon.firstOrderOnly) {
+      const priorOrders = await prisma.buyerPayment.count({
+        where: { tenantId, status: "PAID", buyerEmail: emailWhere },
+      });
+      if (priorOrders > 0) return { ok: false, reason: "first_order_only" };
+    }
+    if (coupon.perCustomerLimit !== null) {
+      const usedByBuyer = await prisma.buyerPayment.count({
+        where: { tenantId, status: "PAID", couponId: coupon.id, buyerEmail: emailWhere },
+      });
+      if (usedByBuyer >= coupon.perCustomerLimit) {
+        return { ok: false, reason: "per_customer_limit" };
+      }
+    }
   }
 
   const raw =

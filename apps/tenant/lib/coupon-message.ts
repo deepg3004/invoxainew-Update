@@ -20,5 +20,11 @@ export function couponErrorMessage(failure: Failure): string {
       return failure.minSubtotalPaise
         ? `Add ${formatRupees(failure.minSubtotalPaise)} or more to use this code.`
         : "Your cart doesn’t qualify for this code.";
+    case "wrong_product":
+      return "That code doesn’t apply to this item.";
+    case "first_order_only":
+      return "That code is for first orders only.";
+    case "per_customer_limit":
+      return "You’ve already used this code.";
   }
 }

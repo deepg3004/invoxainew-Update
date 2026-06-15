@@ -160,7 +160,10 @@ export async function startProductCheckout(
   let couponSnapshot: string | null = null;
   let discountPaise = 0;
   if (code) {
-    const result = await applyCoupon(product.tenantId, code, amountPaise);
+    const result = await applyCoupon(product.tenantId, code, amountPaise, {
+      buyerEmail: buyer.email ?? null,
+      productIds: [product.id],
+    });
     if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
     couponId = result.couponId;
     couponSnapshot = result.code;
@@ -277,7 +280,10 @@ export async function startProductUpiSession(
   let couponSnapshot: string | null = null;
   let discountPaise = 0;
   if (code) {
-    const result = await applyCoupon(product.tenantId, code, amountPaise);
+    const result = await applyCoupon(product.tenantId, code, amountPaise, {
+      buyerEmail: buyer.email ?? null,
+      productIds: [product.id],
+    });
     if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
     couponId = result.couponId;
     couponSnapshot = result.code;
@@ -357,7 +363,9 @@ export async function previewProductCoupon(
   const line = await resolveProductLine(product, variantId);
   if (!line.ok) return { ok: false, error: line.error };
 
-  const result = await applyCoupon(product.tenantId, trimmed, line.unitPricePaise * qty);
+  const result = await applyCoupon(product.tenantId, trimmed, line.unitPricePaise * qty, {
+    productIds: [product.id],
+  });
   if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
   return { ok: true, code: result.code, discountPaise: result.discountPaise };
 }

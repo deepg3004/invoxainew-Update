@@ -78,7 +78,9 @@ export async function previewCartCoupon(
   const priced = await priceCart(lines, tenant.id);
   if (!priced.ok) return { ok: false, error: priced.error };
 
-  const result = await applyCoupon(tenant.id, trimmed, priced.amountPaise);
+  const result = await applyCoupon(tenant.id, trimmed, priced.amountPaise, {
+    productIds: priced.items.map((i) => i.productId),
+  });
   if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
   return { ok: true, code: result.code, discountPaise: result.discountPaise };
 }
@@ -219,7 +221,10 @@ export async function startCartCheckout(
   let couponSnapshot: string | null = null;
   let discountPaise = 0;
   if (code) {
-    const result = await applyCoupon(tenant.id, code, amountPaise);
+    const result = await applyCoupon(tenant.id, code, amountPaise, {
+      buyerEmail: buyer.email ?? null,
+      productIds: items.map((i) => i.productId),
+    });
     if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
     couponId = result.couponId;
     couponSnapshot = result.code;
@@ -297,7 +302,10 @@ export async function startCartUpiSession(
   let couponSnapshot: string | null = null;
   let discountPaise = 0;
   if (code) {
-    const result = await applyCoupon(tenant.id, code, amountPaise);
+    const result = await applyCoupon(tenant.id, code, amountPaise, {
+      buyerEmail: buyer.email ?? null,
+      productIds: items.map((i) => i.productId),
+    });
     if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
     couponId = result.couponId;
     couponSnapshot = result.code;

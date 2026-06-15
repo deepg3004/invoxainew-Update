@@ -312,6 +312,7 @@ export {
   type CouponInput,
   type CreateCouponResult,
   type ApplyCouponResult,
+  type ApplyCouponContext,
   type CouponStat,
 } from "./coupons";
 export {

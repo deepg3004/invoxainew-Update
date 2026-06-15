@@ -405,6 +405,10 @@ model Coupon {
   minSubtotalPaise Int?         @map("min_subtotal_paise")
   maxRedemptions   Int?         @map("max_redemptions") // null = unlimited
   redeemedCount    Int          @default(0) @map("redeemed_count")
+  // Audit batch 2 restrictions (all optional, enforced server-side in applyCoupon):
+  perCustomerLimit Int?         @map("per_customer_limit") // max uses per buyer email; null = unlimited
+  firstOrderOnly   Boolean      @default(false) @map("first_order_only") // only buyers with no prior PAID order
+  productId        String?      @map("product_id") @db.Uuid // restrict to one product; null = whole store
   startsAt         DateTime?    @map("starts_at")
   expiresAt        DateTime?    @map("expires_at")
   isActive         Boolean      @default(true) @map("is_active")
@@ -415,6 +419,7 @@ model Coupon {
 
   @@unique([tenantId, code])
   @@index([tenantId])
+  @@index([productId])
   @@map("coupons")
 }
 

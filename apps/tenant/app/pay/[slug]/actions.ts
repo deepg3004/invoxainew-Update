@@ -56,6 +56,7 @@ async function priceWithCoupon(
   tenantId: string,
   amountPaise: number,
   couponCode?: string,
+  buyerEmail?: string | null,
 ):
   | Promise<
       | { ok: true; amountPaise: number; couponId: string | null; couponCode: string | null; discountPaise: number }
@@ -63,7 +64,7 @@ async function priceWithCoupon(
     > {
   const code = (couponCode ?? "").trim();
   if (!code) return { ok: true, amountPaise, couponId: null, couponCode: null, discountPaise: 0 };
-  const result = await applyCoupon(tenantId, code, amountPaise);
+  const result = await applyCoupon(tenantId, code, amountPaise, { buyerEmail });
   if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
   return {
     ok: true,
@@ -99,7 +100,7 @@ export async function startBuyerCheckout(
   }
 
   // Apply a coupon if supplied — authoritative, against the page amount.
-  const priced = await priceWithCoupon(page.tenantId, page.amountPaise, couponCode);
+  const priced = await priceWithCoupon(page.tenantId, page.amountPaise, couponCode, buyer.email ?? null);
   if (!priced.ok) return { ok: false, error: priced.error };
 
   const order = await createOrderWithKeys(creds.keyId, creds.keySecret, {
@@ -156,7 +157,7 @@ export async function startPayUpiSession(
   const upi = await getEnabledSellerUpi(page.tenantId);
   if (!upi) return { ok: false, error: "UPI isn’t available for this seller." };
 
-  const priced = await priceWithCoupon(page.tenantId, page.amountPaise, couponCode);
+  const priced = await priceWithCoupon(page.tenantId, page.amountPaise, couponCode, buyer.email ?? null);
   if (!priced.ok) return { ok: false, error: priced.error };
 
   const user = await getSessionUser();

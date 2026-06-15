@@ -89,7 +89,7 @@ export async function startCourseCheckout(
   let couponSnapshot: string | null = null;
   let discountPaise = 0;
   if (code) {
-    const result = await applyCoupon(tenant.id, code, amountPaise);
+    const result = await applyCoupon(tenant.id, code, amountPaise, { buyerEmail });
     if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
     couponId = result.couponId;
     couponSnapshot = result.code;
@@ -173,7 +173,7 @@ export async function startCourseUpiSession(
   let couponSnapshot: string | null = null;
   let discountPaise = 0;
   if (code) {
-    const result = await applyCoupon(tenant.id, code, amountPaise);
+    const result = await applyCoupon(tenant.id, code, amountPaise, { buyerEmail });
     if (!result.ok) return { ok: false, error: couponErrorMessage(result) };
     couponId = result.couponId;
     couponSnapshot = result.code;
