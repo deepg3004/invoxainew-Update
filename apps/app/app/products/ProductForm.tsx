@@ -17,6 +17,10 @@ export interface ProductValues {
   bumpEnabled: boolean;
   bumpBlurb: string | null;
   imageUrl: string | null;
+  galleryUrls: string[];
+  tags: string[];
+  metaTitle: string | null;
+  metaDescription: string | null;
   kind: ProductKind;
   stockQty: number | null;
   sortOrder: number;
@@ -165,6 +169,42 @@ export function ProductForm({
           />
         </div>
       </div>
+
+      <div className="block">
+        <span className="text-sm font-medium text-zinc-900">Gallery images</span>
+        <span className="mt-0.5 block text-xs text-muted">Up to 4 extra images shown on the product page.</span>
+        <div className="mt-1.5 grid gap-3 sm:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <ImageUpload
+              key={i}
+              name="galleryUrls"
+              defaultValue={initial?.galleryUrls[i] ?? ""}
+              action={uploadTenantImageAction}
+              recommend=""
+            />
+          ))}
+        </div>
+      </div>
+
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-900">Tags</span>
+        <input
+          name="tags"
+          defaultValue={initial?.tags.join(", ") ?? ""}
+          placeholder="ebook, beginner, hindi"
+          className={inputCls}
+        />
+        <span className="mt-1 block text-xs text-muted">Comma-separated. Buyers can filter your store by these.</span>
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-900">SEO title</span>
+        <input name="metaTitle" defaultValue={initial?.metaTitle ?? ""} maxLength={200} placeholder="Defaults to the product title" className={inputCls} />
+      </label>
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-900">SEO description</span>
+        <textarea name="metaDescription" defaultValue={initial?.metaDescription ?? ""} rows={2} maxLength={300} placeholder="Shown in Google + link previews" className={inputCls} />
+      </label>
 
       <label className="block">
         <span className="text-sm font-medium text-zinc-900">Access link</span>

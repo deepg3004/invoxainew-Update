@@ -32,6 +32,10 @@ interface ParsedProduct {
   bumpEnabled: boolean;
   bumpBlurb: string | null;
   imageUrl: string | null;
+  galleryUrls: string[];
+  tags: string[];
+  metaTitle: string | null;
+  metaDescription: string | null;
   kind: ProductKind;
   stockQty: number | null;
   sortOrder: number;
@@ -113,6 +117,28 @@ function parseProductFields(
   }
 
   const description = String(form.get("description") ?? "").trim() || null;
+
+  // Gallery: extra image URLs (http(s) only), capped at 8.
+  const galleryUrls = form
+    .getAll("galleryUrls")
+    .map((v) => String(v).trim())
+    .filter((u) => /^https?:\/\/\S+$/.test(u))
+    .slice(0, 8);
+
+  // Tags: comma/newline separated, lowercased, de-duped, capped.
+  const tags = Array.from(
+    new Set(
+      String(form.get("tags") ?? "")
+        .split(/[,\n]/)
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean)
+        .map((t) => t.slice(0, 30)),
+    ),
+  ).slice(0, 20);
+
+  const metaTitle = String(form.get("metaTitle") ?? "").trim().slice(0, 200) || null;
+  const metaDescription = String(form.get("metaDescription") ?? "").trim().slice(0, 300) || null;
+
   return {
     ok: true,
     value: {
@@ -125,6 +151,10 @@ function parseProductFields(
       downloadKey,
       downloadName: String(form.get("downloadName") ?? "").trim().slice(0, 200) || null,
       imageUrl: imageRaw || null,
+      galleryUrls,
+      tags,
+      metaTitle,
+      metaDescription,
       kind,
       stockQty,
       sortOrder,

@@ -37,6 +37,10 @@ const PUBLIC_PRODUCT_SELECT = Prisma.validator<Prisma.ProductSelect>()({
   pricePaise: true,
   compareAtPaise: true,
   imageUrl: true,
+  galleryUrls: true,
+  tags: true,
+  metaTitle: true,
+  metaDescription: true,
   kind: true,
   stockQty: true,
   collectionId: true,
@@ -58,6 +62,10 @@ export async function createProduct(input: {
   bumpEnabled?: boolean;
   bumpBlurb?: string | null;
   imageUrl?: string | null;
+  galleryUrls?: string[];
+  tags?: string[];
+  metaTitle?: string | null;
+  metaDescription?: string | null;
   kind: ProductKind;
   stockQty?: number | null;
   sortOrder?: number;
@@ -81,6 +89,10 @@ export async function createProduct(input: {
         downloadKey: input.downloadKey ?? null,
         downloadName: input.downloadName ?? null,
         imageUrl: input.imageUrl ?? null,
+        galleryUrls: input.galleryUrls ?? [],
+        tags: input.tags ?? [],
+        metaTitle: input.metaTitle ?? null,
+        metaDescription: input.metaDescription ?? null,
         kind: input.kind,
         stockQty: input.stockQty ?? null,
         sortOrder: input.sortOrder ?? 0,
@@ -280,6 +292,10 @@ export function updateProduct(
     bumpEnabled?: boolean;
     bumpBlurb?: string | null;
     imageUrl?: string | null;
+    galleryUrls?: string[];
+    tags?: string[];
+    metaTitle?: string | null;
+    metaDescription?: string | null;
     kind: ProductKind;
     stockQty?: number | null;
     sortOrder?: number;
@@ -302,6 +318,10 @@ export function updateProduct(
       downloadKey: data.downloadKey ?? null,
       downloadName: data.downloadName ?? null,
       imageUrl: data.imageUrl ?? null,
+      galleryUrls: data.galleryUrls ?? [],
+      tags: data.tags ?? [],
+      metaTitle: data.metaTitle ?? null,
+      metaDescription: data.metaDescription ?? null,
       kind: data.kind,
       stockQty: data.stockQty ?? null,
       sortOrder: data.sortOrder ?? 0,

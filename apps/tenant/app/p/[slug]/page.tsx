@@ -10,6 +10,7 @@ import {
   getProductReviews,
   getOrderBumpProduct,
   listProductVariants,
+  listPublishedProducts,
 } from "@invoxai/db";
 import { formatDateIST } from "@invoxai/utils/date";
 import { resolveTenantByHost } from "../../../lib/resolve";
@@ -36,15 +37,16 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = await cachedProduct(tenant.id, slug);
   if (!product) return {};
-  const description = product.description?.slice(0, 200) ?? undefined;
+  const metaTitle = product.metaTitle?.trim() || product.title;
+  const description = product.metaDescription?.trim() || product.description?.slice(0, 200) || undefined;
   const images = product.imageUrl ? [product.imageUrl] : undefined;
   return {
-    title: product.title,
+    title: metaTitle,
     description,
-    openGraph: { title: product.title, description, images, type: "website" },
+    openGraph: { title: metaTitle, description, images, type: "website" },
     twitter: {
       card: images ? "summary_large_image" : "summary",
-      title: product.title,
+      title: metaTitle,
       description,
       images,
     },
@@ -65,7 +67,7 @@ export default async function ProductPage({
   const product = await cachedProduct(tenant.id, slug);
   if (!product) notFound();
 
-  const [gateway, upi, tracking, rating, reviews, bumpProduct, variants] = await Promise.all([
+  const [gateway, upi, tracking, rating, reviews, bumpProduct, variants, related] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
@@ -73,7 +75,12 @@ export default async function ProductPage({
     getProductReviews(product.id),
     getOrderBumpProduct(tenant.id),
     listProductVariants(product.id),
+    // Related products: others in the same collection (derived, no extra table).
+    product.collectionId
+      ? listPublishedProducts(tenant.id, { collectionId: product.collectionId })
+      : Promise.resolve([]),
   ]);
+  const relatedProducts = related.filter((p) => p.id !== product.id).slice(0, 4);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
   // Offer the store's bump add-on here — unless this IS the bump product.
@@ -119,6 +126,19 @@ export default async function ProductPage({
                 No image
               </div>
             )}
+            {product.galleryUrls.length > 0 ? (
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {product.galleryUrls.map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={url}
+                    alt={`${product.title} ${i + 2}`}
+                    className="aspect-square w-full rounded-lg border border-zinc-200 object-cover"
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -152,6 +172,20 @@ export default async function ProductPage({
             {product.kind.charAt(0) + product.kind.slice(1).toLowerCase()} · paid securely to{" "}
             {tenant.name ?? tenant.username}.
           </p>
+
+          {product.tags.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {product.tags.map((t) => (
+                <Link
+                  key={t}
+                  href={`/store?q=${encodeURIComponent(t)}`}
+                  className="rounded-full border border-zinc-200 px-2.5 py-0.5 text-xs text-muted hover:bg-zinc-50"
+                >
+                  {t}
+                </Link>
+              ))}
+            </div>
+          ) : null}
 
           {product.description ? (
             <p className="mt-4 whitespace-pre-line leading-relaxed text-zinc-700">
@@ -223,6 +257,28 @@ export default async function ProductPage({
               </li>
             ))}
           </ul>
+        </section>
+      ) : null}
+
+      {relatedProducts.length > 0 ? (
+        <section className="mt-12">
+          <h2 className="text-lg font-semibold text-zinc-900">Related products</h2>
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {relatedProducts.map((p) => (
+              <Link
+                key={p.id}
+                href={`/p/${p.slug}`}
+                className="flex flex-col rounded-xl border border-zinc-200 p-3 no-underline transition hover:border-brand/40"
+              >
+                {p.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.imageUrl} alt={p.title} className="aspect-square w-full rounded-lg object-cover" />
+                ) : null}
+                <div className="mt-2 text-sm font-medium text-zinc-900">{p.title}</div>
+                <div className="mt-0.5 text-sm font-semibold text-brand-strong">{formatRupees(p.pricePaise)}</div>
+              </Link>
+            ))}
+          </div>
         </section>
       ) : null}
 

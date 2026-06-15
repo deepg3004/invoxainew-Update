@@ -66,7 +66,8 @@ export default async function StorePage({
     ? products.filter(
         (p) =>
           p.title.toLowerCase().includes(needle) ||
-          (p.description?.toLowerCase().includes(needle) ?? false),
+          (p.description?.toLowerCase().includes(needle) ?? false) ||
+          p.tags.some((t) => t.includes(needle)),
       )
     : products;
 

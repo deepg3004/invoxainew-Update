@@ -277,6 +277,11 @@ model Product {
   bumpEnabled Boolean       @default(false) @map("bump_enabled")
   bumpBlurb   String?       @map("bump_blurb") // short pitch shown on the bump card
   imageUrl    String?       @map("image_url")
+  // Audit batch 3: extra gallery images, free-form tags, and per-product SEO.
+  galleryUrls     String[]  @map("gallery_urls") // additional images beyond imageUrl
+  tags            String[]                       // free-form labels for filtering
+  metaTitle       String?   @map("meta_title")
+  metaDescription String?   @map("meta_description")
   kind        ProductKind   @default(DIGITAL)
   // Optional storefront collection/category grouping (Shopify-style). Null = none.
   collectionId String?      @map("collection_id") @db.Uuid
