@@ -23,7 +23,7 @@ pnpm install
 pnpm db:generate        # regenerate the Prisma client from the new schema
 ```
 
-## 2. Apply the 10 new migrations  ⚠️ production-safe command
+## 2. Apply the 11 new migrations  ⚠️ production-safe command
 
 Use **`db:deploy`** (runs `prisma migrate deploy` — applies pending migrations only,
 never resets). Do NOT use `db:migrate` (that's `migrate dev`, for local only).
@@ -33,7 +33,7 @@ pnpm db:status          # should list the 10 below as "not yet applied"
 pnpm db:deploy
 ```
 
-The 10 pending migrations (all additive — new tables/columns only, no destructive
+The 11 pending migrations (all additive — new tables/columns only, no destructive
 changes):
 
 | # | Migration | Adds |
@@ -48,6 +48,7 @@ changes):
 | 8 | `20260615090000_certificates` | course certificates (1 table + courses.certificate_enabled) |
 | 9 | `20260615100000_file_assets` | media library (1 table) |
 | 10 | `20260615110000_quizzes` | per-lesson quizzes (3 tables) |
+| 11 | `20260615120000_bookings` | 1-on-1 bookings (3 tables + buyer_payments.booking_slot_id) |
 
 ## 3. Build + restart
 
@@ -105,7 +106,7 @@ Storefront branding · coupon power-ups · product depth · form power-ups · bi
 socials · **premium builder blocks** (hero, pricing table, feature grid, stats,
 gallery, logo strip, image+text) + 4 premium themes · public-page polish ·
 **Broadcasts** (email marketing) · **Workshops** (live sessions) · **Certificates**
-(course completion) · **Media library** (cloud storage) · **Quizzes** (per-lesson).
+(course completion) · **Media library** (cloud storage) · **Quizzes** (per-lesson) ·
+**1-on-1 Bookings** (consultations with time slots).
 
-Deferred (not in this release): 1-on-1 Bookings (needs slot-hold/TTL design),
-Team/RBAC, withdrawals/payouts, dedicated Buyer model.
+Deferred (not in this release): Team/RBAC, withdrawals/payouts, dedicated Buyer model.
