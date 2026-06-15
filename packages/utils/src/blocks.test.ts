@@ -35,6 +35,29 @@ describe("normalizeToBlocks — Part 2 widgets", () => {
     expect(norm({ type: "callout", text: "   " })).toEqual([]);
   });
 
+  it("accepts an faq, drops pairs missing q or a, caps at 20", () => {
+    const out = norm({
+      type: "faq",
+      items: [
+        { q: "Q1", a: "A1" },
+        { q: "no answer" },
+        { a: "no question" },
+        { q: "  ", a: "blank q" },
+      ],
+    });
+    expect(out).toEqual([{ type: "faq", items: [{ q: "Q1", a: "A1" }] }]);
+    const big = norm({ type: "faq", items: Array.from({ length: 25 }, (_, i) => ({ q: `q${i}`, a: `a${i}` })) });
+    expect((big[0] as { items: unknown[] }).items).toHaveLength(20);
+    expect(norm({ type: "faq", items: [] })).toEqual([]);
+  });
+
+  it("accepts a countdown with a parseable date and drops a bad one", () => {
+    const out = norm({ type: "countdown", until: "2030-01-01T00:00:00.000Z", label: "Sale ends in" });
+    expect(out).toEqual([{ type: "countdown", until: "2030-01-01T00:00:00.000Z", label: "Sale ends in" }]);
+    expect(norm({ type: "countdown", until: "not a date" })).toEqual([]);
+    expect(norm({ type: "countdown" })).toEqual([]);
+  });
+
   it("still drops unknown block types", () => {
     expect(norm({ type: "script", text: "alert(1)" })).toEqual([]);
   });

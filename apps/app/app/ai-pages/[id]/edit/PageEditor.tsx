@@ -33,6 +33,7 @@ export interface EntityOptions {
 // (product/course/storeGrid/leadForm/paymentButton) are added + picked here.
 type AddType =
   | "heading" | "text" | "image" | "button" | "video" | "divider"
+  | "faq" | "countdown"
   | "product" | "course" | "storeGrid" | "leadForm" | "paymentButton";
 
 function newBlock(type: AddType, e: EntityOptions): Block {
@@ -49,6 +50,14 @@ function newBlock(type: AddType, e: EntityOptions): Block {
       return { type: "video", url: "" };
     case "divider":
       return { type: "divider" };
+    case "faq":
+      return { type: "faq", items: [{ q: "Your question?", a: "Your answer." }] };
+    case "countdown":
+      return {
+        type: "countdown",
+        until: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+        label: "Offer ends in",
+      };
     case "product":
       return { type: "product", productId: e.products[0]?.id ?? "" };
     case "course":
@@ -64,6 +73,68 @@ function newBlock(type: AddType, e: EntityOptions): Block {
 
 const titleOf = (list: { id: string; title: string }[], id: string): string | undefined =>
   list.find((x) => x.id === id)?.title;
+
+/** ISO ↔ <input type="datetime-local"> ("YYYY-MM-DDTHH:mm", local time). */
+function isoToLocal(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function localToIso(local: string): string {
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+
+/** Editor for an FAQ block's question/answer pairs (add / edit / remove). */
+function FaqEditor({
+  items,
+  onChange,
+}: {
+  items: { q: string; a: string }[];
+  onChange: (items: { q: string; a: string }[]) => void;
+}) {
+  const set = (idx: number, patch: Partial<{ q: string; a: string }>) =>
+    onChange(items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  return (
+    <div className="space-y-3">
+      {items.map((it, idx) => (
+        <div key={idx} className="space-y-1.5 rounded-lg border border-zinc-200 p-2">
+          <div className="flex gap-2">
+            <input
+              value={it.q}
+              onChange={(e) => set(idx, { q: e.target.value })}
+              placeholder="Question"
+              className={inputCls}
+            />
+            <button
+              type="button"
+              onClick={() => onChange(items.filter((_, i) => i !== idx))}
+              className="rounded p-1 text-muted hover:bg-red-50 hover:text-red-700"
+              aria-label="Remove question"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <textarea
+            value={it.a}
+            onChange={(e) => set(idx, { a: e.target.value })}
+            placeholder="Answer"
+            rows={2}
+            className={inputCls}
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...items, { q: "", a: "" }])}
+        className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+      >
+        + Add question
+      </button>
+    </div>
+  );
+}
 
 /** A dropdown to pick an entity id for an entity-bound block. Shows a hint when
  *  the seller has none of that entity yet. */
@@ -193,6 +264,29 @@ function PreviewBlock({
           <p className="whitespace-pre-line text-sm">{block.text}</p>
         </div>
       );
+    case "faq":
+      return (
+        <div className="mt-4 space-y-1.5">
+          {block.items.map((it, i) => (
+            <details key={i} className="rounded-lg p-3" style={{ border: `1px solid ${t.border}` }}>
+              <summary className="cursor-pointer text-sm font-medium" style={{ color: t.text }}>{it.q || "Question?"}</summary>
+              <p className="mt-1.5 whitespace-pre-line text-sm" style={{ color: t.muted }}>{it.a}</p>
+            </details>
+          ))}
+        </div>
+      );
+    case "countdown": {
+      const ms = new Date(block.until).getTime() - Date.now();
+      const days = Number.isNaN(ms) ? 0 : Math.max(0, Math.floor(ms / 86_400_000));
+      return (
+        <div className="mt-4 rounded-lg p-3" style={{ border: `1px solid ${t.border}` }}>
+          {block.label ? <div className="text-xs font-medium" style={{ color: t.muted }}>{block.label}</div> : null}
+          <div className="mt-1 text-xl font-bold tabular-nums" style={{ color: t.accent }}>
+            {ms <= 0 ? "Ended" : `${days}d to go`}
+          </div>
+        </div>
+      );
+    }
     case "product":
       return entityCard("Product card", titleOf(entities.products, block.productId), "Pick a product");
     case "course":
@@ -493,6 +587,28 @@ export function PageEditor({
                   <div className="border-t border-dashed border-zinc-200" />
                 ) : null}
 
+                {b.type === "faq" ? (
+                  <FaqEditor items={b.items} onChange={(items) => update(i, { items })} />
+                ) : null}
+
+                {b.type === "countdown" ? (
+                  <div className="space-y-2">
+                    <input
+                      value={b.label}
+                      onChange={(e) => update(i, { label: e.target.value })}
+                      placeholder="Label (e.g. Offer ends in)"
+                      className={inputCls}
+                    />
+                    <input
+                      type="datetime-local"
+                      value={isoToLocal(b.until)}
+                      onChange={(e) => update(i, { until: localToIso(e.target.value) })}
+                      className={inputCls}
+                    />
+                    <span className="block text-xs text-muted">Counts down to this date on the live page.</span>
+                  </div>
+                ) : null}
+
                 {b.type === "product" ? (
                   <EntitySelect
                     value={b.productId}
@@ -561,7 +677,7 @@ export function PageEditor({
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {(["heading", "text", "image", "button", "video", "divider"] as AddType[]).map((t) => (
+            {(["heading", "text", "image", "button", "video", "divider", "faq", "countdown"] as AddType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => add(t)}

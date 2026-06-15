@@ -24,6 +24,8 @@ export type Block =
   | { type: "list"; items: string[] } // bullet list
   | { type: "testimonial"; quote: string; author: string }
   | { type: "callout"; text: string } // highlighted note box
+  | { type: "faq"; items: { q: string; a: string }[] } // accordion of Q&A pairs
+  | { type: "countdown"; until: string; label: string } // until = ISO datetime; label optional
   // Builder Part 3 — entity-bound widgets. These store ONLY a validated entity id
   // (UUID); this module stays pure (no data fetch). The server renderer resolves
   // each id TENANT-SCOPED, so a foreign/missing id renders nothing — the trust
@@ -97,6 +99,16 @@ function asLevel(v: unknown): 1 | 2 | 3 {
   return v === 1 || v === 2 || v === 3 ? v : 2;
 }
 
+/** Validate a datetime string into a canonical ISO string, or "" if unparseable.
+ *  Used by the countdown widget; the value is rendered as text / fed to a client
+ *  timer, never interpolated as code. */
+function isoDate(v: unknown): string {
+  const s = str(v, 40).trim();
+  if (!s) return "";
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** A validated entity id (UUID) for entity-bound blocks, or "" to drop the ref.
  *  The renderer resolves it tenant-scoped, so the only requirement here is that
@@ -167,6 +179,24 @@ function toBlock(raw: unknown): Block | null {
     case "callout": {
       const text = str(b.text, 1000).trim();
       return text ? { type: "callout", text } : null;
+    }
+    case "faq": {
+      const raw = Array.isArray(b.items) ? b.items : [];
+      const items = raw
+        .map((it) => {
+          const o = (it && typeof it === "object" ? it : {}) as Record<string, unknown>;
+          const q = str(o.q, 200).trim();
+          const a = str(o.a, 1000).trim();
+          return q && a ? { q, a } : null;
+        })
+        .filter((x): x is { q: string; a: string } => x !== null)
+        .slice(0, 20);
+      return items.length > 0 ? { type: "faq", items } : null;
+    }
+    case "countdown": {
+      const until = isoDate(b.until);
+      const label = str(b.label, 120).trim();
+      return until ? { type: "countdown", until, label } : null;
     }
     case "product": {
       const productId = entityId(b.productId);

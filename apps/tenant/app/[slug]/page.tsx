@@ -17,6 +17,7 @@ import { normalizeToBlocks, THEME_PRESETS, type Block, type Theme } from "@invox
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
+import { Countdown } from "./Countdown";
 
 export const dynamic = "force-dynamic";
 
@@ -223,6 +224,28 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
         >
           <p className="whitespace-pre-line leading-relaxed">{block.text}</p>
         </div>
+      );
+    case "faq":
+      return (
+        <div className="mt-6 space-y-2">
+          {block.items.map((it, i) => (
+            <details key={i} className="rounded-xl p-4" style={{ border: `1px solid ${t.border}` }}>
+              <summary className="cursor-pointer font-medium" style={{ color: t.text }}>{it.q}</summary>
+              <p className="mt-2 whitespace-pre-line leading-relaxed" style={{ color: t.muted }}>{it.a}</p>
+            </details>
+          ))}
+        </div>
+      );
+    case "countdown":
+      return (
+        <Countdown
+          until={block.until}
+          label={block.label}
+          accent={t.accent}
+          text={t.text}
+          muted={t.muted}
+          border={t.border}
+        />
       );
     case "product": {
       const card = resolved.products.get(block.productId);
