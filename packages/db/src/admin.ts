@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "./client";
+import { lockWalletForUpdate } from "./wallet";
 
 /**
  * Platform-admin data access (Phase 3 admin console).
@@ -367,11 +368,17 @@ export async function adminAdjustWallet(input: {
   adminEmail: string;
 }): Promise<AdminWalletResult> {
   return prisma.$transaction(async (tx) => {
-    const wallet = await tx.wallet.upsert({
+    // Ensure the wallet row exists (an admin may credit a tenant that has none
+    // yet), then lock it FOR UPDATE so this adjustment can't lose a concurrent
+    // fee/credit on the same wallet (lost-update → money drift). The upsert
+    // alone doesn't serialise a later read-modify-write; the FOR UPDATE does.
+    await tx.wallet.upsert({
       where: { tenantId: input.tenantId },
       create: { tenantId: input.tenantId },
       update: {},
     });
+    const wallet = await lockWalletForUpdate(tx, input.tenantId);
+    if (!wallet) return { ok: false, reason: "insufficient_funds" };
 
     const delta = input.direction === "CREDIT" ? input.amountPaise : -input.amountPaise;
     const balanceAfter = wallet.balancePaise + delta;

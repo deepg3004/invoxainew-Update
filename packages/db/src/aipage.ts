@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./client";
+import { lockWalletForUpdate } from "./wallet";
 
 /**
  * AI landing-page data access (C9). Pages are created only after Claude
@@ -76,9 +77,11 @@ export async function chargeAndCreateAiPage(input: {
   chargeRef: string;
 }): Promise<ChargeCreateResult> {
   return prisma.$transaction(async (tx) => {
-    const wallet = await tx.wallet.findUnique({
-      where: { tenantId: input.tenantId },
-    });
+    // Lock the wallet row FOR UPDATE so the balance check + debit can't lose a
+    // concurrent fee on the same wallet (lost-update → money drift). A bare
+    // findUnique read-then-write would let two concurrent charges both read the
+    // same starting balance and silently drop one debit.
+    const wallet = await lockWalletForUpdate(tx, input.tenantId);
     if (!wallet) return { ok: false, reason: "no_wallet" };
     if (wallet.balancePaise < input.pricePaise) {
       return { ok: false, reason: "insufficient_funds" };
