@@ -280,6 +280,7 @@ model Product {
 
   @@unique([tenantId, slug])
   @@index([tenantId, status])
+  @@index([collectionId])
   @@map("products")
 
   // Store slice 2: buyer orders placed against this product.
@@ -1073,6 +1074,11 @@ model BuyerPayment {
   @@index([tenantId, buyerProfileId])
   @@index([affiliateId])
   @@index([upsellId])
+  @@index([productId])
+  @@index([courseId])
+  @@index([communityId])
+  @@index([couponId])
+  @@index([paymentPageId])
   @@map("buyer_payments")
 }
 
@@ -1164,6 +1170,7 @@ model OrderItem {
   createdAt      DateTime     @default(now()) @map("created_at")
 
   @@index([buyerPaymentId])
+  @@index([productId])
   @@map("order_items")
 }
 
@@ -1541,6 +1548,7 @@ model Refund {
   createdAt               DateTime     @default(now()) @map("created_at")
 
   @@index([tenantId, createdAt])
+  @@index([buyerPaymentId])
   @@map("refunds")
 }
 
