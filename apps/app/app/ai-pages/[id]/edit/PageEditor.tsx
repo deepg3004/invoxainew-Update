@@ -44,7 +44,7 @@ type AddType =
   | "heading" | "text" | "image" | "button" | "video" | "divider"
   | "hero" | "pricingTable" | "featureGrid" | "stats"
   | "gallery" | "logoStrip" | "imageText"
-  | "priceTag" | "limitedTag" | "marquee"
+  | "priceTag" | "limitedTag" | "marquee" | "sectionBreak"
   | "faq" | "countdown" | "columns" | "socialProof"
   | "product" | "course" | "storeGrid" | "leadForm" | "paymentButton";
 
@@ -103,6 +103,8 @@ function newBlock(type: AddType, e: EntityOptions): Block {
       return { type: "limitedTag", text: "🔥 Only a few left" };
     case "marquee":
       return { type: "marquee", items: ["★ Trusted by 10,000+", "Free updates", "30-day guarantee"] };
+    case "sectionBreak":
+      return { type: "sectionBreak", bg: "surface" };
     case "gallery":
       return { type: "gallery", images: [] };
     case "logoStrip":
@@ -808,6 +810,14 @@ function PreviewBlock({
           </div>
         </div>
       );
+    case "sectionBreak":
+      return (
+        <div className="my-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide" style={{ color: t.muted }}>
+          <span className="h-px flex-1" style={{ background: t.border }} />
+          ◇ new section · {block.bg}
+          <span className="h-px flex-1" style={{ background: t.border }} />
+        </div>
+      );
   }
 }
 
@@ -1362,6 +1372,18 @@ export function PageEditor({
                   />
                 ) : null}
 
+                {b.type === "sectionBreak" ? (
+                  <label className="block text-xs text-muted">
+                    Section background
+                    <select value={b.bg} onChange={(e) => update(i, { bg: e.target.value as "none" | "surface" | "tint" })} className={inputCls}>
+                      <option value="none">Page background</option>
+                      <option value="surface">Card / white band</option>
+                      <option value="tint">Accent tint</option>
+                    </select>
+                    <span className="mt-1 block">Blocks after this start a new full-width band with this background.</span>
+                  </label>
+                ) : null}
+
                 {b.type === "faq" ? (
                   <FaqEditor items={b.items} onChange={(items) => update(i, { items })} />
                 ) : null}
@@ -1460,7 +1482,7 @@ export function PageEditor({
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            {(["hero", "heading", "text", "image", "button", "video", "divider", "imageText", "gallery", "logoStrip", "pricingTable", "priceTag", "limitedTag", "marquee", "featureGrid", "stats", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
+            {(["hero", "heading", "text", "image", "button", "video", "divider", "imageText", "gallery", "logoStrip", "pricingTable", "priceTag", "limitedTag", "marquee", "sectionBreak", "featureGrid", "stats", "faq", "countdown", "columns", "socialProof"] as AddType[]).map((t) => (
               <button
                 key={t}
                 onClick={() => add(t)}

@@ -588,6 +588,8 @@ function BlockView({ block, t, resolved }: { block: Block; t: Tokens; resolved: 
           </div>
         </div>
       );
+    case "sectionBreak":
+      return null; // a layout marker — consumed by band grouping, never rendered here
   }
 }
 
@@ -617,15 +619,26 @@ export default async function AiLandingPage({
   const nav = page.siteId ? await getSiteNav(page.siteId) : [];
   const t: Tokens = resolveTheme(content.theme);
 
+  // Group blocks into full-width section bands, split at each sectionBreak marker.
+  type Band = { bg: "none" | "surface" | "tint"; blocks: Block[] };
+  const bands: Band[] = [{ bg: "none", blocks: [] }];
+  for (const b of content.blocks) {
+    if (b.type === "sectionBreak") bands.push({ bg: b.bg, blocks: [] });
+    else bands[bands.length - 1]!.blocks.push(b);
+  }
+  const renderBands = bands.filter((bd) => bd.blocks.length > 0);
+  const bandBg = (bg: Band["bg"]): string =>
+    bg === "surface" ? t.surface : bg === "tint" ? `${t.accent}0A` : "transparent";
+
   return (
     <div className="iv-page" style={{ background: t.bg, minHeight: "100vh", position: "relative" }}>
       <ThemeStyle t={t} />
       <AnimatedBg type={t.background} />
-      <main className="relative z-10 mx-auto max-w-3xl px-6 py-20">
+      <main className="relative z-10 py-20">
         <TrackingScripts ids={tracking ?? {}} />
         {nav.length > 1 ? (
           <nav
-            className="mb-10 flex flex-wrap gap-x-5 gap-y-2 border-b pb-4 text-sm font-medium"
+            className="mx-auto mb-10 flex max-w-3xl flex-wrap gap-x-5 gap-y-2 border-b px-6 pb-4 text-sm font-medium"
             style={{ borderColor: t.border }}
           >
             {nav.map((item) => (
@@ -639,13 +652,18 @@ export default async function AiLandingPage({
             ))}
           </nav>
         ) : null}
-        <article>
-          {content.blocks.map((b, i) => (
-            <div key={i} className="iv-reveal">
-              <BlockView block={b} t={t} resolved={resolved} />
+        {renderBands.map((bd, bi) => (
+          <section key={bi} style={{ background: bandBg(bd.bg) }}>
+            <div className="mx-auto max-w-3xl px-6 py-2">
+              {bd.blocks.map((b, i) => (
+                <div key={i} className="iv-reveal">
+                  <BlockView block={b} t={t} resolved={resolved} />
+                </div>
+              ))}
             </div>
-          ))}
-        </article>
+          </section>
+        ))}
+        <div className="mx-auto max-w-3xl px-6">
 
         <footer className="mt-20 pt-6 text-center text-sm" style={{ borderTop: `1px solid ${t.border}`, color: t.muted }}>
           {tenant.name ?? tenant.username} ·{" "}
@@ -653,6 +671,7 @@ export default async function AiLandingPage({
             Your orders
           </Link>
         </footer>
+        </div>
       </main>
       <BuiltWithBadge />
       <Reveal />

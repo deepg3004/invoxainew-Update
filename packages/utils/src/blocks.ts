@@ -102,7 +102,10 @@ export type Block =
   // Builder Part 6 — conversion blocks. All capped plain text; no URLs.
   | { type: "priceTag"; offer: string; compareAt: string } // bold offer + struck retail + %off
   | { type: "limitedTag"; text: string } // pulsing scarcity pill
-  | { type: "marquee"; items: string[] }; // infinite-scrolling strip
+  | { type: "marquee"; items: string[] } // infinite-scrolling strip
+  // Builder Part 8 — a layout marker: starts a new full-width section band. The
+  // renderer groups the blocks between markers into bands with this background.
+  | { type: "sectionBreak"; bg: "none" | "surface" | "tint" };
 
 // ── Theme model v2 (Premium Theme System) ────────────────────────────────────
 //
@@ -749,6 +752,12 @@ function toBlock(raw: unknown): Block | null {
     case "marquee": {
       const items = strList(b.items, 12, 120);
       return items.length > 0 ? { type: "marquee", items } : null;
+    }
+    case "sectionBreak": {
+      const bg = (["none", "surface", "tint"] as const).includes(b.bg as "none" | "surface" | "tint")
+        ? (b.bg as "none" | "surface" | "tint")
+        : "surface";
+      return { type: "sectionBreak", bg };
     }
     case "imageText": {
       const imageUrl = safeUrl(b.imageUrl);

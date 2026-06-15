@@ -295,6 +295,12 @@ describe("normalizeToBlocks — Part 6 conversion blocks", () => {
     expect((big[0] as { items: string[] }).items).toHaveLength(12);
     expect(norm({ type: "marquee", items: [] })).toEqual([]);
   });
+
+  it("accepts a sectionBreak and clamps an unknown bg to surface", () => {
+    expect(norm({ type: "sectionBreak", bg: "tint" })).toEqual([{ type: "sectionBreak", bg: "tint" }]);
+    expect(norm({ type: "sectionBreak", bg: "rainbow" })).toEqual([{ type: "sectionBreak", bg: "surface" }]);
+    expect(norm({ type: "sectionBreak" })).toEqual([{ type: "sectionBreak", bg: "surface" }]);
+  });
 });
 
 describe("normalizeTheme / resolveTheme — theme v2", () => {
