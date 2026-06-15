@@ -1,11 +1,43 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { setStoreAnnouncement, logActivity } from "@invoxai/db";
+import { setStoreAnnouncement, setStorefrontBranding, logActivity } from "@invoxai/db";
 import { safeUrl } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../lib/tenant";
 
 export type StorefrontFormState = { error?: string; ok?: boolean };
+
+const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+/** Save the storefront branding (logo/banner/colour/about/footer/SEO). All URLs
+ *  pass safeUrl; the brand colour must be a hex value; text is trimmed + capped. */
+export async function saveBrandingAction(
+  _prev: StorefrontFormState,
+  form: FormData,
+): Promise<StorefrontFormState> {
+  const { tenant } = await requireTenant();
+  const url = (k: string) => {
+    const raw = String(form.get(k) ?? "").trim();
+    return raw ? safeUrl(raw) || null : null;
+  };
+  const text = (k: string, max: number) => String(form.get(k) ?? "").trim().slice(0, max) || null;
+  const colorRaw = String(form.get("brandColor") ?? "").trim();
+
+  await setStorefrontBranding(tenant.id, {
+    logoUrl: url("logoUrl"),
+    bannerUrl: url("bannerUrl"),
+    brandColor: HEX_RE.test(colorRaw) ? colorRaw : null,
+    aboutText: text("aboutText", 1000),
+    privacyUrl: url("privacyUrl"),
+    refundUrl: url("refundUrl"),
+    termsUrl: url("termsUrl"),
+    storeMetaTitle: text("storeMetaTitle", 200),
+    storeMetaDescription: text("storeMetaDescription", 300),
+  });
+  await logActivity(tenant.id, "storefront.branding_updated").catch(() => {});
+  revalidatePath("/storefront");
+  return { ok: true };
+}
 
 /** Save (or clear) the storefront announcement bar. Owner-scoped via requireTenant. */
 export async function saveStorefrontAction(

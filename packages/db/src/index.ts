@@ -6,6 +6,8 @@ export {
   getTenantByOwnerId,
   setTenantStateCode,
   setStoreAnnouncement,
+  setStorefrontBranding,
+  type StorefrontBrandingInput,
   getTenantByUsername,
   isUsernameTaken,
   createTenantForOwner,

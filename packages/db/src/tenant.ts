@@ -54,6 +54,24 @@ export function setStoreAnnouncement(
   });
 }
 
+export interface StorefrontBrandingInput {
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  brandColor: string | null;
+  aboutText: string | null;
+  privacyUrl: string | null;
+  refundUrl: string | null;
+  termsUrl: string | null;
+  storeMetaTitle: string | null;
+  storeMetaDescription: string | null;
+}
+
+/** Set the seller's storefront branding (logo/banner/colour/about/footer/SEO).
+ *  Owner-scoped upstream; values are sanitized in the action before this call. */
+export function setStorefrontBranding(tenantId: string, input: StorefrontBrandingInput) {
+  return prisma.tenant.update({ where: { id: tenantId }, data: input });
+}
+
 /** Public lookup by username (used to render a tenant's public site). */
 export function getTenantByUsername(username: string) {
   return prisma.tenant.findUnique({ where: { username } });

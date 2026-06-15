@@ -22,7 +22,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = (await headers()).get("host");
   const tenant = await resolveTenantByHost(host);
   const name = tenant ? (tenant.name ?? tenant.username) : "Store";
-  return { title: `Store · ${name}` };
+  const title = tenant?.storeMetaTitle?.trim() || `Store · ${name}`;
+  const description = tenant?.storeMetaDescription?.trim() || undefined;
+  const images = tenant?.bannerUrl || tenant?.logoUrl || undefined;
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: images ? [images] : undefined, type: "website" },
+  };
 }
 
 const SORTS = [
@@ -100,25 +107,44 @@ export default async function StorePage({
   };
   const sortHref = (key: SortKey) => href({ sort: key });
 
+  const brand = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(tenant.brandColor ?? "") ? tenant.brandColor! : null;
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-muted">
-            {tenant.username}.invoxai.io
-          </p>
-          <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold">
-            {tenant.name ?? tenant.username}
-            {tenant.verificationStatus === "VERIFIED" ? (
-              <span
-                title="Verified by InvoxAI"
-                className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
-              >
-                ✓ Verified
-              </span>
-            ) : null}
-          </h1>
+
+      {/* Branding: hero banner (audit batch 1) */}
+      {tenant.bannerUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={tenant.bannerUrl}
+          alt={`${tenant.name ?? tenant.username} banner`}
+          className="mb-6 h-40 w-full rounded-xl object-cover sm:h-56"
+        />
+      ) : null}
+
+      <div className="flex items-start justify-between" style={brand ? { borderTop: `3px solid ${brand}`, paddingTop: "0.75rem" } : undefined}>
+        <div className="flex items-center gap-3">
+          {tenant.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tenant.logoUrl} alt={`${tenant.name ?? tenant.username} logo`} className="h-12 w-12 rounded-lg object-cover" />
+          ) : null}
+          <div>
+            <p className="text-sm font-medium uppercase tracking-wide text-muted">
+              {tenant.username}.invoxai.io
+            </p>
+            <h1 className="mt-1 flex items-center gap-2 text-3xl font-bold">
+              {tenant.name ?? tenant.username}
+              {tenant.verificationStatus === "VERIFIED" ? (
+                <span
+                  title="Verified by InvoxAI"
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
+                >
+                  ✓ Verified
+                </span>
+              ) : null}
+            </h1>
+          </div>
         </div>
         <div className="flex gap-4">
           <CartLink />
@@ -127,6 +153,11 @@ export default async function StorePage({
           </Link>
         </div>
       </div>
+
+      {/* Branding: About the seller */}
+      {tenant.aboutText ? (
+        <p className="mt-4 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-muted">{tenant.aboutText}</p>
+      ) : null}
 
       {products.length === 0 ? (
         <p className="mt-8 text-muted">No products yet. Check back soon.</p>
@@ -231,6 +262,15 @@ export default async function StorePage({
           )}
         </>
       )}
+
+      {/* Branding: footer policy links (audit batch 1) */}
+      {tenant.privacyUrl || tenant.refundUrl || tenant.termsUrl ? (
+        <footer className="mt-16 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-zinc-200 pt-6 text-sm text-muted">
+          {tenant.privacyUrl ? <a href={tenant.privacyUrl} className="underline hover:text-zinc-900">Privacy policy</a> : null}
+          {tenant.refundUrl ? <a href={tenant.refundUrl} className="underline hover:text-zinc-900">Refund policy</a> : null}
+          {tenant.termsUrl ? <a href={tenant.termsUrl} className="underline hover:text-zinc-900">Terms</a> : null}
+        </footer>
+      ) : null}
     </main>
   );
 }
