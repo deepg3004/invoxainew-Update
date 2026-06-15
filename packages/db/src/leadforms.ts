@@ -1,5 +1,6 @@
 import { Prisma, type LeadFormStatus } from "@prisma/client";
 import { prisma } from "./client";
+import { enrollInSequences } from "./sequences";
 
 export type CreateLeadFormResult =
   | { ok: true; id: string }
@@ -117,16 +118,23 @@ export async function submitLead(input: {
   // Cap every field: this endpoint is PUBLIC + anonymous and the columns are
   // unbounded `text`, so without caps a visitor could POST multi-megabyte values
   // to bloat the seller's submissions. Trim first, then clamp (F1).
+  const email = input.email?.trim().slice(0, 200) || null;
   await prisma.leadSubmission.create({
     data: {
       tenantId: form.tenantId,
       formId: form.id,
       name: input.name?.trim().slice(0, 200) || null,
-      email: input.email?.trim().slice(0, 200) || null,
+      email,
       phone: input.phone?.trim().slice(0, 40) || null,
       message: input.message?.trim().slice(0, 4000) || null,
     },
   });
+
+  // Growth G1.3: enrol the lead into any LEAD-triggered sequences (best-effort — a
+  // failure must never break the public submission). Idempotent per (sequence, email).
+  if (email) {
+    await enrollInSequences({ tenantId: form.tenantId, trigger: "LEAD", email }).catch(() => {});
+  }
   return { ok: true };
 }
 

@@ -8,6 +8,8 @@ import { startBuyerCheckout, startPayUpiSession, previewPayCoupon } from "./acti
 import { firePurchase, fireInitiateCheckout } from "../../TrackingScripts";
 import { UpiPayPanel, UpiSubmitted } from "../../UpiPayPanel";
 import { readCouponCookie } from "../../../lib/coupon-cookie";
+import { OtoOffer } from "./OtoOffer";
+import { readExperimentVariant } from "./ExperimentTitle";
 
 declare global {
   interface Window {
@@ -31,18 +33,21 @@ export function PayBox({
   title,
   amountPaise,
   razorpayReady,
+  experimentId,
   upi,
 }: {
   paymentPageId: string;
   title: string;
   amountPaise: number;
   razorpayReady: boolean;
+  experimentId?: string | null;
   upi: { upiId: string; payeeName: string } | null;
 }) {
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [method, setMethod] = useState<"razorpay" | "upi">(razorpayReady ? "razorpay" : "upi");
   const [status, setStatus] = useState<Status>("idle");
+  const [paidOrderId, setPaidOrderId] = useState<string | null>(null);
   const [upiDone, setUpiDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -52,6 +57,19 @@ export function PayBox({
 
   const discount = applied ? Math.min(applied.discountPaise, amountPaise) : 0;
   const total = Math.max(0, amountPaise - discount);
+
+  // A/B: count a conversion for the visitor's bucketed variant on a confirmed payment.
+  function fireExperimentConversion() {
+    if (!experimentId) return;
+    const variant = readExperimentVariant(experimentId);
+    if (!variant) return;
+    void fetch("/api/exp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: experimentId, variant, kind: "conversion" }),
+      keepalive: true,
+    }).catch(() => {});
+  }
 
   async function applyPromo() {
     setApplying(true);
@@ -124,6 +142,8 @@ export function PayBox({
           });
           if (verify.ok) {
             firePurchase(result.amountPaise);
+            fireExperimentConversion();
+            setPaidOrderId(result.orderId);
             setStatus("paid");
           } else {
             setError("Payment received — confirming. If you were charged, you’re all set.");
@@ -140,7 +160,12 @@ export function PayBox({
   }
 
   if (status === "paid") {
-    return (
+    // After a Razorpay payment we have the order id → offer a post-purchase OTO
+    // (OtoOffer falls back to the plain success card when there's no active offer).
+    // The UPI path has no order handle here, so it shows the success card directly.
+    return paidOrderId ? (
+      <OtoOffer parentOrderId={paidOrderId} />
+    ) : (
       <PaymentSuccess
         title="Payment successful"
         subtitle="Thank you! Your payment is confirmed."
@@ -229,7 +254,10 @@ export function PayBox({
           upi={upi}
           title={title}
           onStart={() => startPayUpiSession(paymentPageId, { email, contact }, applied?.code)}
-          onConfirmed={() => setStatus("paid")}
+          onConfirmed={() => {
+            fireExperimentConversion();
+            setStatus("paid");
+          }}
           onSubmitted={() => setUpiDone(true)}
         />
       ) : null}

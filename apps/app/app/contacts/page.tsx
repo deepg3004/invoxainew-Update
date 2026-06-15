@@ -1,9 +1,17 @@
-import { Badge, Button, GlassCard, PageHeader, StatCard, Pagination, pageSlice } from "@invoxai/ui";
-import { listContacts } from "@invoxai/db";
+import Link from "next/link";
+import { Badge, Button, GlassCard, PageHeader, Pagination, pageSlice } from "@invoxai/ui";
+import { listContacts, contactStage, CRM_STAGES, type CrmStage } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { requireTenant } from "../../lib/tenant";
 
 export const dynamic = "force-dynamic";
+
+const STAGE_META: Record<CrmStage, { label: string; tone: "cyan" | "neutral" | "success" | "brand" }> = {
+  LEAD: { label: "Lead", tone: "cyan" },
+  ENGAGED: { label: "Engaged", tone: "neutral" },
+  CUSTOMER: { label: "Customer", tone: "success" },
+  VIP: { label: "VIP", tone: "brand" },
+};
 
 function timeAgo(d: Date): string {
   const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
@@ -17,23 +25,35 @@ function timeAgo(d: Date): string {
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string; size?: string }>;
+  searchParams: Promise<{ q?: string; stage?: string; page?: string; size?: string }>;
 }) {
   const { tenant } = await requireTenant();
-  const [contacts, { q: rawQ, page: rawPage, size: rawSize }] = await Promise.all([
-    listContacts(tenant.id),
-    searchParams,
-  ]);
+  const [rawContacts, { q: rawQ, stage: rawStage, page: rawPage, size: rawSize }] =
+    await Promise.all([listContacts(tenant.id), searchParams]);
+
+  // Decorate every contact with its derived pipeline stage (Growth G1.4).
+  const contacts = rawContacts.map((c) => ({ ...c, stage: contactStage(c) }));
+
+  // Pipeline funnel counts (across all contacts, before search/stage filters).
+  const stageCounts = CRM_STAGES.reduce(
+    (acc, s) => ({ ...acc, [s]: contacts.filter((c) => c.stage === s).length }),
+    {} as Record<CrmStage, number>,
+  );
+
+  const activeStage = (CRM_STAGES as readonly string[]).includes(rawStage ?? "")
+    ? (rawStage as CrmStage)
+    : null;
 
   const q = (rawQ ?? "").trim().toLowerCase();
-  const filtered = q
-    ? contacts.filter(
-        (c) =>
-          c.email.toLowerCase().includes(q) ||
-          (c.name?.toLowerCase().includes(q) ?? false) ||
-          (c.phone?.toLowerCase().includes(q) ?? false),
-      )
-    : contacts;
+  const filtered = contacts.filter((c) => {
+    if (activeStage && c.stage !== activeStage) return false;
+    if (!q) return true;
+    return (
+      c.email.toLowerCase().includes(q) ||
+      (c.name?.toLowerCase().includes(q) ?? false) ||
+      (c.phone?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   // The merged contact list is in memory; paginate the (filtered) array for display.
   const total = filtered.length;
@@ -42,7 +62,7 @@ export default async function ContactsPage({
   const firstOnPage = total === 0 ? 0 : skip + 1;
   const lastOnPage = skip + paged.length;
 
-  const buyers = contacts.filter((c) => c.isBuyer).length;
+  const qParam = rawQ ? `q=${encodeURIComponent(rawQ)}` : "";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -63,11 +83,40 @@ export default async function ContactsPage({
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard label="Contacts" value={contacts.length} />
-        <StatCard label="Buyers" value={buyers} />
-        <StatCard label="Leads only" value={contacts.length - buyers} />
+      {/* Pipeline funnel — click a stage to filter (Growth G1.4). Stages are derived
+          from each contact's activity (Lead → Engaged → Customer → VIP). */}
+      <div className="grid gap-3 sm:grid-cols-4">
+        {CRM_STAGES.map((s) => {
+          const meta = STAGE_META[s];
+          const isActive = activeStage === s;
+          const href = isActive
+            ? `/contacts${qParam ? `?${qParam}` : ""}`
+            : `/contacts?stage=${s}${qParam ? `&${qParam}` : ""}`;
+          return (
+            <Link
+              key={s}
+              href={href}
+              className={`rounded-xl border p-4 transition ${
+                isActive ? "border-brand bg-brand/5" : "border-zinc-200 bg-surface hover:border-brand/40"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-zinc-700">{meta.label}</span>
+                <Badge tone={meta.tone}>{stageCounts[s]}</Badge>
+              </div>
+              <div className="mt-1 text-2xl font-bold text-zinc-900">{stageCounts[s]}</div>
+            </Link>
+          );
+        })}
       </div>
+      {activeStage ? (
+        <p className="mt-2 text-sm text-muted">
+          Showing <span className="font-medium">{STAGE_META[activeStage].label}</span> contacts ·{" "}
+          <Link href={`/contacts${qParam ? `?${qParam}` : ""}`} className="text-brand-strong underline">
+            clear
+          </Link>
+        </p>
+      ) : null}
 
       <form className="mt-6">
         <input
@@ -94,7 +143,7 @@ export default async function ContactsPage({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-zinc-900">{c.name ?? c.email}</span>
-                  {c.isBuyer ? <Badge tone="success">Buyer</Badge> : <Badge tone="cyan">Lead</Badge>}
+                  <Badge tone={STAGE_META[c.stage].tone}>{STAGE_META[c.stage].label}</Badge>
                 </div>
                 <div className="mt-0.5 space-x-2 text-sm">
                   <a href={`mailto:${c.email}`} className="text-brand-strong underline">

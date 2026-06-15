@@ -3,4 +3,8 @@
 // the apps.
 export { enqueueSaleNotification, getNotificationsQueueHealth, SALE_JOB, type QueueHealth } from "./queue";
 export { processSaleNotification, type SaleNotificationPayload } from "./process-sale";
+export { sweepAbandonedRecovery } from "./recovery";
+export { buildResumeUrl, isInRecoveryWindow } from "./recovery-logic";
+export { sweepSequences } from "./sequences";
+export { planAdvance, type AdvancePlan } from "./sequences-logic";
 export { NOTIFICATIONS_QUEUE } from "./connection";

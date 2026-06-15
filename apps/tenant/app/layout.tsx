@@ -9,6 +9,7 @@ import { AffiliateCapture } from "./AffiliateCapture";
 import { PageViewBeacon } from "./PageViewBeacon";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { CartDrawer } from "./CartDrawer";
+import { SocialProofToasts } from "./SocialProofToasts";
 import { resolveTenantByHost } from "../lib/resolve";
 
 const sora = Sora({
@@ -50,6 +51,7 @@ export default async function RootLayout({
         <PageViewBeacon />
         {announcement ? <AnnouncementBar text={announcement} href={annHref} /> : null}
         {tenant && !tenant.suspendedAt ? <CartDrawer /> : null}
+        {tenant && !tenant.suspendedAt ? <SocialProofToasts /> : null}
         {children}
         {tenant && !tenant.suspendedAt ? (
           <footer className="border-t border-zinc-200/70 py-5 text-center text-xs text-zinc-400">

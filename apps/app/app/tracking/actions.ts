@@ -18,6 +18,8 @@ export async function saveTrackingAction(form: FormData) {
     ga4MeasurementId: clean(form.get("ga4MeasurementId")),
     googleAdsId: clean(form.get("googleAdsId")),
     gtmId: clean(form.get("gtmId")),
+    // Unchecked checkboxes are absent from FormData → false.
+    socialProofEnabled: form.get("socialProofEnabled") === "on",
   });
   revalidatePath("/tracking");
 }

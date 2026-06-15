@@ -38,6 +38,26 @@ export default async function TrackingPage() {
             <span className="text-sm font-medium text-zinc-900">Google Tag Manager ID</span>
             <input name="gtmId" defaultValue={t?.gtmId ?? ""} placeholder="GTM-XXXXXXX" className={inputCls} />
           </label>
+
+          <div className="border-t border-zinc-100 pt-4">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="socialProofEnabled"
+                defaultChecked={t?.socialProofEnabled ?? true}
+                className="mt-1 h-4 w-4"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-zinc-900">Show recent-purchase popups</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  Display live “someone just bought …” social-proof popups on your public
+                  pages. Built from your real recent sales and masked — only a first name
+                  and the item are ever shown.
+                </span>
+              </span>
+            </label>
+          </div>
+
           <Button type="submit">
             Save tracking
           </Button>

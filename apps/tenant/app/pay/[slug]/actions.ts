@@ -7,6 +7,10 @@ import {
   createUpiSession,
   applyCoupon,
   isTenantSuspended,
+  getActiveOtoForOrder,
+  findOtoOrder,
+  resolveOtoContext,
+  type OtoOffer,
 } from "@invoxai/db";
 import { getGatewayCredentials } from "../../../lib/gateway";
 import { createOrderWithKeys } from "../../../lib/razorpay";
@@ -179,5 +183,106 @@ export async function startPayUpiSession(
     buyerPaymentId: session.id,
     payAmountPaise: session.payAmountPaise,
     expiresAt: session.expiresAt.toISOString(),
+  };
+}
+
+// ── Growth G1.1: post-purchase one-time offer (OTO) ──────────────────────────
+
+/**
+ * The OTO to show on a just-paid order's success screen, or null. Read-only;
+ * resolves the active offer for the PAID parent order (tenant-scoped via the order).
+ */
+export async function getOtoForOrder(parentRazorpayOrderId: string): Promise<OtoOffer | null> {
+  if (!parentRazorpayOrderId) return null;
+  return getActiveOtoForOrder(parentRazorpayOrderId);
+}
+
+export type StartOtoResult =
+  | { ok: false; error: string; alreadyBought?: boolean }
+  | { ok: true; orderId: string; amountPaise: number; keyId: string; title: string };
+
+/**
+ * Start (or re-open) the one-click OTO checkout on the SELLER's gateway. The amount
+ * is recomputed server-side from the offer product + the upsell's discount — the
+ * client supplies only ids. Idempotent: at most one OTO order per (parent order,
+ * upsell), so a refreshed success page or a double-click can't create a second
+ * charge. The resulting order is a normal product BuyerPayment, so /api/pay/verify
+ * and the markBuyerPaymentPaid claim (commission, stock, grants) apply unchanged.
+ */
+export async function startOtoCheckout(
+  upsellId: string,
+  parentRazorpayOrderId: string,
+): Promise<StartOtoResult> {
+  const ctx = await resolveOtoContext(parentRazorpayOrderId, upsellId);
+  if (!ctx) return { ok: false, error: "This offer is no longer available." };
+
+  if (await isTenantSuspended(ctx.parent.tenantId)) {
+    return { ok: false, error: "This store is temporarily unavailable." };
+  }
+
+  const creds = await getGatewayCredentials(ctx.parent.tenantId);
+  if (!creds) {
+    return { ok: false, error: "The seller hasn’t finished setting up payments yet." };
+  }
+
+  // Idempotency: reuse any existing OTO order for this parent×upsell.
+  const existing = await findOtoOrder(ctx.parent.id, upsellId);
+  if (existing) {
+    if (existing.status === "PAID") {
+      return { ok: false, error: "You’ve already added this.", alreadyBought: true };
+    }
+    if (existing.status === "CREATED") {
+      return {
+        ok: true,
+        orderId: existing.razorpayOrderId,
+        amountPaise: existing.amountPaise,
+        keyId: creds.keyId,
+        title: ctx.title,
+      };
+    }
+    // FAILED/EXPIRED/etc → fall through and create a fresh order.
+  }
+
+  const order = await createOrderWithKeys(creds.keyId, creds.keySecret, {
+    amountPaise: ctx.pricePaise,
+    receipt: `oto_${upsellId}`.slice(0, 40),
+    notes: { upsellId, parentPaymentId: ctx.parent.id, tenantId: ctx.parent.tenantId },
+  });
+
+  try {
+    await createBuyerPayment({
+      razorpayOrderId: order.id,
+      tenantId: ctx.parent.tenantId,
+      productId: ctx.offerProductId,
+      itemTitle: ctx.title,
+      amountPaise: ctx.pricePaise,
+      buyerProfileId: ctx.parent.buyerProfileId,
+      buyerEmail: ctx.parent.buyerEmail,
+      buyerContact: ctx.parent.buyerContact,
+      parentPaymentId: ctx.parent.id,
+      upsellId,
+      affiliate: await affiliateAttribution(ctx.parent.tenantId, ctx.pricePaise),
+    });
+  } catch {
+    // Lost the race on the (parent, upsell) unique → reuse the winner's order.
+    const dup = await findOtoOrder(ctx.parent.id, upsellId);
+    if (dup && dup.status === "CREATED") {
+      return {
+        ok: true,
+        orderId: dup.razorpayOrderId,
+        amountPaise: dup.amountPaise,
+        keyId: creds.keyId,
+        title: ctx.title,
+      };
+    }
+    return { ok: false, error: "Could not start the offer. Please try again." };
+  }
+
+  return {
+    ok: true,
+    orderId: order.id,
+    amountPaise: ctx.pricePaise,
+    keyId: creds.keyId,
+    title: ctx.title,
   };
 }

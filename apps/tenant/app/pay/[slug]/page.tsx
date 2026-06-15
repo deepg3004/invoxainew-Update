@@ -5,11 +5,13 @@ import {
   getSellerGateway,
   getEnabledSellerUpi,
   getTenantTracking,
+  getRunningExperimentForPage,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { cachedPaymentPage } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { PayBox } from "./PayBox";
+import { ExperimentTitle } from "./ExperimentTitle";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 
@@ -48,10 +50,11 @@ export default async function PayPage({
   const page = await cachedPaymentPage(tenant.id, slug);
   if (!page) notFound();
 
-  const [gateway, upi, tracking] = await Promise.all([
+  const [gateway, upi, tracking, experiment] = await Promise.all([
     getSellerGateway(tenant.id),
     getEnabledSellerUpi(tenant.id),
     getTenantTracking(tenant.id),
+    getRunningExperimentForPage(page.id),
   ]);
   const razorpayReady = Boolean(gateway && gateway.status === "CONNECTED");
   const sellerReady = razorpayReady || Boolean(upi);
@@ -62,10 +65,20 @@ export default async function PayPage({
       <p className="text-sm font-medium uppercase tracking-wide text-muted">
         {tenant.name ?? tenant.username}
       </p>
-      <h1 className="mt-1 text-2xl font-bold">{page.title}</h1>
-      {page.description ? (
-        <p className="mt-2 text-muted">{page.description}</p>
-      ) : null}
+      {experiment ? (
+        <ExperimentTitle
+          experiment={experiment}
+          aTitle={page.title}
+          aDescription={page.description ?? null}
+        />
+      ) : (
+        <>
+          <h1 className="mt-1 text-2xl font-bold">{page.title}</h1>
+          {page.description ? (
+            <p className="mt-2 text-muted">{page.description}</p>
+          ) : null}
+        </>
+      )}
 
       {page.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -100,6 +113,7 @@ export default async function PayPage({
             title={page.title}
             amountPaise={page.amountPaise}
             razorpayReady={razorpayReady}
+            experimentId={experiment?.id ?? null}
             upi={
               upi
                 ? { upiId: upi.upiId, payeeName: upi.displayName ?? tenant.name ?? tenant.username }

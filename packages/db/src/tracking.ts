@@ -16,12 +16,18 @@ export function upsertTenantTracking(input: {
   ga4MeasurementId: string | null;
   googleAdsId: string | null;
   gtmId: string | null;
+  socialProofEnabled?: boolean;
 }) {
   const data = {
     metaPixelId: input.metaPixelId,
     ga4MeasurementId: input.ga4MeasurementId,
     googleAdsId: input.googleAdsId,
     gtmId: input.gtmId,
+    // Only touch the toggle when the caller provided it, so the create-default of
+    // `true` and an existing value aren't clobbered by a pixel-only save.
+    ...(input.socialProofEnabled !== undefined
+      ? { socialProofEnabled: input.socialProofEnabled }
+      : {}),
   };
   return prisma.tenantTracking.upsert({
     where: { tenantId: input.tenantId },

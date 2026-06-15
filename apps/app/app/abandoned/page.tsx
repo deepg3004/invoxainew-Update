@@ -36,8 +36,9 @@ export default async function AbandonedPage({
       />
 
       <GlassCard className="text-sm text-muted">
-        💡 Automatic email / WhatsApp recovery nudges turn on once you connect an
-        email provider. For now, follow up manually below.
+        💡 Buyers who leave at checkout are automatically emailed a reminder with a
+        link to finish (about 30 minutes after they drop off, once email is
+        configured). You can also follow up manually below.
       </GlassCard>
 
       {carts.length === 0 ? (
@@ -68,6 +69,11 @@ export default async function AbandonedPage({
                     </div>
                     <div className="mt-0.5 text-sm text-muted">
                       {formatRupees(c.amountPaise)} · started {timeAgo(c.createdAt)}
+                      {c.recoveryEmailAt ? (
+                        <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                          ✓ Reminder sent
+                        </span>
+                      ) : null}
                     </div>
                     {c.orderItems.length > 0 ? (
                       <ul className="mt-1 text-xs text-muted">

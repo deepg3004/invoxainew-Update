@@ -13,6 +13,26 @@ export interface CrmContact {
   isBuyer: boolean;
 }
 
+/**
+ * Growth G1.4 — a contact's pipeline stage, DERIVED purely from their activity (no
+ * stored stage; consistent with contacts themselves being derived). Ordered
+ * LEAD → ENGAGED → CUSTOMER → VIP:
+ *   VIP      = repeat buyer (≥2 paid orders)
+ *   CUSTOMER = exactly one paid order
+ *   ENGAGED  = started a checkout but hasn't paid (intent, no purchase yet)
+ *   LEAD     = only a form submission, never reached checkout
+ * (A manual-override / REFUNDED stage needs a stored table — that's Part 2.)
+ */
+export const CRM_STAGES = ["LEAD", "ENGAGED", "CUSTOMER", "VIP"] as const;
+export type CrmStage = (typeof CRM_STAGES)[number];
+
+export function contactStage(c: { paidCount: number; orderCount: number }): CrmStage {
+  if (c.paidCount >= 2) return "VIP";
+  if (c.paidCount === 1) return "CUSTOMER";
+  if (c.orderCount > 0) return "ENGAGED";
+  return "LEAD";
+}
+
 // Per-source scan cap. At this product's scale a full in-memory merge is fine;
 // the caps stop a pathological tenant from loading unbounded rows. If a tenant
 // ever exceeds these, the oldest activity is what falls off (newest-first scan).

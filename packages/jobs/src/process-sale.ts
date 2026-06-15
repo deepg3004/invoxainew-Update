@@ -4,6 +4,7 @@ import {
   getOrderNotifyContext,
   recordNotificationLog,
   getEmailDispatchConfig,
+  enrollPurchaseFromOrder,
 } from "@invoxai/db";
 import { formatRupees } from "@invoxai/utils/money";
 import { sendEmail, escapeHtml, type SendEmailResult } from "@invoxai/utils/email";
@@ -61,6 +62,10 @@ export async function processSaleNotification(input: SaleNotificationPayload): P
   // Email channel (Phase 14). Independent of the in-app notifications above and
   // also fully best-effort — wrapped so a transport error never escapes.
   await sendSaleEmails(input).catch(() => {});
+
+  // Growth G1.3: enrol the buyer into any PURCHASE drip sequences (idempotent per
+  // sequence+email; gated by product). Best-effort — never affects the sale.
+  await enrollPurchaseFromOrder(input.buyerPaymentId).catch(() => {});
 }
 
 /**

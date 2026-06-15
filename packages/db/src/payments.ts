@@ -226,6 +226,11 @@ export function createBuyerPayment(input: {
   status?: "CREATED" | "PENDING";
   paymentMethod?: "RAZORPAY" | "UPI_MANUAL";
   upiRef?: string | null;
+  // Growth G1.1 (OTO): set when this order is a post-purchase one-time offer, linking
+  // it to the parent order + the accepted upsell. The (parent, upsell) unique makes
+  // acceptance idempotent. Both null for every normal order.
+  parentPaymentId?: string | null;
+  upsellId?: string | null;
 }) {
   return prisma.buyerPayment.create({
     data: {
@@ -233,6 +238,8 @@ export function createBuyerPayment(input: {
       tenantId: input.tenantId,
       paymentPageId: input.paymentPageId ?? null,
       productId: input.productId ?? null,
+      parentPaymentId: input.parentPaymentId ?? null,
+      upsellId: input.upsellId ?? null,
       courseId: input.courseId ?? null,
       communityId: input.communityId ?? null,
       quantity: input.quantity ?? 1,
@@ -485,6 +492,64 @@ export function countAbandonedCheckouts(
   return prisma.buyerPayment.count({
     where: { tenantId, status: "CREATED", createdAt: { lt: cutoff } },
   });
+}
+
+/**
+ * Growth G1.2 — checkouts due an automatic recovery email (GLOBAL across tenants,
+ * for the cron sweep). A row qualifies when it's a Razorpay checkout still CREATED
+ * (manual-UPI has its own session/expiry flow), has a buyer email, hasn't been
+ * nudged yet, and sits in the recovery WINDOW: older than `minAgeMinutes` (truly
+ * abandoned, not still paying) but newer than `maxAgeHours` (a stale nudge is
+ * pointless / spammy). Includes the bits needed to build the resume link + email.
+ */
+export function listCheckoutsForRecovery(opts: {
+  minAgeMinutes?: number;
+  maxAgeHours?: number;
+  limit?: number;
+}) {
+  const now = Date.now();
+  const newerThan = new Date(now - (opts.minAgeMinutes ?? 30) * 60_000);
+  const olderThan = new Date(now - (opts.maxAgeHours ?? 24) * 3_600_000);
+  return prisma.buyerPayment.findMany({
+    where: {
+      status: "CREATED",
+      paymentMethod: "RAZORPAY",
+      recoveryEmailAt: null,
+      buyerEmail: { not: null },
+      createdAt: { lte: newerThan, gte: olderThan },
+    },
+    orderBy: { createdAt: "asc" },
+    take: opts.limit ?? 200,
+    select: {
+      id: true,
+      tenantId: true,
+      itemTitle: true,
+      amountPaise: true,
+      buyerEmail: true,
+      paymentPage: { select: { slug: true } },
+      product: { select: { slug: true } },
+      tenant: {
+        select: {
+          username: true,
+          name: true,
+          domains: { where: { isPrimary: true }, select: { domain: true }, take: 1 },
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Atomically claim a checkout for its recovery email (set recoveryEmailAt where it's
+ * still null). Returns true only for the winner, so two concurrent cron runs can
+ * never double-send. Call this BEFORE sending; if it returns false, skip.
+ */
+export async function claimRecoveryEmail(id: string): Promise<boolean> {
+  const res = await prisma.buyerPayment.updateMany({
+    where: { id, recoveryEmailAt: null },
+    data: { recoveryEmailAt: new Date() },
+  });
+  return res.count === 1;
 }
 
 export interface SalesSummary {
