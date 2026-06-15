@@ -8,6 +8,17 @@ export interface BioLinkConfig {
   facebook: string | null;
   whatsapp: string | null;
   website: string | null;
+  tiktok: string | null;
+  linkedin: string | null;
+  threads: string | null;
+}
+
+const HEX_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+/** Validate a stored bio background colour to a hex value, or "" — it's
+ *  interpolated into an inline style, so only a hex colour may pass. */
+export function bioBgColor(value: string | null | undefined): string {
+  const s = (value ?? "").trim();
+  return HEX_RE.test(s) ? s : "";
 }
 
 export interface BioTarget {
@@ -47,6 +58,9 @@ export function bioRender(
     { label: "Facebook", href: safeUrl(bio.facebook) },
     { label: "WhatsApp", href: safeUrl(bio.whatsapp) },
     { label: "Website", href: safeUrl(bio.website) },
+    { label: "TikTok", href: safeUrl(bio.tiktok) },
+    { label: "LinkedIn", href: safeUrl(bio.linkedin) },
+    { label: "Threads", href: safeUrl(bio.threads) },
   ].filter((s) => s.href);
 
   const auto: BioTarget[] = [];

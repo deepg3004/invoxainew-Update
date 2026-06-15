@@ -10,6 +10,10 @@ export interface BioLinkInput {
   facebook?: string | null;
   whatsapp?: string | null;
   website?: string | null;
+  tiktok?: string | null;
+  linkedin?: string | null;
+  threads?: string | null;
+  bgColor?: string | null;
   linksText?: string | null;
   published?: boolean;
 }
@@ -72,6 +76,10 @@ export function upsertBioLink(tenantId: string, input: BioLinkInput) {
     facebook: norm(input.facebook),
     whatsapp: norm(input.whatsapp),
     website: norm(input.website),
+    tiktok: norm(input.tiktok),
+    linkedin: norm(input.linkedin),
+    threads: norm(input.threads),
+    bgColor: norm(input.bgColor),
     linksText: norm(input.linksText),
     published: input.published ?? false,
   };

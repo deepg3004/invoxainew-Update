@@ -8,7 +8,7 @@ import {
   listPublishedCourses,
 } from "@invoxai/db";
 import { resolveTenantByHost } from "../../lib/resolve";
-import { bioRender, trackHref } from "../../lib/bio";
+import { bioRender, trackHref, bioBgColor } from "../../lib/bio";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
 
@@ -51,9 +51,13 @@ export default async function BioPage() {
     hasProducts: products.length > 0,
     hasCourses: courses.length > 0,
   });
+  const bg = bioBgColor(bio.bgColor);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center px-6 py-16 text-center">
+    <main
+      className="mx-auto flex min-h-screen max-w-md flex-col items-center px-6 py-16 text-center"
+      style={bg ? { background: bg } : undefined}
+    >
       <TrackingScripts ids={tracking ?? {}} />
 
       {bio.avatarUrl ? (

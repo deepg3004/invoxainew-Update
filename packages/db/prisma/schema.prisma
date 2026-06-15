@@ -158,6 +158,11 @@ model BioLink {
   facebook    String?
   whatsapp    String?
   website     String?
+  tiktok      String?
+  linkedin    String?
+  threads     String?
+  // Optional background colour (hex) for the public bio page; validated at render.
+  bgColor     String?  @map("bg_color")
   // Custom links as "Label | https://url" lines; parsed + sanitized at render.
   linksText   String?  @map("links_text")
   published   Boolean  @default(false)

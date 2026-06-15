@@ -19,6 +19,9 @@ const EMPTY: Parameters<typeof bioRender>[0] = {
   facebook: null,
   whatsapp: null,
   website: null,
+  tiktok: null,
+  linkedin: null,
+  threads: null,
 };
 
 const NO_CATALOG = { hasProducts: false, hasCourses: false };

@@ -23,6 +23,9 @@ const SOCIALS: { name: string; label: string }[] = [
   { name: "facebook", label: "Facebook URL" },
   { name: "whatsapp", label: "WhatsApp link" },
   { name: "website", label: "Website URL" },
+  { name: "tiktok", label: "TikTok URL" },
+  { name: "linkedin", label: "LinkedIn URL" },
+  { name: "threads", label: "Threads URL" },
 ];
 
 export default async function BioEditorPage() {
@@ -116,6 +119,19 @@ export default async function BioEditorPage() {
         </div>
 
         <BioLinksEditor name="linksText" defaultValue={bio?.linksText ?? ""} />
+
+        <div>
+          <label className="text-sm font-medium">Background colour</label>
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="color"
+              name="bgColor"
+              defaultValue={/^#[0-9a-fA-F]{6}$/.test(bio?.bgColor ?? "") ? (bio!.bgColor as string) : "#ffffff"}
+              className="h-9 w-12 cursor-pointer rounded border border-zinc-300"
+            />
+            <span className="text-xs text-muted">Optional — the public bio page background.</span>
+          </div>
+        </div>
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="published" defaultChecked={bio?.published ?? false} /> Published (page is live)

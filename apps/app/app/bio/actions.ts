@@ -17,6 +17,10 @@ export async function saveBioLinkAction(form: FormData): Promise<void> {
     facebook: g("facebook"),
     whatsapp: g("whatsapp"),
     website: g("website"),
+    tiktok: g("tiktok"),
+    linkedin: g("linkedin"),
+    threads: g("threads"),
+    bgColor: g("bgColor"),
     linksText: g("linksText"),
     published: form.get("published") === "on",
   });
