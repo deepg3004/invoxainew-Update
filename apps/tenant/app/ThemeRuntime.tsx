@@ -30,7 +30,7 @@ export function ThemeStyle({ t }: { t: ThemeTokens }) {
   --iv-radius:${t.radius}px;--iv-cta:${ctaGradient(t)};--iv-shimmer:${t.ctaShimmer};
   --iv-fh:'${t.fontHeading}',system-ui,-apple-system,sans-serif;
   --iv-fb:'${t.fontBody}',system-ui,-apple-system,sans-serif;
-  font-family:var(--iv-fb);
+  font-family:var(--iv-fb);color:var(--iv-text);
 }
 .iv-page h1,.iv-page h2,.iv-page h3,.iv-page .iv-h{font-family:var(--iv-fh);}
 /* gradient CTA + shimmer */

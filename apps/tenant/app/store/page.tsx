@@ -10,9 +10,11 @@ import {
   getProductSalesCounts,
   variantsByProductIds,
 } from "@invoxai/db";
+import { resolveTheme, normalizeTheme } from "@invoxai/utils/blocks";
 import { resolveTenantByHost } from "../../lib/resolve";
 import { StoreUnavailable } from "../StoreUnavailable";
 import { TrackingScripts } from "../TrackingScripts";
+import { ThemeStyle, AnimatedBg, BuiltWithBadge } from "../ThemeRuntime";
 import { CartLink } from "../CartLink";
 import { ProductCard } from "./ProductCard";
 
@@ -109,9 +111,13 @@ export default async function StorePage({
   const sortHref = (key: SortKey) => href({ sort: key });
 
   const brand = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(tenant.brandColor ?? "") ? tenant.brandColor! : null;
+  const theme = resolveTheme(normalizeTheme({ theme: { preset: tenant.storeTheme || "pure-snow" } }));
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
+    <div className="iv-page" style={{ background: theme.bg, minHeight: "100vh", position: "relative" }}>
+      <ThemeStyle t={theme} />
+      <AnimatedBg type={theme.background} />
+      <main className="relative z-10 mx-auto max-w-6xl px-6 py-12">
       <TrackingScripts ids={tracking ?? {}} />
 
       {/* Branding: hero banner (audit batch 1) */}
@@ -172,7 +178,7 @@ export default async function StorePage({
               placeholder="Search products"
               className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-brand"
             />
-            <button className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">
+            <button className="iv-cta px-4 py-2 text-sm font-medium text-white">
               Search
             </button>
             {q ? (
@@ -272,6 +278,8 @@ export default async function StorePage({
           {tenant.termsUrl ? <a href={tenant.termsUrl} className="underline hover:text-zinc-900">Terms</a> : null}
         </footer>
       ) : null}
-    </main>
+      </main>
+      <BuiltWithBadge />
+    </div>
   );
 }

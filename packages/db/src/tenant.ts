@@ -64,6 +64,7 @@ export interface StorefrontBrandingInput {
   termsUrl: string | null;
   storeMetaTitle: string | null;
   storeMetaDescription: string | null;
+  storeTheme: string | null;
 }
 
 /** Set the seller's storefront branding (logo/banner/colour/about/footer/SEO).

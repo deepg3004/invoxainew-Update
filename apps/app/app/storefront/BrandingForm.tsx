@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { ImageUpload } from "@invoxai/ui";
+import { THEME_LIBRARY, THEME_PRESETS } from "@invoxai/utils/blocks";
 import { saveBrandingAction, type StorefrontFormState } from "./actions";
 import { uploadTenantImageAction } from "../upload-actions";
 
@@ -18,6 +19,7 @@ export interface BrandingInitial {
   termsUrl: string;
   storeMetaTitle: string;
   storeMetaDescription: string;
+  storeTheme: string;
 }
 
 export function BrandingForm({ initial }: { initial: BrandingInitial }) {
@@ -49,6 +51,20 @@ export function BrandingForm({ initial }: { initial: BrandingInitial }) {
           className="h-8 w-12 cursor-pointer rounded border border-zinc-300"
         />
         <span className="text-xs font-normal text-muted">Accent used on your storefront.</span>
+      </label>
+
+      <label className="block">
+        <span className="text-sm font-medium text-zinc-900">Storefront theme</span>
+        <select name="storeTheme" defaultValue={initial.storeTheme || "aurora-glow"} className={inputCls}>
+          {THEME_LIBRARY.map((id) => (
+            <option key={id} value={id}>
+              {THEME_PRESETS[id]!.label}
+            </option>
+          ))}
+        </select>
+        <span className="mt-1 block text-xs text-muted">
+          Paints your store + product/checkout pages — colours, fonts, animated background.
+        </span>
       </label>
 
       <label className="block">

@@ -58,6 +58,9 @@ model Tenant {
   bannerUrl            String? @map("banner_url")
   brandColor           String? @map("brand_color")
   aboutText            String? @map("about_text")
+  // Premium theme system: the storefront's chosen theme preset slug (one of the 24
+  // in THEME_LIBRARY). Null = default. Paints /store + the commerce pages.
+  storeTheme           String? @map("store_theme")
   privacyUrl           String? @map("privacy_url")
   refundUrl            String? @map("refund_url")
   termsUrl             String? @map("terms_url")

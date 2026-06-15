@@ -49,6 +49,7 @@ export default async function StorefrontPage() {
               termsUrl: tenant?.termsUrl ?? "",
               storeMetaTitle: tenant?.storeMetaTitle ?? "",
               storeMetaDescription: tenant?.storeMetaDescription ?? "",
+              storeTheme: tenant?.storeTheme ?? "",
             }}
           />
         </div>

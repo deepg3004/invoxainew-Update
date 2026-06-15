@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { setStoreAnnouncement, setStorefrontBranding, logActivity } from "@invoxai/db";
-import { safeUrl } from "@invoxai/utils/blocks";
+import { safeUrl, THEME_PRESETS } from "@invoxai/utils/blocks";
 import { requireTenant } from "../../lib/tenant";
 
 export type StorefrontFormState = { error?: string; ok?: boolean };
@@ -22,6 +22,8 @@ export async function saveBrandingAction(
   };
   const text = (k: string, max: number) => String(form.get(k) ?? "").trim().slice(0, max) || null;
   const colorRaw = String(form.get("brandColor") ?? "").trim();
+  const themeRaw = String(form.get("storeTheme") ?? "").trim();
+  const storeTheme = themeRaw && themeRaw in THEME_PRESETS ? themeRaw : null;
 
   await setStorefrontBranding(tenant.id, {
     logoUrl: url("logoUrl"),
@@ -33,6 +35,7 @@ export async function saveBrandingAction(
     termsUrl: url("termsUrl"),
     storeMetaTitle: text("storeMetaTitle", 200),
     storeMetaDescription: text("storeMetaDescription", 300),
+    storeTheme,
   });
   await logActivity(tenant.id, "storefront.branding_updated").catch(() => {});
   revalidatePath("/storefront");
