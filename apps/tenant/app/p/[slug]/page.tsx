@@ -23,6 +23,7 @@ import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
 import { CartLink } from "../../CartLink";
+import { StickyBuyBar } from "../../StickyBuyBar";
 
 export const dynamic = "force-dynamic";
 
@@ -193,7 +194,7 @@ export default async function ProductPage({
             </p>
           ) : null}
 
-          <div className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-5 shadow-card">
+          <div id="buybox" className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-5 shadow-card">
             {sellerReady ? (
               <ProductBuyBox
                 product={{
@@ -285,6 +286,10 @@ export default async function ProductPage({
       ) : null}
 
       <MoreFromStore tenantId={tenant.id} excludeProductId={product.id} />
+
+      {sellerReady ? (
+        <StickyBuyBar label="Buy now" offerPaise={product.pricePaise} compareAtPaise={product.compareAtPaise} />
+      ) : null}
     </main>
   );
 }

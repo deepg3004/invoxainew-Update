@@ -11,6 +11,7 @@ import { resolveTenantByHost } from "../../../lib/resolve";
 import { cachedPaymentPage } from "../../../lib/content";
 import { formatRupees } from "@invoxai/utils/money";
 import { PayBox } from "./PayBox";
+import { StickyBuyBar } from "../../StickyBuyBar";
 import { ExperimentTitle } from "./ExperimentTitle";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
@@ -95,7 +96,7 @@ export default async function PayPage({
         />
       ) : null}
 
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-card">
+      <div id="buybox" className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-card">
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-3xl font-bold">{formatRupees(page.amountPaise)}</span>
           {page.compareAtPaise != null && page.compareAtPaise > page.amountPaise ? (
@@ -139,6 +140,10 @@ export default async function PayPage({
           <span className="inline-flex items-center gap-1">⚡ Instant confirmation</span>
           {razorpayReady ? <span className="inline-flex items-center gap-1">💳 Cards · UPI · Netbanking</span> : null}
         </div>
+      ) : null}
+
+      {sellerReady ? (
+        <StickyBuyBar label="Pay now" offerPaise={page.amountPaise} compareAtPaise={page.compareAtPaise} />
       ) : null}
     </main>
   );

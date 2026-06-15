@@ -11,6 +11,7 @@ import {
 import { formatRupees } from "@invoxai/utils/money";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { BookingBox } from "./BookingBox";
+import { StickyBuyBar } from "../../StickyBuyBar";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -85,7 +86,7 @@ export default async function BookingPage({
         <p className="mt-2 whitespace-pre-line text-muted">{type.description}</p>
       ) : null}
 
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-card">
+      <div id="buybox" className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-card">
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="text-3xl font-bold">{formatRupees(type.pricePaise)}</span>
           {type.compareAtPaise != null && type.compareAtPaise > type.pricePaise ? (
@@ -113,6 +114,10 @@ export default async function BookingPage({
           </p>
         )}
       </div>
+
+      {sellerReady ? (
+        <StickyBuyBar label="Book now" offerPaise={type.pricePaise} compareAtPaise={type.compareAtPaise} />
+      ) : null}
     </main>
   );
 }

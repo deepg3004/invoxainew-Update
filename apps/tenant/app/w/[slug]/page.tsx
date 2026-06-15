@@ -16,6 +16,7 @@ import { formatDateTimeShortIST } from "@invoxai/utils/date";
 import { resolveTenantByHost } from "../../../lib/resolve";
 import { getSessionUser } from "../../../lib/auth";
 import { WorkshopJoinBox } from "./WorkshopJoinBox";
+import { StickyBuyBar } from "../../StickyBuyBar";
 import { StoreUnavailable } from "../../StoreUnavailable";
 import { TrackingScripts } from "../../TrackingScripts";
 import { TrackView } from "../../TrackView";
@@ -113,7 +114,7 @@ export default async function WorkshopPage({
         <p className="mt-2 whitespace-pre-line text-muted">{workshop.description}</p>
       ) : null}
 
-      <div className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-card">
+      <div id="buybox" className="mt-6 rounded-2xl border border-zinc-200 bg-surface p-6 shadow-card">
         {registration ? (
           <div className="text-center">
             <p className="text-sm font-medium text-green-700">✓ You’re registered.</p>
@@ -172,6 +173,10 @@ export default async function WorkshopPage({
           </>
         )}
       </div>
+
+      {sellerReady && !registration && !soldOut && !isFree ? (
+        <StickyBuyBar label="Register" offerPaise={workshop.pricePaise} compareAtPaise={workshop.compareAtPaise} />
+      ) : null}
     </main>
   );
 }
